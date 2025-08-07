@@ -1,0 +1,72 @@
+.screen {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: 100%;
+}
+
+.screen .div-2 {
+  background-color: #ffffff;
+  height: 932px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.screen .element-17 {
+  height: 1px;
+  left: 215px;
+  object-fit: cover;
+  position: absolute;
+  top: 4453px;
+  width: 1px;
+}
+
+.screen .text-wrapper-20 {
+  color: rgba(11, 79, 127, 1);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 67px;
+  
+  left: 159px;
+  letter-spacing: 0;
+  line-height: normal;
+  position: absolute;
+  text-align: right;
+  top: 509px;
+  white-space: nowrap;
+}
+
+.screen .phonelogo-x {
+  height: 183px;
+  left: 197px;
+  object-fit: cover;
+  position: absolute;
+  top: 317px;
+  width: 110px;
+}
+
+.screen .overlap-group-2 {
+  height: 662px;
+  left: -26px;
+  position: absolute;
+  top: 748px;
+  width: 581px;
+}
+
+.screen .bird {
+  height: 133px;
+  left: 31px;
+  position: absolute;
+  top: 51px;
+  width: 499px;
+}
+
+.screen .bird-2 {
+  height: 662px;
+  left: 0;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  width: 581px;
+}

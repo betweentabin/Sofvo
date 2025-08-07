@@ -1,0 +1,45 @@
+.footer-outer {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 50px;
+  left: 50%;
+  position: fixed;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  z-index: 1000;
+}
+
+.footer-inner {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #E8E8E8;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  height: 50px;
+}
+
+.footer-content {
+  align-items: center;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  padding: 0 30px;
+  height: 100%;
+}
+
+.footer-nav-icon {
+  width: 20px;
+  height: 24px;
+  object-fit: contain;
+  cursor: pointer;
+}
+ 

@@ -1,0 +1,200 @@
+.screen-26 {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: 100%;
+}
+
+.screen-26 .main-content {
+  background-color: #ffffff;
+  height: calc(100vh - 101px);
+  position: absolute;
+  width: 100%;
+  padding-bottom: 0px; /* Footerの高さ分 */
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.screen-26 .frame-501 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  left: 0;
+  position: absolute;
+  top: 0px;
+  width: 100%;
+}
+
+.screen-26 .frame-502 {
+  align-items: center;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 10px;
+  position: relative;
+  width: 100%;
+}
+
+.screen-26 .frame-503 {
+  align-items: flex-start;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.screen-26 .text-wrapper-238 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  margin-top: -1px;
+  position: relative;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.screen-26 .text-wrapper-239 {
+  align-self: stretch;
+  color: var(--2);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  margin-top: -1px;
+  position: relative;
+}
+
+.screen-26 .text-wrapper-240 {
+  align-self: stretch;
+  color: var(--2);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  margin-top: -1px;
+  position: relative;
+}
+
+.screen-26 .text-wrapper-241 {
+  align-self: stretch;
+  color: var(--2);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+}
+
+.screen-26 .frame-504 {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  left: 0;
+  padding: 0px;
+  position: relative;
+  top: 0px;
+  width: 100%;
+}
+
+.screen-26 .text-wrapper-242 {
+  color: #0B4F7F;
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 18px;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  margin-top: -1px;
+  position: relative;
+  text-align: right;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.screen-26 .overlap-group-23 {
+  height: 80px;
+  left: 0;
+  position: absolute;
+  top: -1px;
+  width: 100%;
+}
+
+.screen-26 .frame-505 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  height: 80px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.screen-26 .frame-506 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  position: relative;
+  width: 100%;
+}
+
+.screen-26 .frame-507 {
+  align-items: center;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.screen-26 .text-wrapper-243 {
+  color: var(--);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 30px;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: right;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.screen-26 .frame-508 {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.screen-26 .vector-55 {
+  height: 1px;
+  left: 0;
+  object-fit: cover;
+  position: absolute;
+  top: 79px;
+  width: 100%;
+}

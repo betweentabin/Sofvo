@@ -1,0 +1,327 @@
+.screen-10 {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: 100%;
+}
+
+.screen-10 .main-content {
+  background-color: #ffffff;
+  height: calc(100vh - 101px);
+  position: absolute;
+  width: 100%;
+  padding-bottom: 0px; /* Footerの高さ分 */
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.screen-10 .overlap-9 {
+  height: 364px;
+  left: 0;
+  position: absolute;
+  top: 1171px;
+  width: 100%;
+}
+
+.screen-10 .frame-132 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.screen-10 .frame-133 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px 10px;
+  position: relative;
+  width: 100%;
+  border-bottom: 1px solid #D4D4D4;
+}
+
+.screen-10 .frame-134 {
+  align-items: center;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.screen-10 .frame-135 {
+  align-items: center;
+  background-color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  position: relative;
+}
+
+.screen-10 .frame-136 {
+  background-color: #d9d9d9;
+  border-radius: 50px;
+  height: 30px;
+  position: relative;
+  width: 30px;
+}
+
+.screen-10 .text-wrapper-85 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 13px;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.screen-10 .text-wrapper-86 {
+  color: var(--2);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 10px;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.screen-10 .rectangle-7 {
+  align-self: stretch;
+  background-color: #d9d9d9;
+  border-radius: 5px;
+  height: 230px;
+  position: relative;
+  width: 100%;
+}
+
+.screen-10 .frame-137 {
+  align-items: center;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 42px;
+  justify-content: flex-end;
+  position: relative;
+  width: 100%;
+}
+
+.screen-10 .frame-138 {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 9px;
+  position: relative;
+}
+
+.screen-10 .frame-139 {
+  align-items: center;
+  background-color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  position: relative;
+}
+
+.screen-10 .heart-4 {
+  height: 24px;
+  overflow: hidden;
+  position: relative;
+  width: 24px;
+}
+
+.screen-10 .vector-24 {
+  height: 18px;
+  left: -5312px;
+  position: absolute;
+  top: 2585px;
+  width: 21px;
+}
+
+.screen-10 .text-wrapper-87 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 13px;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.screen-10 .element-22 {
+  height: 1px;
+  margin-left: -4926px;
+  object-fit: cover;
+  position: relative;
+  width: 100%;
+}
+
+.screen-10 .frame-140 {
+  height: 65px;
+  left: 0;
+  position: absolute;
+  top: 154px;
+  width: 100%;
+}
+
+.screen-10 .overlap-group-10 {
+  height: 444px;
+  left: 0;
+  position: absolute;
+  top: -1px;
+  width: 100%;
+}
+
+.screen-10 .frame-141 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  left: 0;
+  position: absolute;
+  top: 80px;
+  width: 100%;
+}
+
+.screen-10 .heart-5 {
+  height: 24px;
+  position: relative;
+  width: 24px;
+}
+
+.screen-10 .vector-25 {
+  height: 18px;
+  left: 2px;
+  position: absolute;
+  top: 4px;
+  width: 21px;
+}
+
+.screen-10 .element-23 {
+  height: 1px;
+  object-fit: cover;
+  position: relative;
+  width: 100%;
+}
+
+.screen-10 .vector-26 {
+  height: 1px;
+  left: 0;
+  object-fit: cover;
+  position: absolute;
+  top: 80px;
+  width: 100%;
+}
+
+.screen-10 .frame-142 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  height: 80px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.screen-10 .frame-143 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  position: relative;
+  width: 100%;
+}
+
+.screen-10 .text-wrapper-88 {
+  color: var(--);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 30px;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: right;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.screen-10 .frame-144 {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.screen-10 .frame-145 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  left: 0;
+  position: absolute;
+  top: 443px;
+  width: 100%;
+}
+
+.screen-10 .frame-146 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px 20px 0px;
+  position: relative;
+  width: 100%;
+}
+
+.screen-10 .frame-147 {
+  align-items: center;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  position: relative;
+  width: 100%;
+}
+
+.screen-10 .frame-148 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  left: 0;
+  position: absolute;
+  top: 807px;
+  width: 100%;
+}

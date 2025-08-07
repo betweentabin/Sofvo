@@ -1,0 +1,669 @@
+.HOME-screen {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+
+.HOME-screen .main-content {
+  background-color: #ffffff;
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden; /* 横スクロールを無効化 */
+  padding-bottom: 65px; /* フッターの高さ分 */
+  box-sizing: border-box;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 65px; /* フッターの高さ分 */
+  padding: 20px 10px 0px;
+}
+
+
+
+.HOME-screen .frame-72 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.HOME-screen .frame-73 {
+  align-items: center;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 15px;
+  padding: 25px 20px 0px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-74 {
+  align-items: center;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .post-2 {
+  height: 50px;
+  object-fit: cover;
+  position: relative;
+  width: 50px;
+}
+
+.HOME-screen .text-wrapper-63 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.HOME-screen .img-3 {
+  height: 1px;
+  object-fit: cover;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-75 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.HOME-screen .frame-76 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 15px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-77 {
+  align-items: center;
+  background-color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  position: relative;
+}
+
+.HOME-screen .frame-78 {
+  background-color: #d9d9d9;
+  border-radius: 50px;
+  height: 30px;
+  position: relative;
+  width: 30px;
+}
+
+.HOME-screen .frame-79 {
+  align-items: flex-start;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .text-wrapper-65 {
+  color: var(--4);
+  font-family: Arial, Helvetica;
+    font-size: 13px;;
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: left;
+  white-space: nowrap;
+  width: fit-content;
+  color: #1A1A1A;
+  line-height: 1;
+}
+
+.HOME-screen .frame-80 {
+  align-items: center;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  width: 100%;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  white-space: nowrap; /* 改行を防ぐ */
+  min-width: 0; /* flexboxの縮小を防ぐ */
+}
+
+.HOME-screen .frame-80::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.HOME-screen .following-content {
+  overflow: visible; /* 横スクロールを無効化 */
+}
+
+.HOME-screen .rectangle-4 {
+  background-color: #d9d9d9;
+  border-radius: 5px;
+  height: 100px;
+  position: relative;
+  width: 100px;
+  flex-shrink: 0; /* 縮小を防ぐ */
+}
+
+.HOME-screen .frame-81 {
+  align-items: center;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-82 {
+  align-items: center;
+  background-color: #0B4F7F; /* 背景色を設定 */
+  border-radius: 5px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 10px 20px;
+  position: relative;
+}
+
+.HOME-screen .text-wrapper-66 {
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: normal; /* ← "regular" は無効なので "normal" に */
+    font-size: 13px;;
+  line-height: 1; /* キャップハイト相当に詰める */
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+  }
+
+.HOME-screen .frame-83 {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 9px;
+  position: relative;
+}
+
+.HOME-screen .frame-84 {
+  align-items: center;
+  background-color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  position: relative;
+}
+
+.HOME-screen .heart-2 {
+  height: 24px;
+  position: relative;
+  width: 24px;
+}
+
+.HOME-screen .vector-16 {
+  height: 18px;
+  left: 2px;
+  position: absolute;
+  top: 4px;
+  width: 21px;
+}
+
+.HOME-screen .text-wrapper-67 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.HOME-screen .overlap-7 {
+  height: 370px;
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.HOME-screen .frame-85 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+  padding: 20px 0px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-86 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 15px;
+  padding: 0px 20px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-87 {
+  align-items: flex-start;
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 5px;
+  position: relative;
+}
+
+.HOME-screen .frame-88 {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  height: 100px;
+  overflow: hidden;
+  position: relative;
+  width: 464px;
+}
+
+.HOME-screen .frame-89 {
+  align-items: center;
+  background-color: #ffffff;
+  display: flex;
+  height: 38px;
+  justify-content: space-between;
+  position: relative;
+  width: 464px;
+}
+
+.HOME-screen .vector-wrapper-3 {
+  height: 24px;
+  overflow: hidden;
+  position: relative;
+  width: 24px;
+}
+
+.HOME-screen .vector-17 {
+  height: 18px;
+  left: -2472px;
+  position: absolute;
+  top: 2652px;
+  width: 20px;
+}
+
+.HOME-screen .vector-18 {
+  height: 18px;
+  left: -2592px;
+  position: absolute;
+  top: 2652px;
+  width: 21px;
+}
+
+.HOME-screen .element-21 {
+  align-self: stretch;
+  height: 1px;
+  margin-bottom: -20px;
+  margin-left: -2206px;
+  object-fit: cover;
+  position: relative;
+  width: 100%;
+}
+
+
+
+.HOME-screen .frame-91 {
+  background-color: var(--);
+  border-radius: 100px;
+  height: 44px;
+  overflow: hidden;
+  position: relative;
+  width: 44px;
+  margin-left: auto;
+  margin-right: 20px;
+}
+
+.HOME-screen .text-wrapper-68 {
+  color: #ffffff;
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 24px;
+  
+  left: 10px;
+  letter-spacing: 0;
+  line-height: normal;
+  position: absolute;
+  top: 13px;
+  white-space: nowrap;
+}
+
+.HOME-screen .frame-92 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.HOME-screen .frame-93 {
+  align-items: center;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 42px;
+  justify-content: flex-end;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-94 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.HOME-screen .frame-95 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  padding: 20px 20px 0px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-96 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-97 {
+  align-items: flex-start;
+  border: 0.5px solid;
+  border-color: var(--4);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 10px;
+  position: relative;
+  width: 412px;
+}
+
+.HOME-screen .text-wrapper-69 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  margin-top: -0.5px;
+  position: relative;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.HOME-screen .text-wrapper-70 {
+  align-self: stretch;
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 10px;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+}
+
+.HOME-screen .frame-98 {
+  align-items: flex-end;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .text-wrapper-71 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 10px;
+  
+  letter-spacing: 0;
+  line-height: normal;
+  margin-top: -1px;
+  position: relative;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.HOME-screen .frame-99 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.HOME-screen .rectangle-5 {
+  background-color: #d9d9d9;
+  border-radius: 5px;
+  height: 150px;
+  position: relative;
+  width: 242px;
+}
+
+/* おすすめ関連のスタイル */
+.HOME-screen .recommend-section {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.HOME-screen .recommend-header {
+  align-items: center;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  height: 24px;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .text-wrapper-77 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  letter-spacing: 0;
+  line-height: normal;
+  margin-top: -1px;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.HOME-screen .text-wrapper-78 {
+  color: var(--2);
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 10px;
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.HOME-screen .recommend-items {
+  align-items: flex-start;
+  align-self: stretch;
+  display: flex;
+  gap: 15px;
+  height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  width: 100%;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.HOME-screen .recommend-items::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.HOME-screen .recommend-item {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  width: 190px;
+}
+
+.HOME-screen .recommend-item-content {
+  align-items: flex-start;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .rectangle-6 {
+  align-self: stretch;
+  background-color: #d9d9d9;
+  border-radius: 5px;
+  height: 190px;
+  position: relative;
+  width: 190px;
+  object-fit: cover;
+}
+
+.HOME-screen .recommend-item-header {
+  align-items: center;
+  background-color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  position: relative;
+}
+
+.HOME-screen .frame-117 {
+  background-color: #d9d9d9;
+  border-radius: 50px;
+  height: 24px;
+  position: relative;
+  width: 24px;
+}
+
+.HOME-screen .text-wrapper-79 {
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: bold;
+    font-size: 13px;;
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.HOME-screen .text-wrapper-80 {
+  align-self: stretch;
+  color: var(--4);
+  font-family: Arial, Helvetica; font-weight: regular;
+    font-size: 13px;;
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+}
+
+
