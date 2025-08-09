@@ -302,7 +302,7 @@
 
 .screen-11 .custom-select {
   padding: 8px 30px 8px 10px;  /* 右側に30pxの余白 */
-    font-size: 13px;;
+  font-size: 13px;
   border: 1px solid #1A1A1A;
   border-radius: 4px;
   background-color: #fff;
@@ -311,16 +311,15 @@
   -webkit-appearance: none;
   -moz-appearance: none;
 
-  /* 右端の縦中央に配置 */
-  background-image: url('data:image/svg+xml;utf8,<svg fill="gray" height="10" viewBox="0 0 10 10" width="10" xmlns="http://www.w3.org/2000/svg"><polygon points="0,0 10,0 5,7"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 10px center;  /* ←ここがポイント */
-  background-size: 10px 10px;
+  /* ▼ カスタム矢印画像の設定 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 
-  cursor: pointer;
-  line-height: normal; /* 行高さリセット */
-  height: 36px; /* 高さ固定で安定させる */
-  box-sizing: border-box;
+  background-image: url("/img/vector-1.svg");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
 }
 
 .screen-11 .frame-29 {

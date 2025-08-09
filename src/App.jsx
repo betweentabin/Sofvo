@@ -26,6 +26,8 @@ import { Screen26 as Screen25 } from "./screens/プライバシーポ�
 import { Screen27 } from "./screens/お問い合わせ（送信）";
 import { Screen28 } from "./screens/お問い合わせ（完了）";
 import { Screen29 } from "./screens/お問い合わせ（記入）";
+import { Screen30 } from "./screens/通知設定"; 
+import { Screen31 } from "./screens/退会";
 import { ScreenScreen } from "./screens/ログイン";
 
 const router = createBrowserRouter([
@@ -136,6 +138,14 @@ const router = createBrowserRouter([
   {
     path: "/contact-complete",
     element: <Screen27 />,
+  },
+  {
+    path: "/notification-settings",
+    element: <Screen30 />,
+  },
+  {
+    path: "/withdraw",
+    element: <Screen31 />,
   },
   {
     path: "/dm",
