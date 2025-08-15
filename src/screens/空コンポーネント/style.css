@@ -1,0 +1,12 @@
+.number-circle-five {
+  background-color: transparent;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: 100%;
+}
+
+.number-circle-five .div-3 {
+  height: 24px;
+  width: 24px;
+}
