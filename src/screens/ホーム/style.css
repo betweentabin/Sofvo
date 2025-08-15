@@ -20,7 +20,7 @@
   left: 0;
   right: 0;
   bottom: 65px; /* フッターの高さ分 */
-  padding: 20px 10px 0px;
+  padding: 30px 10px 0px;
 }
 
 
@@ -531,7 +531,199 @@
   width: 242px;
 }
 
+
+
+
 /* おすすめ関連のスタイル */
+.HOME-screen .frame-22 {
+  align-items: flex-start;
+  align-self: stretch;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 15px;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-23 {
+  align-items: center;
+  background-color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  position: relative;
+}
+
+.HOME-screen .magnifying-glass-wrapper {
+  align-items: center;
+  background-color: #D9D9D9;
+  border: 1px solid;
+  border-color: #ffffff;
+  border-radius: 50px;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px;
+  position: relative;
+  width: 35px;
+  height: 35px;
+}
+
+.HOME-screen .search-icon {
+  height: 20px;
+  object-fit: cover;
+  position: relative;
+  width: 20px;
+}
+
+.HOME-screen .text-wrapper-39 {
+  color: var(--4);
+  font-family: Arial, Helvetica;
+  font-weight: bold;
+    font-size: 13px;;
+  letter-spacing: 0;
+  line-height: normal;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.HOME-screen .frame-24 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  justify-content: flex-start;
+  position: relative;
+  width: 100%;
+}
+
+.HOME-screen .frame-box1 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.HOME-screen .custom-input {
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+}
+
+.HOME-screen .custom-input:focus {
+  border-color: #007bff;
+}
+
+
+.HOME-screen .dropdown-label {
+    font-size: 13px;;
+  font-weight: 600;
+  color: #333;
+}
+
+.HOME-screen .custom-select {
+  padding: 8px 30px 8px 10px;  /* 右側に30pxの余白 */
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* ▼ カスタム矢印画像の設定 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-image: url("/img/vector-1.svg");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+}
+
+.HOME-screen .rectangle-3 {
+  transform: scale(1.3);
+  transform-origin: center;
+  cursor: pointer;
+}
+
+.HOME-screen .frame-30 {
+  align-items: center;
+  background-color: #0B4F7F;
+  border-radius: 5px;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px 20px;
+  position: relative;
+  width: 200px;
+  height: 40px;
+  margin: 0 auto;
+}
+
+.HOME-screen .text-wrapper-43 {
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: normal; /* ← "regular" は無効なので "normal" に */
+    font-size: 13px;;
+  line-height: 1; /* キャップハイト相当に詰める */
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+}
+
+
+
+
+
+
+
+.HOME-screen .frame-90 {
+  align-items: center;
+  background-color: #0B4F7F;
+  border-radius: 5px;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px 20px;
+  position: relative;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.HOME-screen .text-wrapper-44 {
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: normal; /* ← "regular" は無効なので "normal" に */
+    font-size: 13px;;
+  line-height: 1; /* キャップハイト相当に詰める */
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
+  width: fit-content;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+}
+
+.HOME-screen .activity-section,
 .HOME-screen .recommend-section {
   align-items: flex-start;
   background-color: #ffffff;
@@ -541,8 +733,15 @@
   position: relative;
   width: 100%;
   margin-bottom: 20px;
+  margin-top: 20px;
 }
 
+.HOME-screen .activity-section {
+  border-bottom: 1px solid #D4D4D4;
+  padding-bottom: 20px;
+}
+
+.HOME-screen .activity-header,
 .HOME-screen .recommend-header {
   align-items: center;
   align-self: stretch;
@@ -579,6 +778,7 @@
   width: fit-content;
 }
 
+.HOME-screen .activity-items,
 .HOME-screen .recommend-items {
   align-items: flex-start;
   align-self: stretch;
@@ -593,10 +793,12 @@
   -ms-overflow-style: none; /* IE and Edge */
 }
 
+.HOME-screen .activity-items::-webkit-scrollbar,
 .HOME-screen .recommend-items::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
 
+.HOME-screen .activity-item,
 .HOME-screen .recommend-item {
   align-items: flex-end;
   display: flex;
@@ -606,6 +808,7 @@
   width: 190px;
 }
 
+.HOME-screen .activity-item-content,
 .HOME-screen .recommend-item-content {
   align-items: flex-start;
   align-self: stretch;
@@ -621,12 +824,13 @@
   align-self: stretch;
   background-color: #d9d9d9;
   border-radius: 5px;
-  height: 190px;
+  height: 130px;
   position: relative;
-  width: 190px;
+  width: 130px;
   object-fit: cover;
 }
 
+.HOME-screen .activity-item-header,
 .HOME-screen .recommend-item-header {
   align-items: center;
   background-color: #ffffff;

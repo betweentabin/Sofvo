@@ -4,7 +4,7 @@ import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
-export const Screen29 = () => {
+export const Screen37 = () => {
   const [mainContentTop, setMainContentTop] = useState(0);
 
   // フォーム状態管理
@@ -30,7 +30,7 @@ export const Screen29 = () => {
   }, []);
 
   return (
-    <div className="screen-29">
+    <div className="screen-37">
       <HeaderContent />
       <div
         className="main-content"
@@ -42,25 +42,47 @@ export const Screen29 = () => {
           width: "100%",
         }}
       >
-        <div className="screen-29">
+        <div className="screen-37">
           <div className="frame-532">
             <div className="frame-533">
-              <div className="frame-543">
-                <div className="text-wrapper-265">お問い合わせ</div>
+
+              <div className="frame-466">
+                <div className="text-wrapper-226">プロフィールを編集</div>
               </div>
 
-              <p className="div-10">
-                <span className="text-wrapper-257">① お客様情報の入力</span>
-                <span className="text-wrapper-258"> - </span>
-                <span className="text-wrapper-259">② 記入内容のご確認</span>
-                <span className="text-wrapper-258"> - </span>
-                <span className="text-wrapper-259">③ 完了</span>
-              </p>
 
-              {/* ご用件 */}
+              {/* 大会名 */}
               <div className="frame-535">
                 <div className="frame-536">
-                  <div className="text-wrapper-260">ご用件</div>
+                  <div className="text-wrapper-260">大会名</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              {/* 開催日時 */}
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">開催日時</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <input
+                  type="text"
+                  value={furigana}
+                  onChange={(e) => setFurigana(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              {/* 開催地域 */}
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">開催地域</div>
                   <div className="text-wrapper-261">*</div>
                 </div>
                 <select
@@ -76,38 +98,10 @@ export const Screen29 = () => {
                 </select>
               </div>
 
-              {/* お名前 */}
+              {/* 開催場所 */}
               <div className="frame-535">
                 <div className="frame-536">
-                  <div className="text-wrapper-260">お名前</div>
-                  <div className="text-wrapper-261">*</div>
-                </div>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="input-field"
-                />
-              </div>
-
-              {/* フリガナ */}
-              <div className="frame-535">
-                <div className="frame-536">
-                  <div className="text-wrapper-260">フリガナ</div>
-                  <div className="text-wrapper-261">*</div>
-                </div>
-                <input
-                  type="text"
-                  value={furigana}
-                  onChange={(e) => setFurigana(e.target.value)}
-                  className="input-field"
-                />
-              </div>
-
-              {/* メールアドレス */}
-              <div className="frame-535">
-                <div className="frame-536">
-                  <div className="text-wrapper-260">メールアドレス</div>
+                  <div className="text-wrapper-260">開催場所</div>
                   <div className="text-wrapper-261">*</div>
                 </div>
                 <input
@@ -118,10 +112,24 @@ export const Screen29 = () => {
                 />
               </div>
 
-              {/* 電話番号 */}
+              {/* 住所 */}
               <div className="frame-535">
                 <div className="frame-536">
-                  <div className="text-wrapper-260">電話番号</div>
+                  <div className="text-wrapper-260">住所</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              {/* 試合球 */}
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">試合球</div>
                 </div>
                 <input
                   type="tel"
@@ -131,22 +139,53 @@ export const Screen29 = () => {
                 />
               </div>
 
-              {/* 内容 */}
+              {/* 種別 */}
               <div className="frame-535">
                 <div className="frame-536">
-                  <div className="text-wrapper-260">内容</div>
+                  <div className="text-wrapper-260">種別</div>
+                  <div className="text-wrapper-261">*</div>
                 </div>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="textarea-field"
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-field"
                 />
               </div>
+
+              {/* 競技方法 */}
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">競技方法</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              {/* 順位方法 */}
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">順位方法</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
             </div>
           </div>
 
           <div className="frame-540">
-            <Link to="/settings" className="frame-541">
+            <Link to="/team-management" className="frame-541">
               <div className="text-wrapper-263">戻る</div>
             </Link>
 
@@ -155,7 +194,7 @@ export const Screen29 = () => {
               state={{ subject, name, furigana, email, phone, content }}
               className="frame-542"
             >
-              <div className="text-wrapper-264">確認する</div>
+              <div className="text-wrapper-264">完了</div>
             </Link>
           </div>
         </div>

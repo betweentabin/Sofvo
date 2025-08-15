@@ -94,7 +94,9 @@ export const Screen14 = () => {
             </div>
             <div className="frame-249">
               <div className="frame-250">
-                <div className="text-wrapper-130">大会概要</div>
+                <Link to="/tournament-result-all" className="frame-38">
+                  <div className="text-wrapper-130">大会概要</div>
+                </Link>
               </div>
               <div className="frame-251">
                 <div className="frame-252">

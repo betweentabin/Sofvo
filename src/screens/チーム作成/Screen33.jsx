@@ -4,7 +4,7 @@ import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
-export const Screen24 = () => {
+export const Screen33 = () => {
   const [mainContentTop, setMainContentTop] = useState(0);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export const Screen24 = () => {
   };
 
   return (
-    <div className="screen-24">
+    <div className="screen-33">
       <HeaderContent />
       <div
         className="main-content"
@@ -77,12 +77,12 @@ export const Screen24 = () => {
           width: "100%",
         }}
       >
-        <div className="screen-24">
+        <div className="screen-33">
           <div className="frame-439">
             <div className="frame-440">
 
               <div className="frame-466">
-                <div className="text-wrapper-226">チームプロフィール編集</div>
+                <div className="text-wrapper-226">チーム作成</div>
               </div>
 
               <div className="frame-441">

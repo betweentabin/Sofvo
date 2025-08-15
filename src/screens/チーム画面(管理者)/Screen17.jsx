@@ -49,8 +49,8 @@ export const Screen17 = () => {
                     <div className="text-wrapper-300">〇〇〇〇チーム</div>
                     <div className="text-wrapper-301">静岡市</div>
                   </div>
-                  <Link to="/profile-edit" className="frame-607">
-                    <div className="text-wrapper-302">編集</div>
+                  <Link to="/team-management" className="frame-607">
+                    <div className="text-wrapper-302">管理画面</div>
                   </Link>
                 </div>
                 <div className="frame-608">
@@ -112,7 +112,9 @@ export const Screen17 = () => {
             </div>
             <div className="frame-628">
               <div className="frame-629">
-                <div className="text-wrapper-312">大会概要</div>
+                <Link to="/tournament-result-team" className="frame-38">
+                  <div className="text-wrapper-312">大会概要</div>
+                </Link>
               </div>
             </div>
           </div>

@@ -1,154 +1,238 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { HeaderContent } from "../../components/HeaderContent";
+import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const Screen18 = () => {
+  const [mainContentTop, setMainContentTop] = useState(201);
+
+  useEffect(() => {
+    const updateMainContentPosition = () => {
+      const header = document.querySelector(".header-content-outer");
+      if (header) {
+        const headerRect = header.getBoundingClientRect();
+        const headerBottom = headerRect.bottom;
+        setMainContentTop(headerBottom);
+      }
+    };
+
+    const timer = setTimeout(updateMainContentPosition, 200);
+    window.addEventListener("resize", updateMainContentPosition);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateMainContentPosition);
+    };
+  }, []);
+
   return (
     <div className="screen-18">
-      <div className="screen-33">
-        <div className="overlap-group-16">
-          <div className="frame-326">
-            <div className="frame-327">
-              <div className="frame-328">
-                <div className="text-wrapper-165">エントリー受付中</div>
-              </div>
+      <HeaderContent />
 
-              <div className="rectangle-9" />
+      <div className="main-content" style={{ top: `${mainContentTop}px` }}>
+        {/* エントリー受付中 */}
+        <div className="frame-164">
+          <div className="text-wrapper-96">エントリー受付中</div>
+        </div>
 
-              <div className="frame-329">
-                <div className="text-wrapper-166">
-                  大会名：第15回 〇〇カップ
-                </div>
+        <div className="frame-159">
+          <div className="frame-160">
+            <div className="gray-box"></div>
 
-                <div className="text-wrapper-167">
-                  開催日時：2025年5月18日（日）
-                </div>
-
-                <div className="text-wrapper-167">開催地域：静岡県</div>
-
-                <div className="text-wrapper-167">開催場所：〇〇体育館</div>
-
-                <div className="text-wrapper-167">
-                  住所：静岡県〇〇市〇〇町1-2-3
-                </div>
-
-                <div className="text-wrapper-167">主催者：00000</div>
-              </div>
-
-              <div className="rectangle-10" />
-
-              <div className="frame-330">
-                <div className="frame-331">
-                  <div className="frame-332">
-                    <div className="heart-11">
-                      <img
-                        className="vector-43"
-                        alt="Vector"
-                        src="/img/vector-25.svg"
-                      />
-                    </div>
-
-                    <div className="text-wrapper-168">10 いいね</div>
-                  </div>
-                </div>
-              </div>
+            <div className="frame-161">
+              <div className="text-wrapper-93-1">大会名：第15回 〇〇カップ</div>
+              <div className="text-wrapper-93-2">開催日時：2025年5月18日（日）</div>
+              <div className="text-wrapper-93-3">開催地域：静岡県</div>
+              <div className="text-wrapper-93-4">開催場所：〇〇体育館</div>
+              <div className="text-wrapper-93-5">住所：静岡県〇〇市〇〇町1-2-3</div>
+              <div className="text-wrapper-93-6">主催者：〇〇〇〇〇〇</div>
             </div>
 
-            <img className="element-30" alt="Element" src="/img/2-1.svg" />
-          </div>
+            <div className="gray-box2"></div>
 
-          <div className="frame-333">
-            <div className="frame-327">
-              <div className="frame-328">
-                <div className="text-wrapper-165">スケジュール</div>
+            <div className="frame-84">
+              <div className="heart-2">
+                    <img className="vector-16" alt="Vector" src="/img/vector-25.svg" />
               </div>
-
-              <div className="frame-329">
-                <div className="text-wrapper-166">8:00　開場</div>
-
-                <div className="text-wrapper-169">8:00　代表者会議</div>
-
-                <div className="text-wrapper-167">8:00　試合開始</div>
-              </div>
+              <div className="text-wrapper-67">10 いいね</div>
             </div>
 
-            <img className="element-30" alt="Element" src="/img/2-1.svg" />
           </div>
+        </div>
 
-          <img className="vector-44" alt="Vector" src="/img/vector-3.svg" />
+        {/* スケジュール */}
+        <div className="frame-164">
+          <div className="text-wrapper-96">スケジュール</div>
+        </div>
 
-          <div className="frame-334">
-            <div className="frame-335">
-              <div className="frame-336">
-                <div className="text-wrapper-170">Sofvo</div>
+        <div className="frame-159">
+          <div className="frame-160">
+            <div className="frame-161">
+              <div className="text-wrapper-94-1">8:00　開場</div>
+              <div className="text-wrapper-94-2">8:00　代表者会議</div>
+              <div className="text-wrapper-94-3">8:00　試合開始</div>
+            </div>
+          </div>
+        </div>
 
-                <img
-                  className="frame-337"
-                  alt="Frame"
-                  src="/img/frame-19-7.svg"
+        {/* 概要 */}
+        <div className="frame-164">
+          <div className="text-wrapper-96">概要</div>
+        </div>
+
+        <div className="frame-159">
+          <div className="frame-160">
+            <div className="frame-161">
+              <div className="text-wrapper-95-1">試合球：ミカサ</div>
+              <div className="text-wrapper-95-2">種別：混合フリー</div>
+              <div className="text-wrapper-95-3">順位方法：〇〇〇〇〇〇</div>
+              <div className="frame-170">
+                <div className="text-wrapper-93-3">順位方法：</div>
+                <div className="text-wrapper-95-5">
+                  〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇
+                </div>
+              </div>
+              <div className="frame-170">
+                <div className="text-wrapper-96-1">獲得ポイント：</div>
+                <div
+                  className="text-wrapper-95-6"
+                  dangerouslySetInnerHTML={{
+                    __html: "1位→100P<br/>2位→80P<br/>3位→70P",
+                  }}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="frame-338">
-          <div className="frame-327">
-            <div className="frame-328">
-              <div className="text-wrapper-165">概要</div>
-            </div>
-
-            <div className="frame-329">
-              <div className="text-wrapper-171">・試合球：ミカサ</div>
-
-              <div className="frame-339">
-                <div className="text-wrapper-171">・種別：混合フリー</div>
-
-                <img
-                  className="vector-45"
-                  alt="Vector"
-                  src="/img/vector-16.svg"
-                />
-              </div>
-
-              <div className="text-wrapper-172">・順位方法：〇〇〇〇〇〇</div>
-
-              <div className="frame-340">
-                <div className="text-wrapper-166">・注意事項：</div>
-
-                <div className="text-wrapper-173">
-                  〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇
-                </div>
-              </div>
-
-              <div className="frame-341">
-                <div className="text-wrapper-171">・獲得ポイント：</div>
-
-                <div className="element-p-p-p">
-                  1位→100P
-                  <br />
-                  2位→80P
-                  <br />
-                  3位→70P
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <img className="element-30" alt="Element" src="/img/2-1.svg" />
+        {/* 大会結果 */}
+        <div className="frame-164">
+          <div className="text-wrapper-96">大会結果</div>
         </div>
 
-        <div className="frame-342">
-          <div className="frame-343">
-            <div className="text-wrapper-174">エントリー</div>
-          </div>
+        <div className="frame-180-1">
+          <div className="frame-181">
 
-          <Link to="/contact" className="frame-344">
-            <div className="text-wrapper-175">お問い合わせ</div>
+            {/* 1行目：横幅いっぱい */}
+            <div className="row row-1">
+              <div className="cell-1">本選</div>
+            </div>
+
+            {/* 2行目：左列は3列分の幅 */}
+            <div className="row row-2">
+              <div className="cell-span-2">対戦相手</div>
+              <div className="cell-2">スコア</div>
+            </div>
+
+            {/* 3行目 */}
+            <div className="row row-3" key={3}>
+              <div className="sub-row">
+                <div className="sub-cell-3-1">3-1-1</div>
+                <div className="sub-cell-3-2">VS</div>
+                <div className="sub-cell-3-3">3-1-3</div>
+              </div>
+              <div className="cell-3">3-2</div>
+            </div>
+
+            {/* 4行目 */}
+            <div className="row row-4" key={4}>
+              <div className="sub-row">
+                <div className="sub-cell-4-1">4-1-1</div>
+                <div className="sub-cell-4-2">VS</div>
+                <div className="sub-cell-4-3">4-1-3</div>
+              </div>
+              <div className="cell-4">4-2</div>
+            </div>
+
+            {/* 5行目 */}
+            <div className="row row-5" key={5}>
+              <div className="sub-row">
+                <div className="sub-cell-5-1">5-1-1</div>
+                <div className="sub-cell-5-2">VS</div>
+                <div className="sub-cell-5-3">5-1-3</div>
+              </div>
+              <div className="cell-5">5-2</div>
+            </div>
+
+            {/* 6行目 */}
+            <div className="row row-6" key={6}>
+              <div className="sub-row">
+                <div className="sub-cell-6-1">6-1-1</div>
+                <div className="sub-cell-6-2">VS</div>
+                <div className="sub-cell-6-3">6-1-3</div>
+              </div>
+              <div className="cell-6">6-2</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="frame-182">
+          <div className="frame-181">
+            {/* 1行目：横幅いっぱい */}
+            <div className="row row-7">
+              <div className="cell-7">予選</div>
+            </div>
+
+            {/* 2行目：左列は3列分の幅 */}
+            <div className="row row-8">
+              <div className="cell-span-8">対戦相手</div>
+              <div className="cell-8">スコア</div>
+            </div>
+
+            {/* 3行目 */}
+            <div className="row row-9" key={3}>
+              <div className="sub-row">
+                <div className="sub-cell-9-1">3-1-1</div>
+                <div className="sub-cell-9-2">VS</div>
+                <div className="sub-cell-9-3">3-1-3</div>
+              </div>
+              <div className="cell-9">3-2</div>
+            </div>
+
+            {/* 4行目 */}
+            <div className="row row-10" key={4}>
+              <div className="sub-row">
+                <div className="sub-cell-10-1">4-1-1</div>
+                <div className="sub-cell-10-2">VS</div>
+                <div className="sub-cell-10-3">4-1-3</div>
+              </div>
+              <div className="cell-10">4-2</div>
+            </div>
+
+            {/* 5行目 */}
+            <div className="row row-11" key={5}>
+              <div className="sub-row">
+                <div className="sub-cell-11-1">5-1-1</div>
+                <div className="sub-cell-11-2">VS</div>
+                <div className="sub-cell-11-3">5-1-3</div>
+              </div>
+              <div className="cell-11">5-2</div>
+            </div>
+
+            {/* 6行目 */}
+            <div className="row row-12" key={6}>
+              <div className="sub-row">
+                <div className="sub-cell-12-1">6-1-1</div>
+                <div className="sub-cell-12-2">VS</div>
+                <div className="sub-cell-12-3">6-1-3</div>
+              </div>
+              <div className="cell-12">6-2</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="frame-309">
+          <Link to="/settings" className="frame-310">
+            <div className="text-wrapper-206">エントリー</div>
+          </Link>
+
+          <Link to="/settings" className="frame-311">
+            <div className="text-wrapper-207">お問い合わせ</div>
           </Link>
         </div>
 
-        <img className="frame-345" alt="Frame" src="/img/frame-18-2.svg" />
+        <Footer currentPage="schedule" />
       </div>
     </div>
   );

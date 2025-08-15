@@ -120,20 +120,6 @@
   position: relative;
 }
 
-.screen-16 .frame-607 {
-  align-items: center;
-  background-color: #0B4F7F;
-  border-radius: 30px;
-  display: inline-flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: center;
-  overflow: hidden;
-  padding: 5px 20px;
-  position: relative;
-}
-
 .screen-16 .text-wrapper-302 {
   color: #ffffff;
   font-family: Arial, Helvetica; font-weight: normal;

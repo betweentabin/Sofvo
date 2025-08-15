@@ -4,7 +4,7 @@ import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
-export const Screen31 = () => {
+export const Screen34 = () => {
   const [mainContentTop, setMainContentTop] = useState(0);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export const Screen31 = () => {
   }, []);
 
   return (
-    <div className="screen-31">
+    <div className="screen-34">
       <HeaderContent />
     <div
       className="main-content"
@@ -34,37 +34,38 @@ export const Screen31 = () => {
         width: "100%",
       }}
     >
-      <div className="screen-31">
+      <div className="screen-34">
         <div className="frame-300">
           <div className="frame-301">
 
             <div className="frame-302">
-              <div className="text-wrapper-200">退会手続き</div>
+              <div className="text-wrapper-200">チーム解散</div>
             </div>
 
             <div className="frame-303">
               <div className="frame-304">
-                <div className="text-wrapper-201">アカウントの退会についてご確認ください</div>
+                <div className="text-wrapper-201">チーム解散についてご確認ください</div>
               </div>
 
               <div className="frame-305">
-                <div className="text-wrapper-202">退会手続きを行うと、以下の内容がすべて削除され、元に戻すことはできません。</div>
+                <div className="text-wrapper-202">チームを解散すると、以下の内容がすべて削除され、元に戻すことはできません。</div>
               </div>
 
               <div className="frame-306">
                 <ul className="text-wrapper-203">
-                  <li>・ご利用中のデータ（履歴・ポイント・設定など）</li>
-                  <li>・アカウント情報</li>
+                  <li>・チーム情報（チーム名・プロフィール・設定など）</li>
+                  <li>・チームに紐づく試合記録などのデータ</li>
                   <li>・その他すべての個人データ</li>
                 </ul>
               </div>
 
               <div className="frame-307">
-                <div className="text-wrapper-204">退会後は、同じメールアドレスでの再登録時にも過去のデータは引き継がれませんのでご注意ください。</div>
+                <div className="text-wrapper-204">チーム解散後に、同じチーム名で新たにチームを作成することは可能ですが、過去のデータは一切引き継がれず、すべて再設定が必要になります。</div>
               </div>
 
               <div className="frame-308">
-                <div className="text-wrapper-205">Sofvoアカウントを削除すると、アカウントにログインできなくなります。アカウントを削除しますか？</div>
+                <div className="text-wrapper-205">チームを解散すると、そのチームに関連するすべてのデータにアクセスできなくなります。
+                本当にチームを解散しますか？</div>
               </div>
               
             </div>
@@ -73,12 +74,12 @@ export const Screen31 = () => {
         </div>
 
         <div className="frame-309">
-          <Link to="/settings" className="frame-310">
+          <Link to="/team-management" className="frame-310">
             <div className="text-wrapper-206">戻る</div>
           </Link>
 
           <Link to="/settings" className="frame-311">
-            <div className="text-wrapper-207">退会する</div>
+            <div className="text-wrapper-207">解散する</div>
           </Link>
         </div>
       </div>

@@ -1,4 +1,4 @@
-.screen-11 {
+.screen-36 {
   background-color: #ffffff;
   display: flex;
   flex-direction: row;
@@ -6,7 +6,7 @@
   width: 100%;
 }
 
-.screen-11 .main-content {
+.screen-36 .main-content {
   background-color: #ffffff;
   height: calc(100vh - 101px);
   position: absolute;
@@ -16,81 +16,15 @@
   overflow-y: auto;
 }
 
-.screen-11 .frame-164,
-.screen-11 .frame-159,
-.screen-11 .frame-166,
-.screen-11 .frame-167 {
+.screen-36 .frame-166,
+.screen-36 .frame-167 {
   margin: 0 !important;
   padding: 0 !important;
 }
 
-.screen-11 .frame-164 {
-  align-items: center;
-  background-color: #ffffff;
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  left: 0;
-  padding: 0 0 20px;
-  position: relative;
-  top: 0;
-  width: 100%;
-}
-
-.screen-11 .text-wrapper-96 {
-  color: #1A1A1A;
-  font-family: Arial, Helvetica; font-weight: bold;
-  font-size: 18px;
-  letter-spacing: 0;
-  line-height: normal;
-  margin-top: -1px;
-  position: relative;
-  text-align: center;
-  white-space: nowrap;
-  width: fit-content;
-}
-
-.screen-11 .frame-159 {
-  align-items: flex-start;
-  background-color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  position: relative; /* ← absolute を relative に */
-  top: auto;           /* ← top の指定も不要 */
-  left: auto;          /* ← left の指定も不要 */
-}
-
-.screen-11 .frame-160 {
-  align-items: flex-start;
-  align-self: stretch;
-  background-color: #ffffff;
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  gap: 15px;
-  padding:  20px 10px;
-  position: relative;
-  width: 100%;
-  border-bottom: 1px solid #D4D4D4;
-}
-
-.screen-11 .frame-161 {
-  align-items: flex-start;
-  align-self: stretch;
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  gap: 5px;
-  justify-content: center;
-  position: relative;
-  width: 100%;
-}
-
-.screen-11 .text-wrapper-93-1,
-.screen-11 .text-wrapper-93-2,
-.screen-11 .text-wrapper-93-3 {
+.screen-36 .text-wrapper-93-1,
+.screen-36 .text-wrapper-93-2,
+.screen-36 .text-wrapper-93-3 {
   color: var(--4);
   font-family: Arial, Helvetica;
     font-size: 13px;;
@@ -104,79 +38,7 @@
   line-height: 1;
 }
 
-.screen-11 .frame-151 {
-  align-items: center;
-  align-self: stretch;
-  background-color: #ffffff;
-  display: flex;
-  flex: 0 0 auto;
-  gap: 10px;
-  position: relative;
-  width: 100%;
-}
-
-.screen-11 .frame-162-1 {
-  align-items: center;
-  background-color: #0B4F7F;
-  border-radius: 5px;
-  display: flex;
-  flex: 0 0 auto;
-  gap: 10px;
-  justify-content: center;
-  padding: 10px 20px;
-  position: relative;
-  width: auto;
-  height: auto;
-}
-
-.screen-11 .text-wrapper-92 {
-  color: #ffffff;
-  font-family: Arial, Helvetica, sans-serif;
-  font-weight: normal; /* ← "regular" は無効なので "normal" に */
-    font-size: 13px;;
-  line-height: 1; /* キャップハイト相当に詰める */
-  letter-spacing: 0;
-  text-align: center;
-  white-space: nowrap;
-  width: fit-content;
-  padding-top: 0;
-  padding-bottom: 0;
-  margin: 0;
-  }
-
-.screen-11 .frame-163 {
-  align-items: center;
-  background-color: #ffffff;
-  border: 1px solid #0B4F7F;
-  border-radius: 5px;
-  display: flex;
-  flex: 0 0 auto;
-  gap: 10px;
-  justify-content: center;
-  padding: 10px 20px;
-  position: relative;
-  width: auto;
-  height: auto;
-}
-
-.screen-11 .text-wrapper-95 {
-  color: #0B4F7F;
-  font-family: Arial, Helvetica, sans-serif;
-  font-weight: normal; /* ← "regular" は無効なので "normal" に */
-    font-size: 13px;;
-  line-height: 1; /* キャップハイト相当に詰める */
-  letter-spacing: 0;
-  text-align: center;
-  white-space: nowrap;
-  width: fit-content;
-  padding-top: 0;
-  padding-bottom: 0;
-  margin: 0;
-  }
-
-
-
-.screen-11 .frame-166 {
+.screen-36 .frame-166 {
   align-items: center;
   background-color: #ffffff;
   display: flex;
@@ -189,7 +51,7 @@
   width: 100%;
 }
 
-.screen-11 .text-wrapper-96-2 {
+.screen-36 .text-wrapper-96-2 {
   color: #1A1A1A;
   font-family: Arial, Helvetica; font-weight: bold;
   font-size: 18px;
@@ -202,7 +64,7 @@
   width: fit-content;
 }
 
-.screen-11 .frame-21 {
+.screen-36 .frame-21 {
   align-items: flex-start;
   background-color: #ffffff;
   display: flex;
@@ -215,7 +77,7 @@
   width: 100%;
 }
 
-.screen-11 .frame-22 {
+.screen-36 .frame-22 {
   align-items: flex-start;
   align-self: stretch;
   background-color: #ffffff;
@@ -229,7 +91,7 @@
   border-bottom: 1px solid #D4D4D4;
 }
 
-.screen-11 .frame-23 {
+.screen-36 .frame-23 {
   align-items: center;
   background-color: #ffffff;
   display: inline-flex;
@@ -238,7 +100,7 @@
   position: relative;
 }
 
-.screen-11 .magnifying-glass-wrapper {
+.screen-36 .magnifying-glass-wrapper {
   align-items: center;
   background-color: #D9D9D9;
   border: 1px solid;
@@ -254,14 +116,14 @@
   height: 35px;
 }
 
-.screen-11 .search-icon {
+.screen-36 .search-icon {
   height: 20px;
   object-fit: cover;
   position: relative;
   width: 20px;
 }
 
-.screen-11 .text-wrapper-39 {
+.screen-36 .text-wrapper-39 {
   color: var(--4);
   font-family: Arial, Helvetica;
   font-weight: bold;
@@ -274,7 +136,7 @@
   width: fit-content;
 }
 
-.screen-11 .frame-24 {
+.screen-36 .frame-24 {
   align-items: flex-start;
   background-color: #ffffff;
   display: flex;
@@ -285,22 +147,22 @@
   width: 100%;
 }
 
-.screen-11 .frame-box1,
-.screen-11 .frame-box2,
-.screen-11 .frame-box3 {
+.screen-36 .frame-box1,
+.screen-36 .frame-box2,
+.screen-36 .frame-box3 {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px; /* ラベルとselectの間の余白 */
+  gap: 6px;
 }
 
-.screen-11 .dropdown-label {
-    font-size: 13px;;
+.screen-36 .dropdown-label {
+  font-size: 13px;
   font-weight: 600;
   color: #333;
 }
 
-.screen-11 .custom-select {
+.screen-36 .custom-select {
   padding: 8px 30px 8px 10px;  /* 右側に30pxの余白 */
   font-size: 13px;
   border: 1px solid #ccc;
@@ -322,37 +184,37 @@
   background-size: 12px;
 }
 
-.screen-11 .frame-29 {
-  align-items: center;
-  background-color: #ffffff;
-  display: flex;
-  flex: 0 0 auto;
-  gap: 10px;
-  justify-content: center;
-  position: relative;
-  width: 100px;
+
+
+.screen-36 .custom-select {
+  padding: 8px 30px 8px 10px;  /* 右側に30pxの余白 */
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* ▼ カスタム矢印画像の設定 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-image: url("/img/vector-1.svg");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
 }
 
-.screen-11 .rectangle-3 {
+.screen-36 .rectangle-3 {
   transform: scale(1.3);
   transform-origin: center;
   cursor: pointer;
 }
 
-.screen-11 .text-wrapper-42 {
-  color: var(--4);
-  font-family: Arial, Helvetica;
-  font-weight: bold;
-    font-size: 13px;;
-  letter-spacing: 0;
-  line-height: normal;
-  position: relative;
-  text-align: center;
-  white-space: nowrap;
-  width: fit-content;
-}
-
-.screen-11 .frame-30 {
+.screen-36 .frame-30 {
   align-items: center;
   background-color: #0B4F7F;
   border-radius: 5px;
@@ -367,7 +229,7 @@
   margin: 0 auto;
 }
 
-.screen-11 .text-wrapper-43 {
+.screen-36 .text-wrapper-43 {
   color: #ffffff;
   font-family: Arial, Helvetica, sans-serif;
   font-weight: normal; /* ← "regular" は無効なので "normal" に */
@@ -384,21 +246,10 @@
 
 
 
-.screen-11 .frame-167 {
-  align-items: flex-start;
-  background-color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  left: 0;
-  overflow: hidden;
-  position: relative;
-  top: 0;
-  width: 100%;
-  border-bottom: 1px solid #D4D4D4;
-}
 
-.screen-11 .frame-160-1 {
+
+
+.screen-36 .frame-160-1 {
   align-items: flex-start;
   align-self: stretch;
   background-color: #ffffff;
@@ -412,7 +263,7 @@
   border-bottom: 1px solid #D4D4D4;
 }
 
-.screen-11 .frame-168 {
+.screen-36 .frame-168 {
   align-items: center;
   align-self: stretch;
   background-color: #ffffff;
@@ -423,7 +274,7 @@
   width: 100%;
 }
 
-.screen-11 .text-wrapper-89 {
+.screen-36 .text-wrapper-89 {
   color: var(--4);
   font-family: Arial, Helvetica; font-weight: bold;
     font-size: 13px;;
@@ -436,7 +287,7 @@
   width: fit-content;
 }
 
-.screen-11 .frame-169 {
+.screen-36 .frame-169 {
   align-items: center;
   display: inline-flex;
   flex: 0 0 auto;
@@ -444,7 +295,7 @@
   position: relative;
 }
 
-.screen-11 .frame-35 {
+.screen-36 .frame-35 {
   align-items: center;
   background-color: #ffffff;
   border: 1px solid #0B4F7F;
@@ -459,7 +310,7 @@
   height: auto;
 }
 
-.screen-11 .text-wrapper-95-2 {
+.screen-36 .text-wrapper-95-2 {
   color: #0B4F7F;
   font-family: Arial, Helvetica; font-weight: bold;
   font-size: 10px;
@@ -472,7 +323,7 @@
   width: fit-content;
 }
 
-.screen-11 .frame-170 {
+.screen-36 .frame-170 {
   align-items: flex-start;
   align-self: stretch;
   display: flex;
@@ -483,10 +334,10 @@
   width: 100%;
 }
 
-.screen-11 .text-wrapper-94-1,
-.screen-11 .text-wrapper-94-2,
-.screen-11 .text-wrapper-94-3,
-.screen-11 .text-wrapper-94-4 {
+.screen-36 .text-wrapper-94-1,
+.screen-36 .text-wrapper-94-2,
+.screen-36 .text-wrapper-94-3,
+.screen-36 .text-wrapper-94-4 {
   color: var(--4);
   font-family: Arial, Helvetica;
     font-size: 13px;;
@@ -500,7 +351,7 @@
   line-height: 1;
 }
 
-.screen-11 .frame-171 {
+.screen-36 .frame-171 {
   align-items: flex-start;
   align-self: stretch;
   background-color: #ffffff;
@@ -513,9 +364,9 @@
   width: 100%;
 }
 
-.screen-11 .frame-162-2,
-.screen-11 .frame-162-3,
-.screen-11 .frame-162-4 {
+.screen-36 .frame-162-2,
+.screen-36 .frame-162-3,
+.screen-36 .frame-162-4 {
   align-items: center;
   background-color: #0B4F7F;
   border-radius: 5px;
@@ -529,9 +380,9 @@
   height: auto;
 }
 
-.screen-11 .text-wrapper-92-1,
-.screen-11 .text-wrapper-92-2,
-.screen-11 .text-wrapper-92-3{
+.screen-36 .text-wrapper-92-1,
+.screen-36 .text-wrapper-92-2,
+.screen-36 .text-wrapper-92-3{
 color: #ffffff;
 font-family: Arial, Helvetica, sans-serif;
 font-weight: normal; /* ← "regular" は無効なので "normal" に */
@@ -545,3 +396,155 @@ padding-top: 0;
 padding-bottom: 0;
 margin: 0;
 }
+
+
+
+
+
+
+
+
+/* 親フレーム */
+.screen-36 .frame-167 {
+  align-items: flex-start;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  left: 0;
+  overflow: hidden;
+  position: relative;
+  top: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.screen-36 .frame-168 {
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+/* メンバー詳細の背景色と横並び設定 */
+.screen-36 .tournament-item {
+  background-color: #F0F0F0;
+  border-radius: 5px;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* summary 部分を横並びにしてボタンを右寄せ */
+.screen-36 .tournament-item summary {
+  background-color: #F0F0F0;
+  cursor: pointer;
+  font-family: Arial, Helvetica;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 15px 15px;
+  outline: none;
+  display: flex;
+  justify-content: space-between; /* 左に名前、右にボタン */
+  align-items: center;
+  list-style: none;
+  border-radius: 5px 5px 0 0;
+  position: relative;
+}
+
+/* summary の右端に矢印画像 */
+.screen-36 .tournament-item summary::after {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-image: url("/img/vector-1.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  transition: transform 0.3s ease;
+  margin-left: 10px;
+}
+
+/* 開いたときに矢印を回転 */
+.screen-36 .tournament-item[open] summary::after {
+  transform: rotate(180deg);
+}
+
+/* details 開いたときも背景色を維持 */
+.screen-36 .tournament-item[open] {
+  background-color: #F0F0F0;
+}
+
+/* 名前と詳細の間に横線 */
+.screen-36 .tournament-item[open] .tournament-details::before {
+  content: "";
+  display: block;
+  height: 1px;
+  background-color: #D4D4D4;
+  margin: 5px 0;
+}
+
+
+
+/* 詳細部分 */
+.screen-36 .tournament-details {
+  padding: 0 15px 10px 15px;
+  font-size: 13px;
+  color: #1A1A1A;
+  box-sizing: border-box;
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+}
+
+/* 横並び用 */
+.screen-36 .tournament-details.horizontal {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* frame-628 を右寄せ用ラッパーに */
+.screen-36 .frame-628 {
+  display: flex;
+  justify-content: flex-end; /* 右寄せ */
+  width: 100%;
+  margin-bottom: 15px; /* 下の余白 */
+}
+
+/* 大会概要ボタン */
+.screen-36 .frame-629 {
+  background-color: #0B4F7F;
+  border-radius: 5px;
+  padding: 10px 20px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ボタン内の文字を白に */
+.screen-36 .frame-629 .text-wrapper-312 {
+  color: #fff;
+}
+
+.screen-36 .custom-hr {
+  border: none; /* 元の border を消す */
+  border-top: 2px dashed #D4D4D4; /* 破線の上線 */
+  height: 0; /* 高さは 0 に */
+  margin: 5px 0; /* 上下の余白 */
+}
+
+
+
+
+
+
+
+

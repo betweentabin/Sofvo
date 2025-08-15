@@ -49,9 +49,6 @@ export const Screen16 = () => {
                     <div className="text-wrapper-300">〇〇〇〇チーム</div>
                     <div className="text-wrapper-301">静岡市</div>
                   </div>
-                  <Link to="/profile-edit" className="frame-607">
-                    <div className="text-wrapper-302">編集</div>
-                  </Link>
                 </div>
                 <div className="frame-608">
                   <div className="frame-609">
@@ -112,7 +109,9 @@ export const Screen16 = () => {
             </div>
             <div className="frame-628">
               <div className="frame-629">
-                <div className="text-wrapper-312">大会概要</div>
+                <Link to="/tournament-result-team" className="frame-38">
+                  <div className="text-wrapper-312">大会概要</div>
+                </Link>
               </div>
             </div>
           </div>

@@ -138,9 +138,10 @@ export const SearchScreen = () => {
                 <div className="text-wrapper-46">残り枠：2チーム → 募集終了</div>
 
                 <div className="frame-33">
-                  <div className="frame-38">
-                    <div className="text-wrapper-43">大会概要</div>
-                  </div>
+
+                <Link to="/tournament-detail" className="frame-38">
+                  <div className="text-wrapper-43">大会概要</div>
+                </Link>
                   <div className="frame-39">
                     <div className="heart">
                       <img className="vector-6" alt="Vector" src="/img/vector-7.svg" />

@@ -28,6 +28,13 @@ import { Screen28 } from "./screens/お問い合わせ（完了）";
 import { Screen29 } from "./screens/お問い合わせ（記入）";
 import { Screen30 } from "./screens/通知設定"; 
 import { Screen31 } from "./screens/退会";
+import { Screen32 } from "./screens/チーム管理画面";
+import { Screen33 } from "./screens/チーム作成";
+import { Screen34 } from "./screens/チーム解散";
+import { Screen35 } from "./screens/メンバー管理";
+import { Screen36 } from "./screens/主催大会管理";
+import { Screen37 } from "./screens/大会を主催";
+import { Screen38 } from "./screens/大会を編集";
 import { ScreenScreen } from "./screens/ログイン";
 
 const router = createBrowserRouter([
@@ -108,8 +115,36 @@ const router = createBrowserRouter([
     element: <Screen24 />,
   },
   {
+    path: "/team-management",
+    element: <Screen32 />,
+  },
+  {
+    path: "/team-create2",
+    element: <Screen33 />,
+  },
+  {
+    path: "/team-disband",
+    element: <Screen34 />,
+  },
+  {
+    path: "/member-manage",
+    element: <Screen35 />,
+  },
+  {
     path: "/notifications",
     element: <Screen15 />,
+  },
+  {
+    path: "/tournament-host-manage",
+    element: <Screen36 />,
+  },
+  {
+    path: "/tournament-host",
+    element: <Screen37 />,
+  },
+  {
+    path: "/tournament-edit",
+    element: <Screen38 />,
   },
   {
     path: "/settings",

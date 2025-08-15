@@ -125,7 +125,7 @@
 .team-content .custom-select {
   padding: 8px 30px 8px 10px;  /* 右側に30pxの余白 */
   font-size: 13px;
-  border: 1px solid #1A1A1A;
+  border: 1px solid #ccc;
   border-radius: 4px;
   background-color: #fff;
 
@@ -570,7 +570,7 @@
 .individual-content .custom-select {
   padding: 8px 30px 8px 10px;  /* 右側に30pxの余白 */
   font-size: 13px;
-  border: 1px solid #1A1A1A;
+  border: 1px solid #ccc;
   border-radius: 4px;
   background-color: #fff;
 

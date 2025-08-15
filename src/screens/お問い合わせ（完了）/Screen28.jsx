@@ -1,121 +1,142 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, Link } from "react-router-dom";
+import { HeaderContent } from "../../components/HeaderContent";
+import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const Screen28 = () => {
+  const location = useLocation();
+  const formData = location.state || {};
+
+  const [mainContentTop, setMainContentTop] = useState(0);
+
+  useEffect(() => {
+    const updateMainContentPosition = () => {
+      const header = document.querySelector(".header-content-outer");
+      if (header) {
+        const rect = header.getBoundingClientRect();
+        setMainContentTop(rect.bottom);
+      }
+    };
+
+    setTimeout(updateMainContentPosition, 200);
+    window.addEventListener("resize", updateMainContentPosition);
+    return () => window.removeEventListener("resize", updateMainContentPosition);
+  }, []);
+
+  // プレースホルダー表示用コンポーネント
+  const PlaceholderText = ({ value, placeholder }) => {
+    if (value && value.trim() !== "") {
+      return <>{value}</>;
+    }
+    return <span className="placeholder-text">{placeholder}</span>;
+  };
+
   return (
     <div className="screen-28">
-      <div className="screen-42">
-        <div className="frame-518">
-          <div className="frame-519">
-            <p className="p">
-              <span className="span">
-                ① お客様情報の入力　-　② 記入内容のご確認{" "}
-              </span>
-
-              <span className="text-wrapper-247">- </span>
-
-              <span className="text-wrapper-248">③ 完了</span>
-            </p>
-          </div>
-
-          <div className="frame-520">
-            <div className="frame-521">
-              <div className="frame-522">
-                <div className="text-wrapper-249">ご用件</div>
+      <HeaderContent />
+      <div
+        className="main-content"
+        style={{
+          position: "absolute",
+          top: `${mainContentTop}px`,
+          bottom: "60px",
+          overflowY: "auto",
+          width: "100%",
+        }}
+      >
+        <div className="screen-28">
+          <div className="frame-532">
+            <div className="frame-533">
+              <div className="frame-543">
+                <div className="text-wrapper-265">お問い合わせ</div>
               </div>
 
-              <div className="div-9">アカウントについて</div>
-            </div>
-
-            <div className="frame-521">
-              <div className="frame-522">
-                <div className="text-wrapper-249">お名前</div>
-              </div>
-
-              <div className="div-9">山田　太郎</div>
-            </div>
-
-            <div className="frame-521">
-              <div className="frame-522">
-                <div className="text-wrapper-249">フリガナ</div>
-              </div>
-
-              <div className="div-9">ヤマダ　タロウ</div>
-            </div>
-
-            <div className="frame-521">
-              <div className="frame-522">
-                <div className="text-wrapper-249">メールアドレス</div>
-              </div>
-
-              <div className="div-9">0000000000@gmail.com</div>
-            </div>
-
-            <div className="frame-521">
-              <div className="frame-522">
-                <div className="text-wrapper-249">電話番号</div>
-              </div>
-
-              <div className="div-9">000-0000-0000</div>
-            </div>
-
-            <div className="frame-521">
-              <div className="frame-522">
-                <div className="text-wrapper-249">内容</div>
-              </div>
-
-              <div className="text-wrapper-250">
-                お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容お問い合わせ内容
-              </div>
-            </div>
-
-            <div className="frame-522">
-              <div className="rectangle-13" />
-
-              <p className="div-9">
-                <Link to="/privacy" className="text-wrapper-251">プライバシーポリシー</Link>
-
-                <span className="text-wrapper-252">に同意する</span>
+              <p className="div-10">
+                <span className="text-wrapper-257">① お客様情報の入力</span>
+                <span className="text-wrapper-258"> - </span>
+                <span
+                  className="text-wrapper-259"
+                  style={{ fontWeight: "bold", color: "#1a1a1a" }}
+                >
+                  ② 記入内容のご確認
+                </span>
+                <span className="text-wrapper-258"> - </span>
+                <span className="text-wrapper-259">③ 完了</span>
               </p>
-            </div>
-          </div>
-        </div>
 
-        <div className="frame-523">
-          <Link to="/contact" className="frame-524">
-            <div className="text-wrapper-253">戻る</div>
-          </Link>
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">ご用件</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <div className="frame-538">
+                  <PlaceholderText value={formData.subject} placeholder="未選択" />
+                </div>
+              </div>
 
-          <Link to="/contact-complete" className="frame-525">
-            <div className="text-wrapper-254">送信する</div>
-          </Link>
-        </div>
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">お名前</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <div className="frame-538">
+                  <PlaceholderText value={formData.name} placeholder="未入力" />
+                </div>
+              </div>
 
-        <div className="frame-526">
-          <div className="text-wrapper-255">お問い合わせ</div>
-        </div>
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">フリガナ</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <div className="frame-538">
+                  <PlaceholderText value={formData.furigana} placeholder="未入力" />
+                </div>
+              </div>
 
-        <div className="overlap-group-25">
-          <div className="frame-527">
-            <div className="frame-528">
-              <div className="frame-529">
-                <div className="text-wrapper-256">Sofvo</div>
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">メールアドレス</div>
+                  <div className="text-wrapper-261">*</div>
+                </div>
+                <div className="frame-538">
+                  <PlaceholderText value={formData.email} placeholder="未入力" />
+                </div>
+              </div>
 
-                <img
-                  className="frame-530"
-                  alt="Frame"
-                  src="/img/frame-19-21.svg"
-                />
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">電話番号</div>
+                </div>
+                <div className="frame-538">
+                  <PlaceholderText value={formData.phone} placeholder="未入力" />
+                </div>
+              </div>
+
+              <div className="frame-535">
+                <div className="frame-536">
+                  <div className="text-wrapper-260">内容</div>
+                </div>
+                <div className="frame-539" style={{ whiteSpace: "pre-wrap" }}>
+                  <PlaceholderText value={formData.content} placeholder="未入力" />
+                </div>
               </div>
             </div>
           </div>
 
-          <img className="vector-57" alt="Vector" src="/img/vector-3.svg" />
-        </div>
+          <div className="frame-540">
+            <Link to="/contact" state={formData} className="frame-541">
+              <div className="text-wrapper-263">戻る</div>
+            </Link>
 
-        <img className="frame-531" alt="Frame" src="/img/frame-19-28.svg" />
+            <Link to="/contact-complete" className="frame-542">
+              <div className="text-wrapper-264">送信する</div>
+            </Link>
+          </div>
+        </div>
       </div>
+      <Footer currentPage="team-create" />
     </div>
   );
 };

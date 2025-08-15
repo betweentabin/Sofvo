@@ -56,8 +56,7 @@
 
 .screen-24 .custom-select {
   align-self: stretch;
-  border: 0.5px solid;
-  border-color: var(--4);
+  border: 1px solid #ccc;
   border-radius: 5px;
   height: 40px;
   position: relative;
@@ -111,6 +110,7 @@
   position: relative;
   white-space: nowrap;
   width: fit-content;
+  height: 24px;
 }
 
 .screen-24 .text-wrapper-226 {
@@ -219,13 +219,12 @@
 }
 
 .screen-24 .frame-445 {
-  align-self: stretch;
-  border: 0.5px solid;
-  border-color: var(--4);
-  border-radius: 5px;
-  height: 40px;
-  position: relative;
   width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .screen-24 .frame-446 {
@@ -503,13 +502,14 @@
 }
 
 .screen-24 .frame-462 {
-  align-self: stretch;
-  border: 0.5px solid;
-  border-color: var(--4);
-  border-radius: 5px;
-  height: 150px;
-  position: relative;
   width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-height: 150px;
+  resize: vertical;
 }
 
 .screen-24 .frame-463 {
