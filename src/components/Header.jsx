@@ -10,9 +10,9 @@ export const Header = ({ onTabChange, activeTab = 'following' }) => {
           <Link to="/" className="header-text" style={{ textDecoration: 'none' }}>Sofvo</Link>
           <div className="header-icon">
             <div className="header-icons">
-              <img className="header-icon-img" alt="通知" src="/images/300ppi/通知.png" />
-              <img className="header-icon-img" alt="メッセージ" src="/images/300ppi/メッセージ.png" />
-              <img className="header-icon-img" alt="歯車" src="/images/300ppi/歯車.png" />
+              <img className="header-icon-img" alt="通知" src="/img/通知.png" />
+              <img className="header-icon-img" alt="メッセージ" src="/img/メッセージ.png" />
+              <img className="header-icon-img" alt="歯車" src="/img/歯車.png" />
             </div>
           </div>
         </div>
@@ -33,7 +33,7 @@ export const Header = ({ onTabChange, activeTab = 'following' }) => {
           おすすめ
         </div>
         <div className="overlap-group-8">
-          <img className="vector-14" alt="Vector" src="/images/300ppi/線.svg" />
+          <img className="vector-14" alt="Vector" src="/img/線.svg" />
           <img className={`vector-15 ${activeTab === 'recommend' ? 'recommend' : ''}`} alt="Vector" src="/img/vector-2-1.svg" />
         </div>
       </div>

@@ -11,13 +11,13 @@ export const HeaderContent = () => {
           <div className="header-content-icon">
             <div className="header-content-icons">
               <Link to="/notifications">
-                <img className="header-content-icon-img" alt="通知" src="/images/300ppi/通知.png" />
+                <img className="header-content-icon-img" alt="通知" src="/img/通知.png" />
               </Link>
               <Link to="/dm">
-                <img className="header-content-icon-img" alt="メッセージ" src="/images/300ppi/メッセージ.png" />
+                <img className="header-content-icon-img" alt="メッセージ" src="/img/メッセージ.png" />
               </Link>
               <Link to="/settings">
-                <img className="header-content-icon-img" alt="歯車" src="/images/300ppi/歯車.png" />
+                <img className="header-content-icon-img" alt="歯車" src="/img/歯車.png" />
               </Link>
             </div>
           </div>

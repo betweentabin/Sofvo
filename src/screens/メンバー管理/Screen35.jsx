@@ -55,7 +55,7 @@ export const Screen35 = () => {
                   <img
                     className="search-icon"
                     alt="検索"
-                    src="/images/300ppi/検索黒.png"
+                    src="/img/検索黒.png"
                   />
                 </div>
               </div>

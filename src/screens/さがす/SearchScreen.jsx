@@ -52,7 +52,7 @@ export const SearchScreen = () => {
                 <div className="frame-23">
                   <div className="magnifying-glass-wrapper">
                     <div className="magnifying-glass">
-                      <img className="search-icon" alt="検索" src="/images/300ppi/検索黒.png" />
+                      <img className="search-icon" alt="検索" src="/img/検索黒.png" />
                     </div>
                   </div>
                   <div className="text-wrapper-39">大会を検索（チーム参加）</div>
@@ -162,7 +162,7 @@ export const SearchScreen = () => {
                 <div className="frame-23">
                   <div className="magnifying-glass-wrapper">
                     <div className="magnifying-glass">
-                      <img className="search-icon" alt="検索" src="/images/300ppi/検索黒.png" />
+                      <img className="search-icon" alt="検索" src="/img/検索黒.png" />
                     </div>
                   </div>
                   <div className="text-wrapper-39">大会を検索（個人参加）</div>
