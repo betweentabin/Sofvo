@@ -18,14 +18,14 @@
   background-position: 50% 50%;
   background-size: cover;
   min-height: 100vh;
-  left: 0;
   position: relative;
-  top: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .screen-screen .element-18 {
@@ -81,7 +81,14 @@
 .screen-screen .error-message {
   background-color: rgba(255, 0, 0, 0.1);
   border-radius: 4px;
-  padding: 8px;
+  padding: 12px;
+  width: 100%;
+  max-width: 343px;
+  color: red;
+  font-size: 14px;
+  text-align: center;
+  margin: 10px 0;
+  border: 1px solid rgba(255, 0, 0, 0.3);
 }
 
 .screen-screen .overlap-4 {
@@ -173,29 +180,41 @@
   white-space: nowrap;
 }
 
+/* 入力グループ */
+.screen-screen .input-group {
+  width: 100%;
+  max-width: 343px;
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* ロゴ部分 */
 .screen-screen .overlap-5 {
   position: relative;
   margin-bottom: 40px;
   text-align: center;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .screen-screen .text-wrapper-26 {
   color: #ffffff;
-  font-family: Arial, Helvetica; font-weight: bold;
-  font-size: clamp(60px, 15vw, 108px);
+  font-family: Arial, Helvetica; 
+  font-weight: bold;
+  font-size: clamp(60px, 12vw, 80px);
   letter-spacing: 0;
   line-height: normal;
-  position: relative;
   text-align: center;
   white-space: nowrap;
-  margin-top: 80px;
+  margin-top: 10px;
 }
 
 .screen-screen .bird-3 {
-  height: 80px;
+  height: 60px;
   width: auto;
   object-fit: cover;
-  position: relative;
-  margin-bottom: 10px;
 }
