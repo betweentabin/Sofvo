@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ScreenScreen } from '../screens/ログイン';
-import { Screen } from '../screens/スプラッシュ';
+import { ScreenScreen } from '../screens/ログイン/ScreenScreen.jsx';
+import { Screen } from '../screens/スプラッシュ/Screen.jsx';
 
 export const AuthGuard = ({ children }) => {
   const { user, loading } = useAuth();
