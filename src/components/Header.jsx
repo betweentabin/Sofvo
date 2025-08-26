@@ -10,9 +10,9 @@ export const Header = ({ onTabChange, activeTab = 'following' }) => {
           <Link to="/" className="header-text" style={{ textDecoration: 'none' }}>Sofvo</Link>
           <div className="header-icon">
             <div className="header-icons">
-              <img className="header-icon-img" alt="通知" src="/img/通知.png" />
-              <img className="header-icon-img" alt="メッセージ" src="/img/メッセージ.png" />
-              <img className="header-icon-img" alt="歯車" src="/img/歯車.png" />
+              <img className="header-icon-img" alt="通知" src="/img/notification.png" />
+              <img className="header-icon-img" alt="メッセージ" src="/img/message.png" />
+              <img className="header-icon-img" alt="歯車" src="/img/settings.png" />
             </div>
           </div>
         </div>

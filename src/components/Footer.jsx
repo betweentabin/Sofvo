@@ -5,11 +5,11 @@ import "./Footer.css";
 export const Footer = ({ currentPage = 'home' }) => {
   const getIconSrc = (pageName) => {
     const icons = {
-      home: '/img/ホーム黒.png',
-      search: '/img/検索黒.png',
-      schedule: '/img/スケジュール黒.png',
-      recommend: '/img/おすすめ黒.png',
-      mypage: '/img/マイページ黒.png'
+      home: '/img/home-black.png',
+      search: '/img/search-black.png',
+      schedule: '/img/schedule-black.png',
+      recommend: '/img/recommend-black.png',
+      mypage: '/img/mypage-black.png'
     };
     
     return icons[pageName] || icons[pageName.replace('黒', '')];
@@ -20,19 +20,19 @@ export const Footer = ({ currentPage = 'home' }) => {
       <div className="footer-inner">
         <div className="footer-content">
           <Link to="/">
-            <img className="footer-nav-icon" alt="ホーム" src={currentPage === 'home' ? getIconSrc('home') : '/img/ホーム.png'} />
+            <img className="footer-nav-icon" alt="ホーム" src={currentPage === 'home' ? getIconSrc('home') : '/img/home.png'} />
           </Link>
           <Link to="/tournament-search-team">
-            <img className="footer-nav-icon" alt="検索" src={currentPage === 'search' ? getIconSrc('search') : '/img/検索.png'} />
+            <img className="footer-nav-icon" alt="検索" src={currentPage === 'search' ? getIconSrc('search') : '/img/search.png'} />
           </Link>
           <Link to="/tournament-schedule">
-            <img className="footer-nav-icon" alt="スケジュール" src={currentPage === 'schedule' ? getIconSrc('schedule') : '/img/スケジュール.png'} />
+            <img className="footer-nav-icon" alt="スケジュール" src={currentPage === 'schedule' ? getIconSrc('schedule') : '/img/schedule.png'} />
           </Link>
           <Link to="/ads">
-            <img className="footer-nav-icon" alt="おすすめ" src={currentPage === 'recommend' ? getIconSrc('recommend') : '/img/おすすめ.png'} />
+            <img className="footer-nav-icon" alt="おすすめ" src={currentPage === 'recommend' ? getIconSrc('recommend') : '/img/recommend.png'} />
           </Link>
           <Link to="/my-profile">
-            <img className="footer-nav-icon" alt="マイページ" src={currentPage === 'mypage' ? getIconSrc('mypage') : '/img/マイページ.png'} />
+            <img className="footer-nav-icon" alt="マイページ" src={currentPage === 'mypage' ? getIconSrc('mypage') : '/img/mypage.png'} />
           </Link>
         </div>
       </div>
