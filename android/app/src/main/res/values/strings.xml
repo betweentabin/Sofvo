@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sofvo</string>
+    <string name="title_activity_main">Sofvo</string>
+    <string name="package_name">com.sofvo.app</string>
+    <string name="custom_url_scheme">com.sofvo.app</string>
+</resources>

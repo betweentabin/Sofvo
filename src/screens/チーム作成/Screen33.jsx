@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const Screen33 = () => {
+  const navigate = useNavigate();
   const [mainContentTop, setMainContentTop] = useState(0);
+  const [formData, setFormData] = useState({
+    teamName: "",
+    activityArea: "",
+    selfIntroduction: "",
+    teamNamePrivacy: "public",
+    activityAreaPrivacy: "public",
+    selfIntroductionPrivacy: "public"
+  });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const updateMainContentPosition = () => {
@@ -42,6 +52,46 @@ export const Screen33 = () => {
   ];
 
   const [matrix, setMatrix] = useState(initialMatrix);
+
+  // フォーム入力変更ハンドラー
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    // エラーをクリア
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ""
+      }));
+    }
+  };
+
+  // バリデーション
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.teamName) newErrors.teamName = "チーム名は必須です";
+    if (!formData.activityArea) newErrors.activityArea = "活動地域を選択してください";
+    if (!formData.selfIntroduction) newErrors.selfIntroduction = "自己紹介は必須です";
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // チーム作成処理
+  const handleCreateTeam = () => {
+    if (validate()) {
+      const teamData = {
+        ...formData,
+        permissions: matrix,
+        roles
+      };
+      console.log("チーム作成:", teamData);
+      // TODO: APIに送信
+      navigate("/team-manage");
+    }
+  };
 
   const toggleCell = (rowIdx, colIdx) => {
     setMatrix((prev) => {
@@ -100,7 +150,11 @@ export const Screen33 = () => {
                 <input
                   type="text"
                   className="frame-445"
+                  value={formData.teamName}
+                  onChange={(e) => handleInputChange("teamName", e.target.value)}
+                  placeholder="チーム名を入力"
                 />
+                {errors.teamName && <div className="error-text">{errors.teamName}</div>}
               </div>
 
               <div className="frame-447">
@@ -110,19 +164,28 @@ export const Screen33 = () => {
                     <div className="text-wrapper-217">*</div>
                   </div>
 
-                  <select className="custom-select2">
+                  <select 
+                    className="custom-select2"
+                    value={formData.activityAreaPrivacy}
+                    onChange={(e) => handleInputChange("activityAreaPrivacy", e.target.value)}
+                  >
                     <option value="public">公開</option>
                     <option value="private">非公開</option>
                   </select>
                 </div>
 
-                <select className="custom-select">
+                <select 
+                  className="custom-select"
+                  value={formData.activityArea}
+                  onChange={(e) => handleInputChange("activityArea", e.target.value)}
+                >
                   <option value="">選択してください</option>
                   <option value="shizuoka">静岡市</option>
                   <option value="hamamatsu">浜松市</option>
                   <option value="fuji">富士市</option>
                   <option value="numazu">沼津市</option>
                 </select>
+                {errors.activityArea && <div className="error-text">{errors.activityArea}</div>}
               </div>
 
               <div className="frame-441">
@@ -193,15 +256,24 @@ export const Screen33 = () => {
                     <div className="text-wrapper-217">*</div>
                   </div>
 
-                  <div className="frame-444">
-                    <div className="text-wrapper-218">公開</div>
-                  </div>
+                  <select 
+                    className="frame-444 custom-select2"
+                    value={formData.selfIntroductionPrivacy}
+                    onChange={(e) => handleInputChange("selfIntroductionPrivacy", e.target.value)}
+                  >
+                    <option value="public">公開</option>
+                    <option value="private">非公開</option>
+                  </select>
                 </div>
 
                 <textarea
                   className="frame-462"
                   rows={4}
+                  value={formData.selfIntroduction}
+                  onChange={(e) => handleInputChange("selfIntroduction", e.target.value)}
+                  placeholder="チームの自己紹介を入力してください"
                 />
+                {errors.selfIntroduction && <div className="error-text">{errors.selfIntroduction}</div>}
               </div>
             </div>
           </div>
@@ -211,9 +283,13 @@ export const Screen33 = () => {
               <div className="text-wrapper-224">戻る</div>
             </Link>
 
-            <Link to="/team-manage" className="frame-465">
+            <button 
+              onClick={handleCreateTeam}
+              className="frame-465"
+              style={{ border: "none", textDecoration: "none", cursor: "pointer" }}
+            >
               <div className="text-wrapper-225">完了</div>
-            </Link>
+            </button>
           </div>
         </div>
       </div>

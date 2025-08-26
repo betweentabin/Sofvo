@@ -396,3 +396,44 @@
   flex: 0 0 auto;
   position: relative;
 }
+
+/* 入力フィールドのスタイル */
+.div-wrapper .signup-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  font-size: 14px;
+  background-color: #fff;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.div-wrapper .signup-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.div-wrapper .signup-input::placeholder {
+  color: #999;
+}
+
+/* エラーメッセージのスタイル */
+.div-wrapper .error-text {
+  color: #ff0000;
+  font-size: 12px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+/* ボタンのホバー効果 */
+.div-wrapper .frame-15:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+.div-wrapper .frame-16:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}

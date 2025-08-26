@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./style.css";
 
 export const Screen17 = () => {
+  const navigate = useNavigate();
   const [mainContentTop, setMainContentTop] = useState(201);
 
   useEffect(() => {
@@ -88,11 +89,11 @@ export const Screen17 = () => {
               <div className="text-wrapper-307-2">開催日時：2025年5月18日（日）</div>
             </div>
             <div className="frame-620">
-              <div className="frame-621">
+              <div className="frame-621" onClick={() => navigate('/tournament-schedule')} style={{ cursor: 'pointer' }}>
                 <div className="text-wrapper-308">エントリーする</div>
               </div>
               <div className="frame-622">
-                <div className="frame-623">
+                <div className="frame-623" onClick={() => navigate('/member-manage')} style={{ cursor: 'pointer' }}>
                   <div className="text-wrapper-309">エントリー済みメンバー</div>
                 </div>
               </div>

@@ -29,9 +29,9 @@ npx cap init
 ```
 
 以下の情報を入力します：
-- **App name**: アプリケーション名（例：Anima Project）
-- **App ID**: アプリケーションID（例：com.example.animaproject）
-- **Web Directory**: ビルドディレクトリ（Viteの場合は `dist`）
+- **App name**: Sofvo
+- **App ID**: com.sofvo.app
+- **Web Directory**: dist（Viteの場合）
 
 ## 3. プラットフォームの追加
 
@@ -55,8 +55,8 @@ npx cap add android
 
 ```json
 {
-  "appId": "com.example.animaproject",
-  "appName": "Anima Project",
+  "appId": "com.sofvo.app",
+  "appName": "Sofvo",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
@@ -133,8 +133,8 @@ npx cap copy
 
 ```json
 {
-  "appId": "com.example.animaproject",
-  "appName": "Anima Project",
+  "appId": "com.sofvo.app",
+  "appName": "Sofvo",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
@@ -243,38 +243,59 @@ npx capacitor-assets generate
 
 ## プロジェクト構造の特徴
 
-このプロジェクトは以下の特徴があります：
+このSofvoプロジェクトは以下の特徴があります：
 
-### ルーティング設定
-- React Router v6を使用したクライアントサイドルーティング
-- 複数のスクリーン（Screen、Screen6-29等）を含む複雑な構造
-- Unicode文字を含むパス名（日本語路径）が多数存在
+### アプリケーション構成
+- スポーツ・競技関連のソーシャルプラットフォーム
+- React + Viteを使用したSPA
+- React Router v6によるクライアントサイドルーティング
 
-### 静的ファイル構成
+### 画面構成
+- **認証系**: ログイン、アカウント作成、プロフィール作成
+- **メイン機能**: ホーム、おすすめ、さがす、マイページ
+- **チーム機能**: チーム作成、チーム管理、メンバー管理
+- **大会機能**: 大会を主催、大会を編集、大会募集画面、大会結果画面
+- **設定系**: 設定画面、通知設定、登録情報変更、退会
+- **その他**: DM、お問い合わせ、利用規約、プライバシーポリシー
+
+### 技術的特徴
+- 日本語のディレクトリ名を使用したスクリーン構成
 - `static/`ディレクトリに画像ファイルが配置
-- SVG、PNG形式の画像を使用
+- SVG、PNG形式のアイコンと画像を使用
 - `_redirects`ファイルでSPAのルーティング対応
 
 ## Capacitor化における重要な修正点
 
 ### 1. ルーティング設定の修正
 
-現在のプロジェクトは`createBrowserRouter`を使用していますが、Capacitorアプリでは以下の修正が必要です：
+現在のプロジェクトでは`App.jsx`でルーティングを設定していますが、Capacitorアプリでは以下の修正が必要です：
 
-#### 1.1 App.jsxの修正
+#### 1.1 App.jsxの修正（src/App.jsx:1）
 
 ```jsx
 import React from "react";
 import { RouterProvider, createHashRouter } from "react-router-dom";
 // createBrowserRouter から createHashRouter に変更
 
+// Sofvoプロジェクトの全スクリーンに対応したルート設定
 const router = createHashRouter([
-  // 既存のルート設定をそのまま使用
   {
-    path: "/*",
-    element: <Screen />,
+    path: "/",
+    element: <HomeScreen />, // ホーム画面
   },
-  // ... 他のルート設定
+  {
+    path: "/login",
+    element: <ScreenScreen />, // ログイン画面
+  },
+  {
+    path: "/register",
+    element: <DivWrapper />, // アカウント作成
+  },
+  {
+    path: "/profile-create",
+    element: <Screen6 />, // プロフィール作成
+  },
+  // ... 他の全スクリーンのルート設定
 ]);
 
 export const App = () => {
@@ -345,7 +366,7 @@ export default defineConfig({
   <meta name="format-detection" content="telephone=no" />
   <meta name="msapplication-tap-highlight" content="no" />
   
-  <title>Anima Project</title>
+  <title>Sofvo</title>
 </head>
 <body>
   <div id="root"></div>
@@ -360,8 +381,8 @@ export default defineConfig({
 
 ```json
 {
-  "appId": "com.example.animaproject",
-  "appName": "Anima Project",
+  "appId": "com.sofvo.app",
+  "appName": "Sofvo",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {

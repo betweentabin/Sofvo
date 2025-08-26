@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const Screen18 = () => {
+  const navigate = useNavigate();
   const [mainContentTop, setMainContentTop] = useState(201);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(10);
+  const [entryStatus, setEntryStatus] = useState("not_entered"); // not_entered, entering, entered
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     const updateMainContentPosition = () => {
@@ -25,6 +30,43 @@ export const Screen18 = () => {
       window.removeEventListener("resize", updateMainContentPosition);
     };
   }, []);
+
+  // いいねボタンの処理
+  const handleLike = () => {
+    if (isLiked) {
+      setLikeCount(prev => prev - 1);
+      setIsLiked(false);
+    } else {
+      setLikeCount(prev => prev + 1);
+      setIsLiked(true);
+    }
+  };
+
+  // エントリー処理
+  const handleEntry = () => {
+    if (entryStatus === "entered") {
+      alert("既にエントリー済みです");
+      return;
+    }
+    setShowConfirmModal(true);
+  };
+
+  // エントリー確認処理
+  const confirmEntry = () => {
+    setEntryStatus("entering");
+    setShowConfirmModal(false);
+    
+    // デモ用：2秒後にエントリー完了
+    setTimeout(() => {
+      setEntryStatus("entered");
+      alert("エントリーが完了しました！");
+    }, 2000);
+  };
+
+  // お問い合わせ処理
+  const handleInquiry = () => {
+    navigate("/contact");
+  };
 
   return (
     <div className="screen-18">
@@ -51,11 +93,20 @@ export const Screen18 = () => {
 
             <div className="gray-box2"></div>
 
-            <div className="frame-84">
-              <div className="heart-2">
-                    <img className="vector-16" alt="Vector" src="/img/vector-25.svg" />
+            <div 
+              className="frame-84"
+              onClick={handleLike}
+              style={{ cursor: "pointer", userSelect: "none" }}
+            >
+              <div className="heart-2" style={{ color: isLiked ? "#ff0066" : "inherit" }}>
+                    <img 
+                      className="vector-16" 
+                      alt="Vector" 
+                      src="/img/vector-25.svg" 
+                      style={{ filter: isLiked ? "brightness(0) saturate(100%) invert(34%) sepia(82%) saturate(6000%) hue-rotate(330deg) brightness(100%) contrast(101%)" : "none" }}
+                    />
               </div>
-              <div className="text-wrapper-67">10 いいね</div>
+              <div className="text-wrapper-67">{likeCount} いいね</div>
             </div>
 
           </div>
@@ -223,14 +274,88 @@ export const Screen18 = () => {
         </div>
 
         <div className="frame-309">
-          <Link to="/settings" className="frame-310">
-            <div className="text-wrapper-206">エントリー</div>
-          </Link>
+          <button 
+            onClick={handleEntry}
+            className="frame-310"
+            style={{ 
+              border: "none", 
+              cursor: entryStatus === "entering" ? "wait" : "pointer",
+              opacity: entryStatus === "entered" ? 0.7 : 1,
+              backgroundColor: entryStatus === "entered" ? "#28a745" : ""
+            }}
+            disabled={entryStatus === "entering"}
+          >
+            <div className="text-wrapper-206">
+              {entryStatus === "not_entered" && "エントリー"}
+              {entryStatus === "entering" && "処理中..."}
+              {entryStatus === "entered" && "エントリー済み"}
+            </div>
+          </button>
 
-          <Link to="/settings" className="frame-311">
+          <button 
+            onClick={handleInquiry}
+            className="frame-311"
+            style={{ border: "none", cursor: "pointer" }}
+          >
             <div className="text-wrapper-207">お問い合わせ</div>
-          </Link>
+          </button>
         </div>
+
+        {/* エントリー確認モーダル */}
+        {showConfirmModal && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: "white",
+              padding: "30px",
+              borderRadius: "10px",
+              maxWidth: "400px",
+              width: "90%"
+            }}>
+              <h3 style={{ marginBottom: "20px" }}>エントリー確認</h3>
+              <p style={{ marginBottom: "30px" }}>
+                「第15回 〇〇カップ」にエントリーしますか？
+              </p>
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button 
+                  onClick={() => setShowConfirmModal(false)}
+                  style={{
+                    padding: "10px 20px",
+                    border: "1px solid #ccc",
+                    borderRadius: "5px",
+                    backgroundColor: "white",
+                    cursor: "pointer"
+                  }}
+                >
+                  キャンセル
+                </button>
+                <button 
+                  onClick={confirmEntry}
+                  style={{
+                    padding: "10px 20px",
+                    border: "none",
+                    borderRadius: "5px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    cursor: "pointer"
+                  }}
+                >
+                  エントリーする
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Footer currentPage="schedule" />
       </div>

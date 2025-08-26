@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { HeaderTabs } from "../../components/HeaderTabs";
 import { HeaderShare } from "../../components/HeaderShare";
@@ -7,8 +7,11 @@ import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const HomeScreen = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("following"); // 'following' or 'recommend'
   const [mainContentTop, setMainContentTop] = useState(201);
+  const [likedPosts, setLikedPosts] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const updateMainContentPosition = () => {
@@ -34,6 +37,21 @@ export const HomeScreen = () => {
   }, []);
 
   console.log("HomeScreen - current mainContentTop:", mainContentTop);
+
+  // いいねボタンのハンドラー
+  const handleLike = (postId) => {
+    setLikedPosts(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  // 検索ハンドラー
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/tournament-search-team?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <div className="HOME-screen">
@@ -73,20 +91,23 @@ export const HomeScreen = () => {
                 </div>
 
                 <div className="frame-81">
-                  <div className="frame-82">
+                  <div className="frame-82" onClick={() => navigate('/tournament-detail')} style={{ cursor: 'pointer' }}>
                     <div className="text-wrapper-66">大会概要</div>
                   </div>
 
                   <div className="frame-83">
-                    <div className="frame-84">
+                    <div className="frame-84" 
+                         onClick={() => handleLike('post1')}
+                         style={{ cursor: 'pointer' }}>
                       <div className="heart-2">
                         <img
                           className="vector-16"
                           alt="Vector"
                           src="/img/vector-25.svg"
+                          style={{ filter: likedPosts['post1'] ? 'invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)' : 'none' }}
                         />
                       </div>
-                      <div className="text-wrapper-67">10 いいね</div>
+                      <div className="text-wrapper-67">{likedPosts['post1'] ? '11' : '10'} いいね</div>
                     </div>
                   </div>
                 </div>
@@ -120,11 +141,19 @@ export const HomeScreen = () => {
                     type="text"
                     id="search-year-month"
                     className="custom-input"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="大会名を入力"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch();
+                      }
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="frame-30">
+              <div className="frame-30" onClick={handleSearch} style={{ cursor: 'pointer' }}>
                 <div className="text-wrapper-43">検索</div>
               </div>
             </div>
@@ -135,7 +164,7 @@ export const HomeScreen = () => {
             <div className="activity-section">
               <div className="activity-header">
                 <div className="text-wrapper-77">おすすめの日記</div>
-                <div className="text-wrapper-78">もっと見る</div>
+                <div className="text-wrapper-78" onClick={() => navigate('/ads')} style={{ cursor: 'pointer' }}>もっと見る</div>
               </div>
 
               <div className="activity-items">
@@ -152,7 +181,7 @@ export const HomeScreen = () => {
                       <div className="text-wrapper-80 result">試合結果：第1位</div>
                       <div className="text-wrapper-80 points">獲得ポイント：100P</div>
                     </div>
-                    <div className="frame-90">
+                    <div className="frame-90" onClick={() => navigate('/tournament-detail')} style={{ cursor: 'pointer' }}>
                       <div className="text-wrapper-44">大会概要</div>
                     </div>
                   </div>
@@ -171,7 +200,7 @@ export const HomeScreen = () => {
                       <div className="text-wrapper-80 result">試合結果：第1位</div>
                       <div className="text-wrapper-80 points">獲得ポイント：100P</div>
                     </div>
-                    <div className="frame-90">
+                    <div className="frame-90" onClick={() => navigate('/tournament-detail')} style={{ cursor: 'pointer' }}>
                       <div className="text-wrapper-44">大会概要</div>
                     </div>
                   </div>
@@ -190,7 +219,7 @@ export const HomeScreen = () => {
                       <div className="text-wrapper-80 result">試合結果：第1位</div>
                       <div className="text-wrapper-80 points">獲得ポイント：100P</div>
                     </div>
-                    <div className="frame-90">
+                    <div className="frame-90" onClick={() => navigate('/tournament-detail')} style={{ cursor: 'pointer' }}>
                       <div className="text-wrapper-44">大会概要</div>
                     </div>
                   </div>
@@ -203,7 +232,7 @@ export const HomeScreen = () => {
             <div className="recommend-section">
               <div className="recommend-header">
                 <div className="text-wrapper-77">おすすめの日記</div>
-                <div className="text-wrapper-78">もっと見る</div>
+                <div className="text-wrapper-78" onClick={() => navigate('/ads')} style={{ cursor: 'pointer' }}>もっと見る</div>
               </div>
 
               <div className="recommend-items">

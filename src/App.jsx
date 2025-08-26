@@ -1,5 +1,5 @@
 import React from "react";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { RouterProvider, createHashRouter } from "react-router-dom";
 import { DivWrapper } from "./screens/アカウント作成";
 import { SearchScreen } from "./screens/さがす";
 import { Dm } from "./screens/DM";
@@ -37,7 +37,7 @@ import { Screen37 } from "./screens/大会を主催";
 import { Screen38 } from "./screens/大会を編集";
 import { ScreenScreen } from "./screens/ログイン";
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: "/",
     element: <HomeScreen />,
