@@ -18,132 +18,279 @@
   overflow-y: auto;
 }
 
-.Dm .frame-270 {
-  align-items: flex-start;
-  background-color: #ffffff;
+.Dm .dm-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.Dm .conversations-sidebar {
+  width: 300px;
+  background-color: #f5f5f5;
+  border-right: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  left: 0;
-  position: relative;
-  top: 0px;
-  width: 100%;
-  padding: 0px 10px 0px 10px;
 }
 
-.Dm .frame-271 {
-  align-items: center;
+.Dm .conversations-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: center;
-  left: 0;
-  padding: 0px 0 20px 0;
-  position: relative;
-  top: 0px;
-  width: 100%;
-  border-bottom: 1px solid #D4D4D4;
-}
-
-.Dm .frame-272 {
-  display: inline-flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  background-color: #ffffff;
-  flex: 0 0 auto;
-  gap: 10px;
-  position: relative;
 }
 
-.Dm .frame-273 {
-  background-color: #d9d9d9;
-  border-radius: 50px;
-  height: 40px;
-  position: relative;
+.Dm .conversations-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.Dm .new-message-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.Dm .new-message-button:hover {
+  background-color: #0056b3;
+}
+
+.Dm .conversations-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.Dm .conversation-item {
+  display: flex;
+  padding: 15px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #e8e8e8;
+  transition: background-color 0.2s;
+}
+
+.Dm .conversation-item:hover {
+  background-color: #f0f0f0;
+}
+
+.Dm .conversation-item.active {
+  background-color: #e8f0ff;
+}
+
+.Dm .conversation-avatar {
   width: 40px;
-}
-
-.Dm .text-wrapper-135 {
-  color: var(--4);
-  font-family: Arial, Helvetica; font-weight: bold;
-  font-size: 13px;
-  
-  letter-spacing: 0;
-  line-height: normal;
-  position: relative;
-  text-align: center;
-  white-space: nowrap;
-  width: fit-content;
-}
-
-
-.Dm .middle-box {
-  flex-grow: 1;   /* ここが残りの高さを取る */
-  background-color: #ffffff; /* 背景色などわかりやすいように */
-}
-
-
-.Dm .frame-274 {
-  align-items: flex-start;
-  background-color: #ffffff;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: white;
   display: flex;
-  flex-direction: column;
-  gap: 20px;
-  left: 0;
-  position: relative;
-  top: 0px;
-  width: 100%;
-  padding: 0px 10px 20px 10px;
-}
-
-.Dm .frame-275 {
   align-items: center;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   justify-content: center;
-  left: 0;
-  padding: 20px 0 0 0;
-  position: relative;
-  top: 0px;
-  width: 100%;
-  border-top: 1px solid #D4D4D4;
+  font-weight: bold;
+  margin-right: 12px;
 }
 
-.Dm .frame-276 {
-  display: inline-flex;
+.Dm .conversation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.Dm .conversation-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.Dm .conversation-last-message {
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.Dm .chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}
+
+.Dm .no-conversation-selected {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 16px;
+}
+
+.Dm .no-conversations {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.Dm .no-conversations p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.Dm .no-conversations button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.Dm .loading {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.Dm .auth-message {
+  display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #ffffff;
-  flex: 0 0 auto;
-  gap: 10px;
-  position: relative;
-  width: 100%;
-  height: auto;
+  justify-content: center;
+  height: 400px;
+  padding: 20px;
 }
 
-.Dm .frame-277 {
-  background-color: #EBEBEB;
-  border-radius: 50px;
-  height: 30px;
-  position: relative;
-  width: 100%;
-  padding: 5px 10px;
-
-  display: flex;           /* ← 追加 */
-  align-items: center;     /* ← 縦方向中央寄せ */
+.Dm .auth-message p {
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 20px;
 }
 
-.Dm .text-wrapper-136 {
-  color: var(--4);
-  font-family: Arial, Helvetica; font-weight: normal;
-  font-size: 10px;
-  
-  letter-spacing: 0;
-  line-height: normal;
-  position: relative;
-  text-align: center;
-  white-space: nowrap;
-  width: fit-content;
+.Dm .login-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.Dm .login-button:hover {
+  background-color: #0056b3;
+}
+
+.Dm .new-message-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.Dm .modal-content {
+  background-color: white;
+  border-radius: 10px;
+  width: 500px;
+  max-width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.Dm .modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.Dm .modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.Dm .modal-header button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.Dm .modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.Dm .modal-body input {
+  width: calc(100% - 80px);
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-right: 10px;
+}
+
+.Dm .modal-body button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.Dm .search-results {
+  margin-top: 20px;
+}
+
+.Dm .user-result {
+  display: flex;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.Dm .user-result:hover {
+  background-color: #f0f0f0;
+}
+
+.Dm .user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 12px;
+}
+
+.Dm .user-info {
+  flex: 1;
+}
+
+.Dm .user-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.Dm .user-username {
+  font-size: 14px;
+  color: #666;
 }
 

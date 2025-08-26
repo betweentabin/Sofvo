@@ -189,6 +189,10 @@ const router = createHashRouter([
     element: <AuthGuard><Dm /></AuthGuard>,
   },
   {
+    path: "/dm/:conversationId",
+    element: <AuthGuard><Dm /></AuthGuard>,
+  },
+  {
     path: "/empty",
     element: <NumberCircleFive />,
   },
