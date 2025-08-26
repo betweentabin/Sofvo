@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 export const ScreenScreen = () => {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [formData, setFormData] = useState({
-    email: "",
-    password: ""
+    email: "test@sofvo.com", // デフォルト値でテストしやすく
+    password: "testpass123"
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,14 +41,14 @@ export const ScreenScreen = () => {
     setError("");
 
     try {
-      // デモ用：成功と仮定してホーム画面へ
-      console.log("ログイン試行:", formData);
-      setTimeout(() => {
-        setLoading(false);
-        navigate("/home");
-      }, 1000);
+      // Supabase認証を使用
+      console.log("ログイン試行:", formData.email);
+      await signIn(formData.email, formData.password);
+      console.log("ログイン成功");
+      navigate("/home");
     } catch (err) {
-      setError("ログインに失敗しました");
+      console.error("ログインエラー:", err);
+      setError(err.message || "ログインに失敗しました。メールアドレスとパスワードを確認してください。");
       setLoading(false);
     }
   };

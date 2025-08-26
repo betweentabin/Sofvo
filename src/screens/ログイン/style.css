@@ -8,7 +8,7 @@
 
 .screen-screen .screen-2 {
   background-color: #ffffff;
-  height: 932px;
+  min-height: 100vh;
   overflow: hidden;
   width: 100%;
 }
@@ -17,11 +17,15 @@
   background-image: url(../../../static/img/home-3-1.png);
   background-position: 50% 50%;
   background-size: cover;
-  height: 988px;
-  left: -66px;
+  min-height: 100vh;
+  left: 0;
   position: relative;
-  top: -42px;
-  width: 690px;
+  top: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .screen-screen .element-18 {
@@ -30,10 +34,10 @@
   border-color: rgba(11, 79, 127, 1);
   border-radius: 8px;
   height: 56px;
-  left: 147px;
-  position: absolute;
-  top: 481px;
-  width: 343px;
+  position: relative;
+  margin: 20px 0 10px 0;
+  width: 90%;
+  max-width: 343px;
 }
 
 .screen-screen .element-19 {
@@ -42,10 +46,10 @@
   border-color: rgba(11, 79, 127, 1);
   border-radius: 8px;
   height: 56px;
-  left: 147px;
-  position: absolute;
-  top: 575px;
-  width: 343px;
+  position: relative;
+  margin: 10px 0 20px 0;
+  width: 90%;
+  max-width: 343px;
 }
 
 /* ログイン入力フィールドのスタイル */
@@ -83,10 +87,10 @@
 .screen-screen .overlap-4 {
   border-radius: 8px;
   height: 56px;
-  left: 147px;
-  position: absolute;
-  top: 669px;
-  width: 343px;
+  position: relative;
+  margin: 20px 0;
+  width: 90%;
+  max-width: 343px;
   cursor: pointer;
 }
 
@@ -97,22 +101,23 @@
   border-radius: 8px;
   display: block;
   height: 56px;
-  left: 0;
   position: absolute;
   top: 0;
-  width: 343px;
+  left: 0;
+  right: 0;
+  width: 100%;
 }
 
 .screen-screen .text-wrapper-21 {
   color: rgba(11, 79, 127, 1);
   font-family: Arial, Helvetica; font-weight: bold;
   font-size: 24px;
-  
-  left: 123px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   letter-spacing: 0;
   line-height: normal;
-  position: absolute;
-  top: 13px;
   white-space: nowrap;
 }
 
@@ -120,13 +125,11 @@
   color: #ffffff;
   font-family: Arial, Helvetica; font-weight: bold;
   font-size: 18px;
-  
-  left: 197px;
+  position: relative;
   letter-spacing: 0;
   line-height: normal;
-  position: absolute;
   text-align: center;
-  top: 918px;
+  margin: 20px 0;
   white-space: nowrap;
 }
 
@@ -134,13 +137,13 @@
   color: #ffffff;
   font-family: Arial, Helvetica; font-weight: bold;
   font-size: 18px;
-  
-  left: 149px;
+  position: relative;
   letter-spacing: 0;
   line-height: normal;
-  position: absolute;
-  text-align: center;
-  top: 453px;
+  text-align: left;
+  width: 90%;
+  max-width: 343px;
+  margin-bottom: 5px;
   white-space: nowrap;
 }
 
@@ -148,12 +151,13 @@
   color: #ffffff;
   font-family: Arial, Helvetica; font-weight: bold;
   font-size: 18px;
-  
-  left: 150px;
+  position: relative;
   letter-spacing: 0;
   line-height: normal;
-  position: absolute;
-  top: 549px;
+  text-align: left;
+  width: 90%;
+  max-width: 343px;
+  margin-bottom: 5px;
   white-space: nowrap;
 }
 
@@ -161,43 +165,37 @@
   color: #ffffff;
   font-family: Arial, Helvetica; font-weight: bold;
   font-size: 18px;
-  
-  left: 241px;
+  position: relative;
   letter-spacing: 0;
   line-height: normal;
-  position: absolute;
   text-align: center;
-  top: 881px;
+  margin: 10px 0;
   white-space: nowrap;
 }
 
 .screen-screen .overlap-5 {
-  height: 247px;
-  left: 167px;
-  position: absolute;
-  top: 148px;
-  width: 301px;
+  position: relative;
+  margin-bottom: 40px;
+  text-align: center;
+  width: 100%;
 }
 
 .screen-screen .text-wrapper-26 {
   color: #ffffff;
   font-family: Arial, Helvetica; font-weight: bold;
-  font-size: 108px;
-  
-  left: 0;
+  font-size: clamp(60px, 15vw, 108px);
   letter-spacing: 0;
   line-height: normal;
-  position: absolute;
-  text-align: right;
-  top: 123px;
+  position: relative;
+  text-align: center;
   white-space: nowrap;
+  margin-top: 80px;
 }
 
 .screen-screen .bird-3 {
-  height: 124px;
-  left: 97px;
+  height: 80px;
+  width: auto;
   object-fit: cover;
-  position: absolute;
-  top: 0;
-  width: 109px;
+  position: relative;
+  margin-bottom: 10px;
 }
