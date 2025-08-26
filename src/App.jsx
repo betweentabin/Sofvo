@@ -1,5 +1,7 @@
 import React from "react";
 import { RouterProvider, createHashRouter } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { AuthGuard } from "./components/AuthGuard";
 import { DivWrapper } from "./screens/アカウント作成";
 import { SearchScreen } from "./screens/さがす";
 import { Dm } from "./screens/DM";
@@ -40,7 +42,7 @@ import { ScreenScreen } from "./screens/ログイン";
 const router = createHashRouter([
   {
     path: "/",
-    element: <HomeScreen />,
+    element: <AuthGuard><HomeScreen /></AuthGuard>,
   },
   {
     path: "/splash",
@@ -60,99 +62,99 @@ const router = createHashRouter([
   },
   {
     path: "/home",
-    element: <HomeScreen />,
+    element: <AuthGuard><HomeScreen /></AuthGuard>,
   },
   {
     path: "/admin",
-    element: <Screen7 />,
+    element: <AuthGuard><Screen7 /></AuthGuard>,
   },
   {
     path: "/ads",
-    element: <Screen10 />,
+    element: <AuthGuard><Screen10 /></AuthGuard>,
   },
   {
     path: "/tournament-schedule",
-    element: <Screen11 />,
+    element: <AuthGuard><Screen11 /></AuthGuard>,
   },
   {
     path: "/tournament-search",
-    element: <SearchScreen />,
+    element: <AuthGuard><SearchScreen /></AuthGuard>,
   },
   {
     path: "/tournament-search-team",
-    element: <SearchScreen />,
+    element: <AuthGuard><SearchScreen /></AuthGuard>,
   },
   {
     path: "/tournament-detail",
-    element: <Screen18 />,
+    element: <AuthGuard><Screen18 /></AuthGuard>,
   },
   {
     path: "/tournament-result-team",
-    element: <Screen20 />,
+    element: <AuthGuard><Screen20 /></AuthGuard>,
   },
   {
     path: "/tournament-result-all",
-    element: <Screen21 />,
+    element: <AuthGuard><Screen21 /></AuthGuard>,
   },
   {
     path: "/profile-edit",
-    element: <Screen13 />,
+    element: <AuthGuard><Screen13 /></AuthGuard>,
   },
   {
     path: "/my-profile",
-    element: <Screen14 />,
+    element: <AuthGuard><Screen14 /></AuthGuard>,
   },
   {
     path: "/team-profile",
-    element: <Screen16 />,
+    element: <AuthGuard><Screen16 /></AuthGuard>,
   },
   {
     path: "/team-manage",
-    element: <Screen17 />,
+    element: <AuthGuard><Screen17 /></AuthGuard>,
   },
   {
     path: "/team-create",
-    element: <Screen24 />,
+    element: <AuthGuard><Screen24 /></AuthGuard>,
   },
   {
     path: "/team-management",
-    element: <Screen32 />,
+    element: <AuthGuard><Screen32 /></AuthGuard>,
   },
   {
     path: "/team-create2",
-    element: <Screen33 />,
+    element: <AuthGuard><Screen33 /></AuthGuard>,
   },
   {
     path: "/team-disband",
-    element: <Screen34 />,
+    element: <AuthGuard><Screen34 /></AuthGuard>,
   },
   {
     path: "/member-manage",
-    element: <Screen35 />,
+    element: <AuthGuard><Screen35 /></AuthGuard>,
   },
   {
     path: "/notifications",
-    element: <Screen15 />,
+    element: <AuthGuard><Screen15 /></AuthGuard>,
   },
   {
     path: "/tournament-host-manage",
-    element: <Screen36 />,
+    element: <AuthGuard><Screen36 /></AuthGuard>,
   },
   {
     path: "/tournament-host",
-    element: <Screen37 />,
+    element: <AuthGuard><Screen37 /></AuthGuard>,
   },
   {
     path: "/tournament-edit",
-    element: <Screen38 />,
+    element: <AuthGuard><Screen38 /></AuthGuard>,
   },
   {
     path: "/settings",
-    element: <Screen19 />,
+    element: <AuthGuard><Screen19 /></AuthGuard>,
   },
   {
     path: "/account-settings",
-    element: <Screen22 />,
+    element: <AuthGuard><Screen22 /></AuthGuard>,
   },
   {
     path: "/terms",
@@ -176,15 +178,15 @@ const router = createHashRouter([
   },
   {
     path: "/notification-settings",
-    element: <Screen30 />,
+    element: <AuthGuard><Screen30 /></AuthGuard>,
   },
   {
     path: "/withdraw",
-    element: <Screen31 />,
+    element: <AuthGuard><Screen31 /></AuthGuard>,
   },
   {
     path: "/dm",
-    element: <Dm />,
+    element: <AuthGuard><Dm /></AuthGuard>,
   },
   {
     path: "/empty",
@@ -193,5 +195,9 @@ const router = createHashRouter([
 ]);
 
 export const App = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 };

@@ -15,7 +15,8 @@
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
       "Bash(npx cap:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }
