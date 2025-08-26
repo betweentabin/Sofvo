@@ -6,6 +6,30 @@
   width: 100%;
 }
 
+.screen-14 .loading-container,
+.screen-14 .error-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #666;
+  font-size: 16px;
+}
+
+.screen-14 .follow-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.screen-14 .no-tournaments {
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+  border-bottom: 1px solid #D4D4D4;
+}
+
 .screen-14 .main-content {
   background-color: #ffffff;
   height: calc(100vh - 101px);

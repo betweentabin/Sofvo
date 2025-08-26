@@ -105,6 +105,10 @@ const router = createHashRouter([
     element: <AuthGuard><Screen14 /></AuthGuard>,
   },
   {
+    path: "/profile/:userId",
+    element: <AuthGuard><Screen14 /></AuthGuard>,
+  },
+  {
     path: "/team-profile",
     element: <AuthGuard><Screen16 /></AuthGuard>,
   },
