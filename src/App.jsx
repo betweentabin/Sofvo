@@ -3,42 +3,42 @@ import { RouterProvider, createHashRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AuthGuard } from "./components/AuthGuard";
 import pushNotificationService from "./services/pushNotification";
-import { DivWrapper } from "./screens/アカウント作成";
-import { SearchScreen } from "./screens/さがす";
-import { Dm } from "./screens/DM";
-import { HomeScreen } from "./screens/ホーム";
-import { NumberCircleFive } from "./screens/空コンポーネント";
-import { Screen } from "./screens/スプラッシュ";
-import { Screen6 } from "./screens/プロフィール作成";
-import { Screen7 } from "./screens/アドミン";
-import { Screen10 } from "./screens/おすすめ";
-import { Screen11 } from "./screens/参加予定大会（本日参加）";
-import { Screen13 } from "./screens/プロフィール編集";
-import { Screen14 } from "./screens/マイページ";
-import { Screen15 } from "./screens/お知らせ";
-import { Screen16 } from "./screens/チーム画面(メンバー)";
-import { Screen17 } from "./screens/チーム画面(管理者)";
-import { Screen18 } from "./screens/大会募集画面";
-import { Screen19 } from "./screens/設定画面";
-import { Screen20 } from "./screens/大会結果個別画面";
-import { Screen21 } from "./screens/大会結果総合画面";
-import { Screen22 } from "./screens/登録情報変更";
-import { Screen23 } from "./screens/利用規約";
-import { Screen24 } from "./screens/チームプロフィール編集";
-import { Screen26 as Screen25 } from "./screens/プライバシーポリシー";
-import { Screen27 } from "./screens/お問い合わせ（送信）";
-import { Screen28 } from "./screens/お問い合わせ（完了）";
-import { Screen29 } from "./screens/お問い合わせ（記入）";
-import { Screen30 } from "./screens/通知設定"; 
-import { Screen31 } from "./screens/退会";
-import { Screen32 } from "./screens/チーム管理画面";
-import { Screen33 } from "./screens/チーム作成";
-import { Screen34 } from "./screens/チーム解散";
-import { Screen35 } from "./screens/メンバー管理";
-import { Screen36 } from "./screens/主催大会管理";
-import { Screen37 } from "./screens/大会を主催";
-import { Screen38 } from "./screens/大会を編集";
-import { ScreenScreen } from "./screens/ログイン";
+import { DivWrapper } from "./screens/アカウント作成/DivWrapper";
+import { SearchScreen } from "./screens/さがす/SearchScreen";
+import { Dm } from "./screens/DM/Dm";
+import { HomeScreen } from "./screens/ホーム/HomeScreen";
+import { NumberCircleFive } from "./screens/空コンポーネント/NumberCircleFive";
+import { Screen } from "./screens/スプラッシュ/Screen";
+import { Screen6 } from "./screens/プロフィール作成/Screen6";
+import { Screen7 } from "./screens/アドミン/Screen7";
+import { Screen10 } from "./screens/おすすめ/Screen10";
+import { Screen11 } from "./screens/参加予定大会（本日参加）/Screen11";
+import { Screen13 } from "./screens/プロフィール編集/Screen13";
+import { Screen14 } from "./screens/マイページ/Screen14";
+import { Screen15 } from "./screens/お知らせ/Screen15";
+import { Screen16 } from "./screens/チーム画面(メンバー)/Screen16";
+import { Screen17 } from "./screens/チーム画面(管理者)/Screen17";
+import { Screen18 } from "./screens/大会募集画面/Screen18";
+import { Screen19 } from "./screens/設定画面/Screen19";
+import { Screen20 } from "./screens/大会結果個別画面/Screen20";
+import { Screen21 } from "./screens/大会結果総合画面/Screen21";
+import { Screen22 } from "./screens/登録情報変更/Screen22";
+import { Screen23 } from "./screens/利用規約/Screen23";
+import { Screen24 } from "./screens/チームプロフィール編集/Screen24";
+import { Screen26 as Screen25 } from "./screens/プライバシーポリシー/Screen26";
+import { Screen27 } from "./screens/お問い合わせ（送信）/Screen27";
+import { Screen28 } from "./screens/お問い合わせ（完了）/Screen28";
+import { Screen29 } from "./screens/お問い合わせ（記入）/Screen29";
+import { Screen30 } from "./screens/通知設定/Screen30"; 
+import { Screen31 } from "./screens/退会/Screen31";
+import { Screen32 } from "./screens/チーム管理画面/Screen32";
+import { Screen33 } from "./screens/チーム作成/Screen33";
+import { Screen34 } from "./screens/チーム解散/Screen34";
+import { Screen35 } from "./screens/メンバー管理/Screen35";
+import { Screen36 } from "./screens/主催大会管理/Screen36";
+import { Screen37 } from "./screens/大会を主催/Screen37";
+import { Screen38 } from "./screens/大会を編集/Screen38";
+import { ScreenScreen } from "./screens/ログイン/ScreenScreen";
 
 const router = createHashRouter([
   {
@@ -98,27 +98,35 @@ const router = createHashRouter([
     element: <AuthGuard><Screen21 /></AuthGuard>,
   },
   {
+    path: "/my-page",
+    element: <AuthGuard><Screen14 /></AuthGuard>,
+  },
+  {
     path: "/profile-edit",
     element: <AuthGuard><Screen13 /></AuthGuard>,
   },
   {
-    path: "/my-profile",
-    element: <AuthGuard><Screen14 /></AuthGuard>,
+    path: "/notifications",
+    element: <AuthGuard><Screen15 /></AuthGuard>,
   },
   {
-    path: "/profile/:userId",
-    element: <AuthGuard><Screen14 /></AuthGuard>,
+    path: "/dm",
+    element: <AuthGuard><Dm /></AuthGuard>,
   },
   {
-    path: "/team-profile",
+    path: "/team-member",
     element: <AuthGuard><Screen16 /></AuthGuard>,
   },
   {
-    path: "/team-manage",
+    path: "/team-admin",
     element: <AuthGuard><Screen17 /></AuthGuard>,
   },
   {
     path: "/team-create",
+    element: <AuthGuard><Screen33 /></AuthGuard>,
+  },
+  {
+    path: "/team-profile-edit",
     element: <AuthGuard><Screen24 /></AuthGuard>,
   },
   {
@@ -126,24 +134,12 @@ const router = createHashRouter([
     element: <AuthGuard><Screen32 /></AuthGuard>,
   },
   {
-    path: "/team-create2",
-    element: <AuthGuard><Screen33 /></AuthGuard>,
+    path: "/team-members",
+    element: <AuthGuard><Screen35 /></AuthGuard>,
   },
   {
     path: "/team-disband",
     element: <AuthGuard><Screen34 /></AuthGuard>,
-  },
-  {
-    path: "/member-manage",
-    element: <AuthGuard><Screen35 /></AuthGuard>,
-  },
-  {
-    path: "/notifications",
-    element: <AuthGuard><Screen15 /></AuthGuard>,
-  },
-  {
-    path: "/tournament-host-manage",
-    element: <AuthGuard><Screen36 /></AuthGuard>,
   },
   {
     path: "/tournament-host",
@@ -154,73 +150,51 @@ const router = createHashRouter([
     element: <AuthGuard><Screen38 /></AuthGuard>,
   },
   {
+    path: "/tournament-manage",
+    element: <AuthGuard><Screen36 /></AuthGuard>,
+  },
+  {
     path: "/settings",
     element: <AuthGuard><Screen19 /></AuthGuard>,
-  },
-  {
-    path: "/account-settings",
-    element: <AuthGuard><Screen22 /></AuthGuard>,
-  },
-  {
-    path: "/terms",
-    element: <Screen23 />,
-  },
-  {
-    path: "/privacy",
-    element: <Screen25 />,
-  },
-  {
-    path: "/contact",
-    element: <Screen29 />,
-  },
-  {
-    path: "/contact-confirm",
-    element: <Screen28 />,
-  },
-  {
-    path: "/contact-complete",
-    element: <Screen27 />,
   },
   {
     path: "/notification-settings",
     element: <AuthGuard><Screen30 /></AuthGuard>,
   },
   {
-    path: "/withdraw",
+    path: "/account-info",
+    element: <AuthGuard><Screen22 /></AuthGuard>,
+  },
+  {
+    path: "/account-delete",
     element: <AuthGuard><Screen31 /></AuthGuard>,
   },
   {
-    path: "/dm",
-    element: <AuthGuard><Dm /></AuthGuard>,
+    path: "/contact-input",
+    element: <AuthGuard><Screen29 /></AuthGuard>,
   },
   {
-    path: "/dm/:conversationId",
-    element: <AuthGuard><Dm /></AuthGuard>,
+    path: "/contact-send",
+    element: <AuthGuard><Screen27 /></AuthGuard>,
   },
   {
-    path: "/empty",
-    element: <NumberCircleFive />,
+    path: "/contact-complete",
+    element: <AuthGuard><Screen28 /></AuthGuard>,
+  },
+  {
+    path: "/terms",
+    element: <AuthGuard><Screen23 /></AuthGuard>,
+  },
+  {
+    path: "/privacy",
+    element: <AuthGuard><Screen25 /></AuthGuard>,
   },
 ]);
 
 export const App = () => {
   useEffect(() => {
-    // アプリ起動時にプッシュ通知を初期化
-    const initPushNotifications = async () => {
-      try {
-        await pushNotificationService.initialize();
-        await pushNotificationService.createChannel(); // Android用チャンネル作成
-      } catch (error) {
-        console.error('Failed to initialize push notifications:', error);
-      }
-    };
-
-    initPushNotifications();
-
-    // クリーンアップ（アプリ終了時）
-    return () => {
-      // 必要に応じてリスナーのクリーンアップ
-    };
+    // プッシュ通知の初期化
+    pushNotificationService.initialize();
   }, []);
 
   return (
