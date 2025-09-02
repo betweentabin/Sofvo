@@ -183,19 +183,26 @@ export const useConversations = () => {
     if (!user) return
 
     try {
-      const { data: existingConversation } = await supabase
-        .from('conversations')
+      // 既存の1対1会話があるか確認（現ユーザーと相手ユーザーの両方が参加）
+      const { data: existingList, error: existingErr } = await supabase
+        .from('conversation_participants')
         .select(`
-          id,
-          participants:conversation_participants(user_id)
+          conversation:conversations(
+            id,
+            type,
+            participants:conversation_participants(user_id)
+          )
         `)
-        .eq('type', 'direct')
-        .contains('participants', [{ user_id: user.id }, { user_id: recipientId }])
-        .single()
+        .eq('user_id', user.id)
+        .eq('conversation.type', 'direct')
 
-      if (existingConversation) {
-        return existingConversation
-      }
+      if (existingErr) throw existingErr
+
+      const existing = (existingList || [])
+        .map(item => item.conversation)
+        .find(conv => conv?.participants?.some(p => p.user_id === recipientId))
+
+      if (existing) return existing
 
       const { data: conversation, error: convError } = await supabase
         .from('conversations')

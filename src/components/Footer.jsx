@@ -19,7 +19,7 @@ export const Footer = ({ currentPage = 'home' }) => {
     <div className="footer-outer">
       <div className="footer-inner">
         <div className="footer-content">
-          <Link to="/">
+          <Link to="/home">
             <img className="footer-nav-icon" alt="ホーム" src={currentPage === 'home' ? getIconSrc('home') : '/img/home.png'} />
           </Link>
           <Link to="/tournament-search-team">

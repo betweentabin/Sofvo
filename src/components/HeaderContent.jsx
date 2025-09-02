@@ -7,7 +7,7 @@ export const HeaderContent = () => {
     <div className="header-content-outer">
       <div className="header-content-inner">
         <div className="header-content-content">
-          <Link to="/" className="header-content-text" style={{ textDecoration: 'none' }}>Sofvo</Link>
+          <Link to="/home" className="header-content-text" style={{ textDecoration: 'none' }}>Sofvo</Link>
           <div className="header-content-icon">
             <div className="header-content-icons">
               <Link to="/notifications">

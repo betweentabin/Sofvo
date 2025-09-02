@@ -43,7 +43,7 @@ import { ScreenScreen } from "./screens/ログイン/ScreenScreen";
 const router = createHashRouter([
   {
     path: "/",
-    element: <AuthGuard><HomeScreen /></AuthGuard>,
+    element: <ScreenScreen />,
   },
   {
     path: "/splash",
@@ -101,6 +101,11 @@ const router = createHashRouter([
     path: "/my-page",
     element: <AuthGuard><Screen14 /></AuthGuard>,
   },
+  // Alias: legacy link target used across components
+  {
+    path: "/my-profile",
+    element: <AuthGuard><Screen14 /></AuthGuard>,
+  },
   {
     path: "/profile-edit",
     element: <AuthGuard><Screen13 /></AuthGuard>,
@@ -111,6 +116,10 @@ const router = createHashRouter([
   },
   {
     path: "/dm",
+    element: <AuthGuard><Dm /></AuthGuard>,
+  },
+  {
+    path: "/dm/:conversationId",
     element: <AuthGuard><Dm /></AuthGuard>,
   },
   {

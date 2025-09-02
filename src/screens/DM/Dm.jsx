@@ -17,7 +17,7 @@ export const Dm = () => {
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { conversations, loading, createDirectConversation } = useConversations();
+  const { conversations, loading, createDirectConversation, refetch } = useConversations();
 
   useEffect(() => {
     const updateMainContentPosition = () => {
@@ -49,13 +49,17 @@ export const Dm = () => {
       .or(`username.ilike.%${searchUser}%,display_name.ilike.%${searchUser}%`)
       .limit(10);
     
-    setSearchResults(data || []);
+    const list = (data || []).filter(u => u.id !== user?.id);
+    setSearchResults(list);
   };
 
   const handleStartConversation = async (recipientId) => {
     try {
+      if (recipientId === user?.id) return;
       const conversation = await createDirectConversation(recipientId);
+      // すぐにスレッドへ遷移し、一覧も更新
       navigate(`/dm/${conversation.id}`);
+      await refetch();
       setShowNewMessage(false);
       setSearchUser("");
       setSearchResults([]);
@@ -155,8 +159,8 @@ export const Dm = () => {
           </div>
 
           <div className="chat-area">
-            {selectedConversation ? (
-              <ChatRoom conversationId={selectedConversation.id} />
+            {(selectedConversation || conversationId) ? (
+              <ChatRoom conversationId={selectedConversation?.id || conversationId} />
             ) : (
               <div className="no-conversation-selected">
                 <p>会話を選択するか、新しい会話を始めてください</p>

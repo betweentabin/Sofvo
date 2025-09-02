@@ -1,17 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 export const ScreenScreen = () => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: "test@sofvo.com", // デフォルト値でテストしやすく
     password: "testpass123"
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 既にログイン済みならホームへ
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/home', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   // 入力変更ハンドラー
   const handleInputChange = (field, value) => {

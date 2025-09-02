@@ -7,7 +7,7 @@ export const Header = ({ onTabChange, activeTab = 'following' }) => {
     <div className="header-outer">
       <div className="header-inner">
         <div className="header-content">
-          <Link to="/" className="header-text" style={{ textDecoration: 'none' }}>Sofvo</Link>
+          <Link to="/home" className="header-text" style={{ textDecoration: 'none' }}>Sofvo</Link>
           <div className="header-icon">
             <div className="header-icons">
               <img className="header-icon-img" alt="通知" src="/img/notification.png" />

@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { HeaderTabs } from "../../components/HeaderTabs";
 import { HeaderShare } from "../../components/HeaderShare";
 import { Footer } from "../../components/Footer";
+import { FloatingPostButton } from "../../components/FloatingPostButton";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 export const HomeScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("following"); // 'following' or 'recommend'
   const [mainContentTop, setMainContentTop] = useState(201);
@@ -368,7 +370,10 @@ export const HomeScreen = () => {
         )}
       </div>
 
-      
+      {/* 投稿用のフローティングボタン（トップページ #/ のみ表示） */}
+      {(location.pathname === "/" || location.pathname === "/home") && (
+        <FloatingPostButton onClick={() => navigate('/tournament-host')} />
+      )}
 
       <Footer currentPage="home" />
     </div>
