@@ -2,10 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
+import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 import "./style.css";
 
 export const Screen33 = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [mainContentTop, setMainContentTop] = useState(0);
   const [formData, setFormData] = useState({
     teamName: "",
@@ -16,6 +19,7 @@ export const Screen33 = () => {
     selfIntroductionPrivacy: "public"
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const updateMainContentPosition = () => {
@@ -80,16 +84,51 @@ export const Screen33 = () => {
   };
 
   // チーム作成処理
-  const handleCreateTeam = () => {
-    if (validate()) {
-      const teamData = {
-        ...formData,
-        permissions: matrix,
-        roles
-      };
-      console.log("チーム作成:", teamData);
-      // TODO: APIに送信
+  const handleCreateTeam = async () => {
+    if (!validate()) return;
+    if (!user) {
+      setErrors({ submit: "ログインが必要です" });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      // Supabaseにチームを作成
+      const { data: team, error: teamError } = await supabase
+        .from('teams')
+        .insert({
+          name: formData.teamName,
+          description: formData.selfIntroduction,
+          sport_type: "バドミントン", // デフォルト値
+          created_by: user.id
+        })
+        .select()
+        .single();
+
+      if (teamError) throw teamError;
+
+      // チームメンバーテーブルに作成者を代表として追加
+      const { error: memberError } = await supabase
+        .from('team_members')
+        .insert({
+          team_id: team.id,
+          user_id: user.id,
+          role: 'owner'
+        });
+
+      if (memberError) throw memberError;
+
+      console.log("チーム作成成功:", team);
       navigate("/team-manage");
+    } catch (error) {
+      console.error("チーム作成エラー:", error);
+      setErrors({ 
+        submit: error.message || "チーム作成に失敗しました。もう一度お試しください。" 
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -154,7 +193,7 @@ export const Screen33 = () => {
                   onChange={(e) => handleInputChange("teamName", e.target.value)}
                   placeholder="チーム名を入力"
                 />
-                {errors.teamName && <div className="error-text">{errors.teamName}</div>}
+                {errors.teamName && <div style={{color: "#c62828", fontSize: "12px", marginTop: "4px"}}>{errors.teamName}</div>}
               </div>
 
               <div className="frame-447">
@@ -185,7 +224,7 @@ export const Screen33 = () => {
                   <option value="fuji">富士市</option>
                   <option value="numazu">沼津市</option>
                 </select>
-                {errors.activityArea && <div className="error-text">{errors.activityArea}</div>}
+                {errors.activityArea && <div style={{color: "#c62828", fontSize: "12px", marginTop: "4px"}}>{errors.activityArea}</div>}
               </div>
 
               <div className="frame-441">
@@ -273,10 +312,23 @@ export const Screen33 = () => {
                   onChange={(e) => handleInputChange("selfIntroduction", e.target.value)}
                   placeholder="チームの自己紹介を入力してください"
                 />
-                {errors.selfIntroduction && <div className="error-text">{errors.selfIntroduction}</div>}
+                {errors.selfIntroduction && <div style={{color: "#c62828", fontSize: "12px", marginTop: "4px"}}>{errors.selfIntroduction}</div>}
               </div>
             </div>
           </div>
+
+          {errors.submit && (
+            <div style={{
+              backgroundColor: "#ffebee",
+              color: "#c62828",
+              padding: "12px",
+              borderRadius: "4px",
+              margin: "16px",
+              fontSize: "14px"
+            }}>
+              {errors.submit}
+            </div>
+          )}
 
           <div className="frame-463">
             <Link to="/settings" className="frame-464">
@@ -286,9 +338,17 @@ export const Screen33 = () => {
             <button 
               onClick={handleCreateTeam}
               className="frame-465"
-              style={{ border: "none", textDecoration: "none", cursor: "pointer" }}
+              style={{ 
+                border: "none", 
+                textDecoration: "none", 
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading ? 0.6 : 1
+              }}
+              disabled={isLoading}
             >
-              <div className="text-wrapper-225">完了</div>
+              <div className="text-wrapper-225">
+                {isLoading ? "作成中..." : "完了"}
+              </div>
             </button>
           </div>
         </div>

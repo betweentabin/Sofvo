@@ -2,11 +2,16 @@ import React, { useState, useEffect } from "react";
 import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 import "./style.css";
 
 export const Screen17 = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [mainContentTop, setMainContentTop] = useState(201);
+  const [teamData, setTeamData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const updateMainContentPosition = () => {
@@ -25,6 +30,45 @@ export const Screen17 = () => {
       window.removeEventListener("resize", updateMainContentPosition);
     };
   }, []);
+
+  // チームデータを取得
+  useEffect(() => {
+    const fetchTeamData = async () => {
+      if (!user) return;
+
+      try {
+        // ユーザーが作成したチームを取得
+        const { data: teams, error } = await supabase
+          .from('teams')
+          .select(`
+            *,
+            team_members!inner(
+              user_id,
+              role
+            )
+          `)
+          .eq('team_members.user_id', user.id)
+          .eq('team_members.role', 'owner')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.error('チームデータ取得エラー:', error);
+          return;
+        }
+
+        if (teams && teams.length > 0) {
+          setTeamData(teams[0]);
+        }
+      } catch (error) {
+        console.error('チームデータ取得エラー:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeamData();
+  }, [user]);
 
   return (
     <div className="screen-17">
@@ -47,7 +91,9 @@ export const Screen17 = () => {
               <div className="frame-604">
                 <div className="frame-605">
                   <div className="frame-606">
-                    <div className="text-wrapper-300">〇〇〇〇チーム</div>
+                    <div className="text-wrapper-300">
+                      {loading ? 'ローディング中...' : teamData?.name || 'チーム名未設定'}
+                    </div>
                     <div className="text-wrapper-301">静岡市</div>
                   </div>
                   <Link to="/team-management" className="frame-607">
@@ -67,12 +113,14 @@ export const Screen17 = () => {
               </div>
             </div>
             <div className="text-wrapper-304">
-              自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介自己紹介
+              {loading ? 'ローディング中...' : teamData?.description || '自己紹介が設定されていません'}
             </div>
             <div className="frame-611">
               <div className="frame-612">
-                <div className="text-wrapper-305-1">所属メンバー：〇〇人</div>
-                <div className="text-wrapper-305-2">チーム代表：〇〇 〇〇</div>
+                <div className="text-wrapper-305-1">所属メンバー：1人</div>
+                <div className="text-wrapper-305-2">
+                  作成日：{teamData?.created_at ? new Date(teamData.created_at).toLocaleDateString('ja-JP') : '未設定'}
+                </div>
               </div>
             </div>
           </div>

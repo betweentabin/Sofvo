@@ -12,14 +12,22 @@
     "ios": "npx cap open ios",
     "sync": "npx cap sync",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "db:setup": "node database/setup-railway-db.js",
+    "db:seed": "node database/seed-data.js",
+    "db:test": "node database/test-connection.js",
+    "db:reset": "node database/setup-railway-db.js && node database/seed-data.js"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
+    "@capacitor/push-notifications": "^7.0.2",
     "@supabase/supabase-js": "^2.56.0",
+    "dotenv": "^17.2.1",
+    "firebase": "^12.2.1",
+    "pg": "^8.16.3",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

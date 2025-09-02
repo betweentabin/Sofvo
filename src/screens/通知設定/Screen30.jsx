@@ -2,22 +2,96 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
+import pushNotificationService from "../../services/pushNotification";
+import { Capacitor } from '@capacitor/core';
 import "./style.css";
 
 export const Screen30 = () => {
   const [mainContentTop, setMainContentTop] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [showPermissionAlert, setShowPermissionAlert] = useState(false);
 
-  // 4つのトグル状態を個別管理
-  const [isOn1, setIsOn1] = useState(false);
-  const [isOn2, setIsOn2] = useState(false);
-  const [isOn3, setIsOn3] = useState(false);
-  const [isOn4, setIsOn4] = useState(false);
+  // 通知設定の状態管理
+  const [settings, setSettings] = useState({
+    news: false,
+    tournaments: false,
+    team_invites: false,
+    messages: false
+  });
 
-  // トグル関数もそれぞれ作る
-  const toggle1 = () => setIsOn1(prev => !prev);
-  const toggle2 = () => setIsOn2(prev => !prev);
-  const toggle3 = () => setIsOn3(prev => !prev);
-  const toggle4 = () => setIsOn4(prev => !prev);
+  // 設定を読み込む
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const notificationSettings = await pushNotificationService.getNotificationSettings();
+      if (notificationSettings) {
+        setSettings({
+          news: notificationSettings.news,
+          tournaments: notificationSettings.tournaments,
+          team_invites: notificationSettings.team_invites,
+          messages: notificationSettings.messages
+        });
+        setPushEnabled(notificationSettings.enabled);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+      setIsLoading(false);
+    }
+  };
+
+  // プッシュ通知の有効/無効を切り替え
+  const togglePushNotifications = async () => {
+    // Webプラットフォームではプッシュ通知を使用しない
+    if (Capacitor.getPlatform() === 'web') {
+      alert('プッシュ通知はモバイルアプリでのみ利用可能です');
+      return;
+    }
+
+    try {
+      if (!pushEnabled) {
+        // 権限をリクエスト
+        const granted = await pushNotificationService.requestPermission();
+        if (granted) {
+          await pushNotificationService.initialize();
+          setPushEnabled(true);
+          await saveSettings({ ...settings, enabled: true });
+        } else {
+          setShowPermissionAlert(true);
+        }
+      } else {
+        // 通知を無効化
+        setPushEnabled(false);
+        await saveSettings({ ...settings, enabled: false });
+        await pushNotificationService.removeDeviceToken();
+      }
+    } catch (error) {
+      console.error('Failed to toggle push notifications:', error);
+    }
+  };
+
+  // 個別の通知設定を切り替え
+  const toggleSetting = async (key) => {
+    const newSettings = {
+      ...settings,
+      [key]: !settings[key]
+    };
+    setSettings(newSettings);
+    await saveSettings({ ...newSettings, enabled: pushEnabled });
+  };
+
+  // 設定を保存
+  const saveSettings = async (newSettings) => {
+    try {
+      await pushNotificationService.updateNotificationSettings(newSettings);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    }
+  };
 
   useEffect(() => {
     const updateMainContentPosition = () => {
@@ -54,17 +128,37 @@ export const Screen30 = () => {
               </div>
 
               <div className="frame-441">
-                {/* 4つの設定項目 */}
+                {/* プッシュ通知のマスター設定（モバイルのみ表示） */}
+                {Capacitor.getPlatform() !== 'web' && (
+                  <div className="frame-442" style={{ backgroundColor: '#f0f0f0', padding: '10px', marginBottom: '10px' }}>
+                    <div className="frame-443">
+                      <div className="text-wrapper-216" style={{ fontWeight: 'bold' }}>プッシュ通知</div>
+                    </div>
+                    <button
+                      className={`toggle-switch ${pushEnabled ? "on" : "off"}`}
+                      onClick={togglePushNotifications}
+                      aria-pressed={pushEnabled}
+                      aria-label="プッシュ通知の有効/無効"
+                      type="button"
+                      disabled={isLoading}
+                    >
+                      <span className="switch-thumb" />
+                    </button>
+                  </div>
+                )}
+
+                {/* 個別の通知設定 */}
                 <div className="frame-442">
                   <div className="frame-443">
                     <div className="text-wrapper-216">お知らせ</div>
                   </div>
                   <button
-                    className={`toggle-switch ${isOn1 ? "on" : "off"}`}
-                    onClick={toggle1}
-                    aria-pressed={isOn1}
-                    aria-label="アカウントネームの通知設定"
+                    className={`toggle-switch ${settings.news ? "on" : "off"}`}
+                    onClick={() => toggleSetting('news')}
+                    aria-pressed={settings.news}
+                    aria-label="お知らせ通知設定"
                     type="button"
+                    disabled={isLoading || (!pushEnabled && Capacitor.getPlatform() !== 'web')}
                   >
                     <span className="switch-thumb" />
                   </button>
@@ -75,11 +169,12 @@ export const Screen30 = () => {
                     <div className="text-wrapper-216">大会開催通知</div>
                   </div>
                   <button
-                    className={`toggle-switch ${isOn2 ? "on" : "off"}`}
-                    onClick={toggle2}
-                    aria-pressed={isOn2}
-                    aria-label="メール通知設定"
+                    className={`toggle-switch ${settings.tournaments ? "on" : "off"}`}
+                    onClick={() => toggleSetting('tournaments')}
+                    aria-pressed={settings.tournaments}
+                    aria-label="大会通知設定"
                     type="button"
+                    disabled={isLoading || (!pushEnabled && Capacitor.getPlatform() !== 'web')}
                   >
                     <span className="switch-thumb" />
                   </button>
@@ -87,14 +182,15 @@ export const Screen30 = () => {
 
                 <div className="frame-442">
                   <div className="frame-443">
-                    <div className="text-wrapper-216">いいね大会の募集期限</div>
+                    <div className="text-wrapper-216">チーム招待</div>
                   </div>
                   <button
-                    className={`toggle-switch ${isOn3 ? "on" : "off"}`}
-                    onClick={toggle3}
-                    aria-pressed={isOn3}
-                    aria-label="プッシュ通知設定"
+                    className={`toggle-switch ${settings.team_invites ? "on" : "off"}`}
+                    onClick={() => toggleSetting('team_invites')}
+                    aria-pressed={settings.team_invites}
+                    aria-label="チーム招待通知設定"
                     type="button"
+                    disabled={isLoading || (!pushEnabled && Capacitor.getPlatform() !== 'web')}
                   >
                     <span className="switch-thumb" />
                   </button>
@@ -102,19 +198,40 @@ export const Screen30 = () => {
 
                 <div className="frame-442">
                   <div className="frame-443">
-                    <div className="text-wrapper-216">ニュースの受け取り</div>
+                    <div className="text-wrapper-216">メッセージ</div>
                   </div>
                   <button
-                    className={`toggle-switch ${isOn4 ? "on" : "off"}`}
-                    onClick={toggle4}
-                    aria-pressed={isOn4}
-                    aria-label="サウンド通知設定"
+                    className={`toggle-switch ${settings.messages ? "on" : "off"}`}
+                    onClick={() => toggleSetting('messages')}
+                    aria-pressed={settings.messages}
+                    aria-label="メッセージ通知設定"
                     type="button"
+                    disabled={isLoading || (!pushEnabled && Capacitor.getPlatform() !== 'web')}
                   >
                     <span className="switch-thumb" />
                   </button>
                 </div>
               </div>
+
+              {/* 権限拒否時のアラート */}
+              {showPermissionAlert && (
+                <div style={{
+                  backgroundColor: '#ffebee',
+                  color: '#c62828',
+                  padding: '12px',
+                  borderRadius: '4px',
+                  margin: '16px',
+                  fontSize: '14px'
+                }}>
+                  プッシュ通知を有効にするには、デバイスの設定から通知を許可してください。
+                  <button 
+                    onClick={() => setShowPermissionAlert(false)}
+                    style={{ marginLeft: '10px', cursor: 'pointer' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>

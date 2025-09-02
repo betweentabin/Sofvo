@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   avatar_url TEXT,
   bio TEXT,
   sport_type TEXT,
+  phone TEXT,
+  furigana TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -131,19 +133,24 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 
 -- Profiles policies
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
 CREATE POLICY "Users can insert own profile" ON public.profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Teams policies
+DROP POLICY IF EXISTS "Teams are viewable by everyone" ON public.teams;
 CREATE POLICY "Teams are viewable by everyone" ON public.teams
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Team members can update team" ON public.teams;
 CREATE POLICY "Team members can update team" ON public.teams
   FOR UPDATE USING (
     EXISTS (
@@ -154,10 +161,45 @@ CREATE POLICY "Team members can update team" ON public.teams
     )
   );
 
+DROP POLICY IF EXISTS "Authenticated users can create teams" ON public.teams;
 CREATE POLICY "Authenticated users can create teams" ON public.teams
   FOR INSERT WITH CHECK (auth.uid() = created_by);
 
+-- Team members policies
+DROP POLICY IF EXISTS "Team members are viewable by everyone" ON public.team_members;
+CREATE POLICY "Team members are viewable by everyone" ON public.team_members
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can join teams" ON public.team_members;
+CREATE POLICY "Users can join teams" ON public.team_members
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Team owners can manage members" ON public.team_members;
+CREATE POLICY "Team owners can manage members" ON public.team_members
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM public.team_members tm
+      WHERE tm.team_id = team_members.team_id
+      AND tm.user_id = auth.uid()
+      AND tm.role = 'owner'
+    )
+  );
+
+-- Tournaments policies
+DROP POLICY IF EXISTS "Tournaments are viewable by everyone" ON public.tournaments;
+CREATE POLICY "Tournaments are viewable by everyone" ON public.tournaments
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can create tournaments" ON public.tournaments;
+CREATE POLICY "Authenticated users can create tournaments" ON public.tournaments
+  FOR INSERT WITH CHECK (auth.uid() = organizer_id);
+
+DROP POLICY IF EXISTS "Organizers can update their tournaments" ON public.tournaments;
+CREATE POLICY "Organizers can update their tournaments" ON public.tournaments
+  FOR UPDATE USING (auth.uid() = organizer_id);
+
 -- Messages policies
+DROP POLICY IF EXISTS "Users can view messages in their conversations" ON public.messages;
 CREATE POLICY "Users can view messages in their conversations" ON public.messages
   FOR SELECT USING (
     EXISTS (
@@ -167,6 +209,7 @@ CREATE POLICY "Users can view messages in their conversations" ON public.message
     )
   );
 
+DROP POLICY IF EXISTS "Users can send messages to their conversations" ON public.messages;
 CREATE POLICY "Users can send messages to their conversations" ON public.messages
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -177,9 +220,11 @@ CREATE POLICY "Users can send messages to their conversations" ON public.message
   );
 
 -- Notifications policies
+DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
 CREATE POLICY "Users can view own notifications" ON public.notifications
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
 CREATE POLICY "Users can update own notifications" ON public.notifications
   FOR UPDATE USING (auth.uid() = user_id);
 
@@ -192,12 +237,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_participants;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, username, display_name)
-  VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'display_name');
+  INSERT INTO public.profiles (id, username, display_name, phone, furigana)
+  VALUES (
+    NEW.id, 
+    COALESCE(NEW.raw_user_meta_data->>'username', NEW.email), 
+    NEW.raw_user_meta_data->>'display_name',
+    NEW.raw_user_meta_data->>'phone',
+    NEW.raw_user_meta_data->>'furigana'
+  );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -211,14 +263,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
+DROP TRIGGER IF EXISTS update_teams_updated_at ON public.teams;
 CREATE TRIGGER update_teams_updated_at BEFORE UPDATE ON public.teams
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
+DROP TRIGGER IF EXISTS update_conversations_updated_at ON public.conversations;
 CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON public.conversations
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
+DROP TRIGGER IF EXISTS update_tournaments_updated_at ON public.tournaments;
 CREATE TRIGGER update_tournaments_updated_at BEFORE UPDATE ON public.tournaments
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();

@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 export const DivWrapper = () => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     accountName: "",
     email: "",
@@ -16,6 +18,7 @@ export const DivWrapper = () => {
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // 入力変更ハンドラー
   const handleInputChange = (field, value) => {
@@ -74,12 +77,31 @@ export const DivWrapper = () => {
   };
 
   // 送信処理
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      // TODO: APIに送信
-      console.log("アカウント作成:", formData);
+    if (!validate()) return;
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      // Supabaseでアカウント作成
+      await signUp(formData.email, formData.password, {
+        username: formData.accountName,
+        display_name: formData.name,
+        phone: formData.phone,
+        furigana: formData.furigana
+      });
+
+      console.log("アカウント作成成功:", formData);
       navigate("/profile-create");
+    } catch (error) {
+      console.error("アカウント作成エラー:", error);
+      setErrors({ 
+        submit: error.message || "アカウント作成に失敗しました。もう一度お試しください。" 
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -255,13 +277,38 @@ export const DivWrapper = () => {
             </div>
           </div>
 
+          {errors.submit && (
+            <div style={{
+              backgroundColor: "#ffebee",
+              color: "#c62828",
+              padding: "12px",
+              borderRadius: "4px",
+              margin: "16px 0",
+              fontSize: "14px"
+            }}>
+              {errors.submit}
+            </div>
+          )}
+
           <div className="frame-14">
             <Link to="/login" className="frame-15">
               <div className="text-wrapper-33">キャンセル</div>
             </Link>
 
-            <button type="submit" className="frame-16" style={{ border: "none", textDecoration: "none" }}>
-              <div className="text-wrapper-34">次へ</div>
+            <button 
+              type="submit" 
+              className="frame-16" 
+              style={{ 
+                border: "none", 
+                textDecoration: "none",
+                opacity: isLoading ? 0.6 : 1,
+                cursor: isLoading ? "not-allowed" : "pointer"
+              }}
+              disabled={isLoading}
+            >
+              <div className="text-wrapper-34">
+                {isLoading ? "作成中..." : "次へ"}
+              </div>
             </button>
           </div>
         </form>

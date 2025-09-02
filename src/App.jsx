@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { RouterProvider, createHashRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AuthGuard } from "./components/AuthGuard";
+import pushNotificationService from "./services/pushNotification";
 import { DivWrapper } from "./screens/アカウント作成";
 import { SearchScreen } from "./screens/さがす";
 import { Dm } from "./screens/DM";
@@ -203,6 +204,25 @@ const router = createHashRouter([
 ]);
 
 export const App = () => {
+  useEffect(() => {
+    // アプリ起動時にプッシュ通知を初期化
+    const initPushNotifications = async () => {
+      try {
+        await pushNotificationService.initialize();
+        await pushNotificationService.createChannel(); // Android用チャンネル作成
+      } catch (error) {
+        console.error('Failed to initialize push notifications:', error);
+      }
+    };
+
+    initPushNotifications();
+
+    // クリーンアップ（アプリ終了時）
+    return () => {
+      // 必要に応じてリスナーのクリーンアップ
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <RouterProvider router={router} />
