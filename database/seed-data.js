@@ -6,9 +6,11 @@
  * テスト用のサンプルデータを投入します
  */
 
-const { Client } = require('pg');
-const crypto = require('crypto');
-require('dotenv').config();
+import { Client } from 'pg';
+import crypto from 'crypto';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const connectionString = process.env.DATABASE_URL_EXTERNAL || process.env.DATABASE_URL;
 

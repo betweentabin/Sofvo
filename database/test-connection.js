@@ -6,8 +6,10 @@
  * データベース接続をテストし、基本的な情報を表示します
  */
 
-const { Client } = require('pg');
-require('dotenv').config();
+import { Client } from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const connectionString = process.env.DATABASE_URL_EXTERNAL || process.env.DATABASE_URL;
 
