@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { Footer } from "../../components/Footer";
+import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 export const Screen19 = () => {
   const [mainContentTop, setMainContentTop] = useState(0);
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   useEffect(() => {
     const updateMainContentPosition = () => {
@@ -20,6 +23,16 @@ export const Screen19 = () => {
     window.addEventListener("resize", updateMainContentPosition);
     return () => window.removeEventListener("resize", updateMainContentPosition);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('ログアウトに失敗しました:', error);
+      alert('ログアウトに失敗しました。時間をおいて再度お試しください。');
+    }
+  };
 
   return (
     <div className="screen-19">
@@ -49,6 +62,9 @@ export const Screen19 = () => {
           <Link to="/account-delete" className="text-wrapper-178">・退会する</Link>
           <Link to="/team-member" className="text-wrapper-178">・参加チーム詳細</Link>
           <Link to="/team-management" className="text-wrapper-178">・作成チーム詳細</Link>
+          <button type="button" className="text-wrapper-178 logout-button" onClick={handleLogout}>
+            ・ログアウト
+          </button>
         </div>
 
 

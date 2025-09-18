@@ -212,6 +212,15 @@
   position: relative;
 }
 
+.HOME-screen .frame-82.disabled {
+  background-color: #9BB9CE;
+  pointer-events: none;
+}
+
+.HOME-screen .frame-82.disabled .text-wrapper-66 {
+  opacity: 0.6;
+}
+
 .HOME-screen .text-wrapper-66 {
   color: #ffffff;
   font-family: Arial, Helvetica, sans-serif;
@@ -233,6 +242,103 @@
   flex: 0 0 auto;
   gap: 9px;
   position: relative;
+}
+
+.HOME-screen .home-post-composer {
+  margin-bottom: 20px;
+}
+
+.HOME-screen .home-post-composer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.HOME-screen .home-post-composer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.HOME-screen .home-post-composer-close {
+  background: none;
+  border: none;
+  color: #0B4F7F;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.HOME-screen .home-post-composer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.HOME-screen .composer-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.HOME-screen .home-post-input,
+.HOME-screen .home-post-textarea {
+  border: 1px solid #D4D4D4;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.HOME-screen .home-post-input:focus,
+.HOME-screen .home-post-textarea:focus {
+  outline: none;
+  border-color: #0B4F7F;
+  box-shadow: 0 0 0 1px rgba(11, 79, 127, 0.2);
+}
+
+.HOME-screen .home-post-textarea {
+  resize: vertical;
+}
+
+.HOME-screen .home-post-inline {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.HOME-screen .home-post-inline .composer-label {
+  flex: 1;
+}
+
+.HOME-screen .home-post-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.HOME-screen .home-post-cancel {
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #D4D4D4;
+  border-radius: 5px;
+  color: #0B4F7F;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 5px;
+  justify-content: center;
+  padding: 10px 20px;
+}
+
+.HOME-screen .home-post-submit {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
 }
 
 .HOME-screen .frame-84 {
@@ -269,6 +375,10 @@
   text-align: center;
   white-space: nowrap;
   width: fit-content;
+}
+
+.HOME-screen .memo-text {
+  white-space: normal;
 }
 
 .HOME-screen .overlap-7 {
@@ -869,5 +979,3 @@
   line-height: normal;
   position: relative;
 }
-
-

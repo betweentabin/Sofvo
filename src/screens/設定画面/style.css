@@ -114,6 +114,18 @@
   width: fit-content;
 }
 
+.screen-19 .logout-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.screen-19 .logout-button:hover {
+  opacity: 0.8;
+}
+
 .screen-19 .frame-351 {
   align-items: center;
   display: flex;

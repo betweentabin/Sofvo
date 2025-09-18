@@ -21,6 +21,18 @@ export const HomeScreen = () => {
   const [recommendedPosts, setRecommendedPosts] = useState([]);
   const [recommendedDiaries, setRecommendedDiaries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userCreatedPosts, setUserCreatedPosts] = useState([]);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const composerInitialState = {
+    tournamentName: '',
+    date: '',
+    location: '',
+    category: '',
+    position: '',
+    points: '',
+    memo: '',
+  };
+  const [composerData, setComposerData] = useState(composerInitialState);
   const [filters, setFilters] = useState({
     yearMonth: 'all',
     region: 'all',
@@ -173,8 +185,8 @@ export const HomeScreen = () => {
   };
 
   const allPosts = useMemo(() => {
-    return [...followingPosts, ...recommendedPosts];
-  }, [followingPosts, recommendedPosts]);
+    return [...userCreatedPosts, ...followingPosts, ...recommendedPosts];
+  }, [userCreatedPosts, followingPosts, recommendedPosts]);
 
   const yearMonthOptions = useMemo(() => {
     const values = new Set();
@@ -232,8 +244,9 @@ export const HomeScreen = () => {
   };
 
   const filteredFollowingPosts = useMemo(() => {
-    return followingPosts.filter((post) => matchesFilters(post));
-  }, [followingPosts, filters]);
+    const combined = [...userCreatedPosts, ...followingPosts];
+    return combined.filter((post) => matchesFilters(post));
+  }, [userCreatedPosts, followingPosts, filters]);
 
   const filteredRecommendedPosts = useMemo(() => {
     return recommendedPosts.filter((post) => matchesFilters(post));
@@ -244,6 +257,53 @@ export const HomeScreen = () => {
       ...prev,
       [key]: value,
     }));
+  };
+
+  const handleComposerChange = (field) => (event) => {
+    setComposerData((prev) => ({
+      ...prev,
+      [field]: event.target.value,
+    }));
+  };
+
+  const resetComposer = () => {
+    setComposerData(composerInitialState);
+    setIsComposerOpen(false);
+  };
+
+  const handleSubmitComposer = (event) => {
+    event.preventDefault();
+
+    if (!composerData.tournamentName.trim()) {
+      alert('大会名を入力してください');
+      return;
+    }
+
+    const newPost = {
+      id: `local-${Date.now()}`,
+      isLocal: true,
+      created_at: new Date().toISOString(),
+      tournaments: {
+        name: composerData.tournamentName.trim(),
+        start_date: composerData.date ? new Date(composerData.date).toISOString() : null,
+        location: composerData.location.trim() || null,
+        sport_type: composerData.category.trim() || null,
+      },
+      position: composerData.position ? Number(composerData.position) : null,
+      points: composerData.points ? Number(composerData.points) : null,
+      memo: composerData.memo.trim(),
+      profiles: {
+        display_name: user?.email?.split('@')[0] || 'あなた',
+        username: user?.email || 'あなた',
+      },
+    };
+
+    setUserCreatedPosts((prev) => [newPost, ...prev]);
+    resetComposer();
+  };
+
+  const handleOpenComposer = () => {
+    setIsComposerOpen(true);
   };
 
   // 検索ハンドラー
@@ -272,6 +332,116 @@ export const HomeScreen = () => {
         {activeTab === "following" ? (
           // フォロー中の内容
           <div className="following-content">
+            {isComposerOpen && (
+              <div className="frame-75 home-post-composer">
+                <form className="frame-76 home-post-composer-form" onSubmit={handleSubmitComposer}>
+                  <div className="home-post-composer-header">
+                    <div className="frame-77">
+                      <div className="frame-78" />
+                      <div className="text-wrapper-63">
+                        {user?.email?.split('@')[0] || 'あなた'}
+                      </div>
+                    </div>
+                    <button type="button" className="home-post-composer-close" onClick={resetComposer}>
+                      閉じる
+                    </button>
+                  </div>
+
+                  <div className="frame-79 home-post-composer-body">
+                    <label className="composer-label">
+                      <span className="text-wrapper-65">大会名</span>
+                      <input
+                        type="text"
+                        value={composerData.tournamentName}
+                        onChange={handleComposerChange('tournamentName')}
+                        placeholder="大会名を入力"
+                        className="home-post-input"
+                        required
+                      />
+                    </label>
+
+                    <label className="composer-label">
+                      <span className="text-wrapper-65">開催日時</span>
+                      <input
+                        type="date"
+                        value={composerData.date}
+                        onChange={handleComposerChange('date')}
+                        className="home-post-input"
+                      />
+                    </label>
+
+                    <label className="composer-label">
+                      <span className="text-wrapper-65">開催地域</span>
+                      <input
+                        type="text"
+                        value={composerData.location}
+                        onChange={handleComposerChange('location')}
+                        placeholder="開催地域を入力"
+                        className="home-post-input"
+                      />
+                    </label>
+
+                    <label className="composer-label">
+                      <span className="text-wrapper-65">種別</span>
+                      <input
+                        type="text"
+                        value={composerData.category}
+                        onChange={handleComposerChange('category')}
+                        placeholder="種別を入力"
+                        className="home-post-input"
+                      />
+                    </label>
+
+                    <div className="home-post-inline">
+                      <label className="composer-label">
+                        <span className="text-wrapper-65">試合結果</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={composerData.position}
+                          onChange={handleComposerChange('position')}
+                          placeholder="順位"
+                          className="home-post-input"
+                        />
+                      </label>
+
+                      <label className="composer-label">
+                        <span className="text-wrapper-65">獲得ポイント</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={composerData.points}
+                          onChange={handleComposerChange('points')}
+                          placeholder="ポイント"
+                          className="home-post-input"
+                        />
+                      </label>
+                    </div>
+
+                    <label className="composer-label">
+                      <span className="text-wrapper-65">メモ</span>
+                      <textarea
+                        value={composerData.memo}
+                        onChange={handleComposerChange('memo')}
+                        placeholder="大会のメモを入力"
+                        className="home-post-textarea"
+                        rows={3}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="home-post-composer-actions">
+                    <button type="button" className="frame-84 home-post-cancel" onClick={resetComposer}>
+                      キャンセル
+                    </button>
+                    <button type="submit" className="frame-82 home-post-submit">
+                      <div className="text-wrapper-66">投稿する</div>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             {loading ? (
               <div style={{ padding: '20px', textAlign: 'center' }}>読み込み中...</div>
             ) : filteredFollowingPosts.length > 0 ? (
@@ -298,6 +468,11 @@ export const HomeScreen = () => {
                       <div className="text-wrapper-65">
                         獲得ポイント：{post.points || 0}P
                       </div>
+                      {post.memo && (
+                        <div className="text-wrapper-65 memo-text">
+                          メモ：{post.memo}
+                        </div>
+                      )}
                     </div>
 
                     <div className="frame-80">
@@ -309,9 +484,14 @@ export const HomeScreen = () => {
                     </div>
 
                     <div className="frame-81">
-                      <div className="frame-82" 
-                           onClick={() => navigate(`/tournament-detail/${post.tournament_id}`)} 
-                           style={{ cursor: 'pointer' }}>
+                      <div
+                        className={`frame-82${post.isLocal ? ' disabled' : ''}`}
+                        onClick={() => {
+                          if (!post.tournament_id) return;
+                          navigate(`/tournament-detail/${post.tournament_id}`);
+                        }}
+                        style={{ cursor: post.tournament_id ? 'pointer' : 'default' }}
+                      >
                         <div className="text-wrapper-66">大会概要</div>
                       </div>
 
@@ -477,7 +657,7 @@ export const HomeScreen = () => {
 
       {/* 投稿用のフローティングボタン（トップページ #/ のみ表示） */}
       {(location.pathname === "/" || location.pathname === "/home") && (
-        <FloatingPostButton onClick={() => navigate('/tournament-host')} />
+        <FloatingPostButton onClick={handleOpenComposer} />
       )}
 
       <Footer currentPage="home" />
