@@ -141,7 +141,7 @@ export const Screen17 = () => {
                 <div className="text-wrapper-308">エントリーする</div>
               </div>
               <div className="frame-622">
-                <div className="frame-623" onClick={() => navigate('/member-manage')} style={{ cursor: 'pointer' }}>
+                <div className="frame-623" onClick={() => navigate('/team-members')} style={{ cursor: 'pointer' }}>
                   <div className="text-wrapper-309">エントリー済みメンバー</div>
                 </div>
               </div>

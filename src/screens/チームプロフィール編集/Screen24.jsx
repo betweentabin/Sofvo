@@ -211,7 +211,7 @@ export const Screen24 = () => {
               <div className="text-wrapper-224">戻る</div>
             </Link>
 
-            <Link to="/team-manage" className="frame-465">
+            <Link to="/team-management" className="frame-465">
               <div className="text-wrapper-225">完了</div>
             </Link>
           </div>

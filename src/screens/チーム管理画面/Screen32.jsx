@@ -40,9 +40,9 @@ export const Screen32 = () => {
         </div>
 
         <div className="frame-350">
-          <Link to="/team-create" className="text-wrapper-178">・チームプロフィールを編集する</Link>
-          <Link to="/member-manage" className="text-wrapper-178">・メンバー管理</Link>
-          <Link to="/tournament-host-manage" className="text-wrapper-178">・主催大会管理</Link>
+          <Link to="/team-profile-edit" className="text-wrapper-178">・チームプロフィールを編集する</Link>
+          <Link to="/team-members" className="text-wrapper-178">・メンバー管理</Link>
+          <Link to="/tournament-manage" className="text-wrapper-178">・主催大会管理</Link>
           <Link to="/tournament-host" className="text-wrapper-178">・大会を主催する</Link>
           <Link to="/team-disband" className="text-wrapper-178">・チームを解散する</Link>
         </div>

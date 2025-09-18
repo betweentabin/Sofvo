@@ -86,7 +86,7 @@ const router = createHashRouter([
     element: <AuthGuard><SearchScreen /></AuthGuard>,
   },
   {
-    path: "/tournament-detail",
+    path: "/tournament-detail/:tournamentId?",
     element: <AuthGuard><Screen18 /></AuthGuard>,
   },
   {
@@ -179,16 +179,24 @@ const router = createHashRouter([
     element: <AuthGuard><Screen31 /></AuthGuard>,
   },
   {
+    path: "/contact",
+    element: <AuthGuard><Screen29 /></AuthGuard>,
+  },
+  {
     path: "/contact-input",
     element: <AuthGuard><Screen29 /></AuthGuard>,
   },
   {
-    path: "/contact-send",
-    element: <AuthGuard><Screen27 /></AuthGuard>,
+    path: "/contact-confirm",
+    element: <AuthGuard><Screen28 /></AuthGuard>,
   },
   {
     path: "/contact-complete",
-    element: <AuthGuard><Screen28 /></AuthGuard>,
+    element: <AuthGuard><Screen27 /></AuthGuard>,
+  },
+  {
+    path: "/contact-send",
+    element: <AuthGuard><Screen27 /></AuthGuard>,
   },
   {
     path: "/terms",

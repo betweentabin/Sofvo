@@ -40,15 +40,15 @@ export const Screen19 = () => {
         </div>
 
         <div className="frame-350">
-          <Link to="/team-create2" className="text-wrapper-178">・チームを作成する</Link>
-          <Link to="/account-settings" className="text-wrapper-178">・登録情報変更</Link>
+          <Link to="/team-create" className="text-wrapper-178">・チームを作成する</Link>
+          <Link to="/account-info" className="text-wrapper-178">・登録情報変更</Link>
           <Link to="/notification-settings" className="text-wrapper-178">・通知設定</Link>
           <Link to="/contact" className="text-wrapper-178">・お問い合わせ</Link>
           <Link to="/terms" className="text-wrapper-178">・利用規約</Link>
           <Link to="/privacy" className="text-wrapper-178">・プライバシーポリシー</Link>
-          <Link to="/withdraw" className="text-wrapper-178">・退会する</Link>
-          <Link to="/team-profile" className="text-wrapper-178">・参加チーム詳細</Link>
-          <Link to="/team-manage" className="text-wrapper-178">・作成チーム詳細</Link>
+          <Link to="/account-delete" className="text-wrapper-178">・退会する</Link>
+          <Link to="/team-member" className="text-wrapper-178">・参加チーム詳細</Link>
+          <Link to="/team-management" className="text-wrapper-178">・作成チーム詳細</Link>
         </div>
 
 

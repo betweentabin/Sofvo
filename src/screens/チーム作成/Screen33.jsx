@@ -121,7 +121,7 @@ export const Screen33 = () => {
       if (memberError) throw memberError;
 
       console.log("チーム作成成功:", team);
-      navigate("/team-manage");
+      navigate("/team-management");
     } catch (error) {
       console.error("チーム作成エラー:", error);
       setErrors({ 
