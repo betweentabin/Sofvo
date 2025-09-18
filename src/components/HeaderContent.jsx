@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./HeaderContent.css";
 
-export const HeaderContent = () => {
+export const HeaderContent = ({ showSettings = true }) => {
   return (
     <div className="header-content-outer">
       <div className="header-content-inner">
@@ -16,9 +16,11 @@ export const HeaderContent = () => {
               <Link to="/dm">
                 <img className="header-content-icon-img" alt="メッセージ" src="/img/message.png" />
               </Link>
-              <Link to="/settings">
-                <img className="header-content-icon-img" alt="歯車" src="/img/settings.png" />
-              </Link>
+              {showSettings && (
+                <Link to="/settings">
+                  <img className="header-content-icon-img" alt="歯車" src="/img/settings.png" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

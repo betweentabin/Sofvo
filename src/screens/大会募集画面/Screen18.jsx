@@ -65,7 +65,7 @@ export const Screen18 = () => {
 
   // お問い合わせ処理
   const handleInquiry = () => {
-    navigate("/contact");
+    navigate("/dm");
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { HeaderTabs } from "../../components/HeaderTabs";
@@ -21,6 +21,11 @@ export const HomeScreen = () => {
   const [recommendedPosts, setRecommendedPosts] = useState([]);
   const [recommendedDiaries, setRecommendedDiaries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    yearMonth: 'all',
+    region: 'all',
+    category: 'all',
+  });
 
   // Fetch following posts
   const fetchFollowingPosts = async () => {
@@ -149,6 +154,98 @@ export const HomeScreen = () => {
     }));
   };
 
+  const formatYearMonth = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+    return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+  };
+
+  const parseYearMonth = (label) => {
+    if (!label) return 0;
+    const match = label.match(/(\d{4})年(\d{1,2})月/);
+    if (!match) return 0;
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    return new Date(year, month).getTime();
+  };
+
+  const allPosts = useMemo(() => {
+    return [...followingPosts, ...recommendedPosts];
+  }, [followingPosts, recommendedPosts]);
+
+  const yearMonthOptions = useMemo(() => {
+    const values = new Set();
+    allPosts.forEach((post) => {
+      const label = formatYearMonth(post?.tournaments?.start_date);
+      if (label) {
+        values.add(label);
+      }
+    });
+    return Array.from(values).sort((a, b) => parseYearMonth(b) - parseYearMonth(a));
+  }, [allPosts]);
+
+  const regionOptions = useMemo(() => {
+    const values = new Set();
+    allPosts.forEach((post) => {
+      if (post?.tournaments?.location) {
+        values.add(post.tournaments.location);
+      }
+    });
+    return Array.from(values).sort();
+  }, [allPosts]);
+
+  const categoryOptions = useMemo(() => {
+    const values = new Set();
+    allPosts.forEach((post) => {
+      if (post?.tournaments?.sport_type) {
+        values.add(post.tournaments.sport_type);
+      }
+    });
+    return Array.from(values).sort();
+  }, [allPosts]);
+
+  const matchesFilters = (post) => {
+    const tournament = post?.tournaments;
+    if (filters.yearMonth !== 'all') {
+      const label = formatYearMonth(tournament?.start_date);
+      if (label !== filters.yearMonth) {
+        return false;
+      }
+    }
+
+    if (filters.region !== 'all') {
+      if (!tournament?.location || tournament.location !== filters.region) {
+        return false;
+      }
+    }
+
+    if (filters.category !== 'all') {
+      if (!tournament?.sport_type || tournament.sport_type !== filters.category) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const filteredFollowingPosts = useMemo(() => {
+    return followingPosts.filter((post) => matchesFilters(post));
+  }, [followingPosts, filters]);
+
+  const filteredRecommendedPosts = useMemo(() => {
+    return recommendedPosts.filter((post) => matchesFilters(post));
+  }, [recommendedPosts, filters]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
   // 検索ハンドラー
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -158,9 +255,17 @@ export const HomeScreen = () => {
 
   return (
     <div className="HOME-screen">
-      <HeaderContent />
+      <HeaderContent showSettings={false} />
       <HeaderTabs onTabChange={setActiveTab} activeTab={activeTab} />
-      <HeaderShare />
+      <HeaderShare
+        filters={filters}
+        options={{
+          yearMonths: yearMonthOptions,
+          regions: regionOptions,
+          categories: categoryOptions,
+        }}
+        onFilterChange={handleFilterChange}
+      />
 
       {/* 本文セクション - ヘッダーとフッターの間 */}
       <div className="main-content" style={{ top: `${mainContentTop}px` }}>
@@ -169,8 +274,8 @@ export const HomeScreen = () => {
           <div className="following-content">
             {loading ? (
               <div style={{ padding: '20px', textAlign: 'center' }}>読み込み中...</div>
-            ) : followingPosts.length > 0 ? (
-              followingPosts.map((post, index) => (
+            ) : filteredFollowingPosts.length > 0 ? (
+              filteredFollowingPosts.map((post) => (
                 <div className="frame-75" key={post.id}>
                   <div className="frame-76">
                     <div className="frame-77">
@@ -289,11 +394,11 @@ export const HomeScreen = () => {
                 <div className="text-wrapper-78" onClick={() => navigate('/ads')} style={{ cursor: 'pointer' }}>もっと見る</div>
               </div>
 
-              <div className="activity-items">
+            <div className="activity-items">
                 {loading ? (
                   <div style={{ padding: '20px', textAlign: 'center' }}>読み込み中...</div>
-                ) : recommendedPosts.length > 0 ? (
-                  recommendedPosts.slice(0, 3).map((post) => (
+                ) : filteredRecommendedPosts.length > 0 ? (
+                  filteredRecommendedPosts.slice(0, 3).map((post) => (
                     <div className="activity-item" key={post.id}>
                       <div className="rectangle-6" />
                       <div className="activity-item-content">
