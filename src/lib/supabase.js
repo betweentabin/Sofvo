@@ -210,3 +210,53 @@ export const addParticipant = async (conversationId, userId) => {
   
   return data;
 };
+
+// ==============================
+// Posts (quick, Twitter-like)
+// ==============================
+export const createPost = async (userId, content, visibility = 'public') => {
+  const payload = { user_id: userId, content, visibility };
+  const { data, error } = await supabase
+    .from('posts')
+    .insert(payload)
+    .select(`
+      *,
+      profiles:user_id (username, display_name, avatar_url)
+    `)
+    .single();
+
+  if (error) {
+    console.error('Error creating post:', error);
+    throw error;
+  }
+  return data;
+};
+
+export const getLatestPosts = async (limit = 20) => {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      profiles:user_id (username, display_name, avatar_url)
+    `)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error fetching latest posts:', error);
+    return [];
+  }
+  return data || [];
+};
+
+export const subscribeToPosts = (callback) => {
+  const channel = supabase
+    .channel('posts:public')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'posts' },
+      (payload) => callback(payload.new)
+    )
+    .subscribe();
+  return channel;
+};

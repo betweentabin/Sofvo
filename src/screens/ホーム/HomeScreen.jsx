@@ -5,7 +5,9 @@ import { HeaderTabs } from "../../components/HeaderTabs";
 import { HeaderShare } from "../../components/HeaderShare";
 import { Footer } from "../../components/Footer";
 import { FloatingPostButton } from "../../components/FloatingPostButton";
+import { PostComposer } from "../../components/PostComposer";
 import { supabase } from "../../lib/supabase";
+import { createPost } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
@@ -22,7 +24,8 @@ export const HomeScreen = () => {
   const [recommendedDiaries, setRecommendedDiaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userCreatedPosts, setUserCreatedPosts] = useState([]);
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [isComposerOpen, setIsComposerOpen] = useState(false); // tournament composer (existing)
+  const [isQuickComposerOpen, setIsQuickComposerOpen] = useState(false); // simple post composer
   const composerInitialState = {
     tournamentName: '',
     date: '',
@@ -304,6 +307,23 @@ export const HomeScreen = () => {
 
   const handleOpenComposer = () => {
     setIsComposerOpen(true);
+  };
+
+  const openQuickComposer = () => setIsQuickComposerOpen(true);
+  const closeQuickComposer = () => setIsQuickComposerOpen(false);
+
+  const handleQuickPostSubmit = async (text) => {
+    if (!user?.id) {
+      alert('ログインが必要です');
+      return;
+    }
+    try {
+      await createPost(user.id, text, 'public');
+      alert('投稿しました');
+    } catch (e) {
+      console.error(e);
+      alert('投稿に失敗しました');
+    }
   };
 
   // 検索ハンドラー
@@ -657,8 +677,14 @@ export const HomeScreen = () => {
 
       {/* 投稿用のフローティングボタン（トップページ #/ のみ表示） */}
       {(location.pathname === "/" || location.pathname === "/home") && (
-        <FloatingPostButton onClick={handleOpenComposer} />
+        <FloatingPostButton onClick={openQuickComposer} />
       )}
+
+      <PostComposer
+        isOpen={isQuickComposerOpen}
+        onClose={closeQuickComposer}
+        onSubmit={handleQuickPostSubmit}
+      />
 
       <Footer currentPage="home" />
     </div>

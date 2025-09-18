@@ -5,6 +5,7 @@ import { Footer } from "../../components/Footer";
 import ChatRoom from "../../components/Chat/ChatRoom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useConversations } from "../../hooks/useChat";
+import api from "../../services/api";
 import { supabase } from "../../lib/supabase";
 import "./style.css";
 
@@ -19,6 +20,13 @@ export const Dm = () => {
   const { user } = useAuth();
   const { conversations, loading, createDirectConversation, refetch } = useConversations();
 
+  // Railway chat test mode
+  const TEST_RAILWAY = import.meta.env.VITE_RAILWAY_CHAT_TEST === 'true';
+  const [testAccounts, setTestAccounts] = useState([]);
+  const [railwayUserId, setRailwayUserId] = useState(null);
+  const [railwayConversations, setRailwayConversations] = useState([]);
+  const [railwayLoading, setRailwayLoading] = useState(false);
+
   useEffect(() => {
     const updateMainContentPosition = () => {
       const header = document.querySelector(".header-content-outer");
@@ -32,6 +40,40 @@ export const Dm = () => {
     window.addEventListener("resize", updateMainContentPosition);
     return () => window.removeEventListener("resize", updateMainContentPosition);
   }, []);
+
+  // Fetch test accounts (Railway) when test mode enabled
+  useEffect(() => {
+    const load = async () => {
+      if (!TEST_RAILWAY) return;
+      try {
+        const { data } = await api.railwayChat.listTestAccounts();
+        setTestAccounts(data || []);
+        if (!railwayUserId && data?.[0]?.id) {
+          setRailwayUserId(data[0].id);
+        }
+      } catch (e) {
+        console.error('Failed to load test accounts:', e);
+      }
+    };
+    load();
+  }, [TEST_RAILWAY]);
+
+  // Fetch railway conversations for selected test user
+  useEffect(() => {
+    const loadConvs = async () => {
+      if (!TEST_RAILWAY || !railwayUserId) return;
+      setRailwayLoading(true);
+      try {
+        const { data } = await api.railwayChat.getConversations(railwayUserId);
+        setRailwayConversations(data || []);
+      } catch (e) {
+        console.error('Failed to load railway conversations:', e);
+      } finally {
+        setRailwayLoading(false);
+      }
+    };
+    loadConvs();
+  }, [TEST_RAILWAY, railwayUserId]);
 
   useEffect(() => {
     if (conversationId && conversations.length > 0) {
@@ -78,6 +120,15 @@ export const Dm = () => {
     return conversation.name || 'グループチャット';
   };
 
+  const getRailwayConversationName = (conv) => {
+    if (conv.type === 'direct') {
+      // Show name of the other participant
+      const other = (conv.participants || []).find(p => p.user_id !== railwayUserId);
+      return other?.display_name || other?.username || 'DM';
+    }
+    return conv.name || 'グループチャット';
+  };
+
   if (!user) {
     return (
       <div className="Dm">
@@ -108,6 +159,22 @@ export const Dm = () => {
         }}
       >
         <div className="dm-container">
+          {TEST_RAILWAY && (
+            <div className="test-railway-selector" style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>
+              <span style={{ marginRight: 8, fontSize: 12, color: '#555' }}>テストアカウント:</span>
+              <select
+                value={railwayUserId || ''}
+                onChange={(e) => setRailwayUserId(e.target.value)}
+                style={{ padding: '6px 8px', fontSize: 12 }}
+              >
+                {testAccounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>
+                    {(acc.display_name || acc.username) + ' (' + acc.username + ')'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="conversations-sidebar">
             <div className="conversations-header">
               <h2>メッセージ</h2>
@@ -120,7 +187,40 @@ export const Dm = () => {
             </div>
             
             <div className="conversations-list">
-              {loading ? (
+              {TEST_RAILWAY ? (
+                railwayLoading ? (
+                  <div className="loading">読み込み中...</div>
+                ) : railwayConversations.length === 0 ? (
+                  <div className="no-conversations">
+                    <p>メッセージはまだありません</p>
+                  </div>
+                ) : (
+                  railwayConversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`conversation-item ${selectedConversation?.id === conversation.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedConversation(conversation);
+                        navigate(`/dm/${conversation.id}`);
+                      }}
+                    >
+                      <div className="conversation-avatar">
+                        {getRailwayConversationName(conversation).charAt(0).toUpperCase()}
+                      </div>
+                      <div className="conversation-info">
+                        <div className="conversation-name">
+                          {getRailwayConversationName(conversation)}
+                        </div>
+                        {conversation.last_message && (
+                          <div className="conversation-last-message">
+                            {conversation.last_message.content}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )
+              ) : loading ? (
                 <div className="loading">読み込み中...</div>
               ) : conversations.length === 0 ? (
                 <div className="no-conversations">
@@ -160,7 +260,11 @@ export const Dm = () => {
 
           <div className="chat-area">
             {(selectedConversation || conversationId) ? (
-              <ChatRoom conversationId={selectedConversation?.id || conversationId} />
+              TEST_RAILWAY ? (
+                <ChatRoom conversationId={selectedConversation?.id || conversationId} useRailway asUserId={railwayUserId} />
+              ) : (
+                <ChatRoom conversationId={selectedConversation?.id || conversationId} />
+              )
             ) : (
               <div className="no-conversation-selected">
                 <p>会話を選択するか、新しい会話を始めてください</p>

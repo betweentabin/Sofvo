@@ -12,6 +12,7 @@ import tournamentRoutes from './routes/tournament.routes.js';
 import messageRoutes from './routes/message.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import contactRoutes from './routes/contact.routes.js';
+import railwayChatRoutes from './routes/railway-chat.routes.js';
 import mediaRoutes from './routes/media.routes.js';
 import homeRoutes from './routes/home.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
@@ -55,6 +56,7 @@ app.use('/api/tournaments', verifySupabaseToken, tournamentRoutes);
 app.use('/api/messages', verifySupabaseToken, messageRoutes);
 app.use('/api/notifications', verifySupabaseToken, notificationRoutes);
 app.use('/api/media', verifySupabaseToken, mediaRoutes);
+app.use('/api/railway-chat', railwayChatRoutes);
 
 // Mixed routes (some endpoints require auth, some don't)
 app.use('/api/home', homeRoutes);

@@ -198,6 +198,18 @@ export const api = {
     },
     delete: (id) => nodeAPI.delete(`/media/${id}`)
   }
+  ,
+  // ===== Railway (PostgreSQL) chat test API =====
+  railwayChat: {
+    listTestAccounts: () => nodeAPI.get('/railway-chat/test-accounts'),
+    getConversations: (asUserId) => nodeAPI.get('/railway-chat/conversations', { params: { as_user: asUserId } }),
+    createConversation: (asUserId, participantIds = [], type = 'direct', name = null) =>
+      nodeAPI.post('/railway-chat/conversations', { as_user: asUserId, participant_ids: participantIds, type, name }),
+    getMessages: (conversationId, asUserId, params = {}) =>
+      nodeAPI.get(`/railway-chat/conversations/${conversationId}/messages`, { params: { as_user: asUserId, ...params } }),
+    sendMessage: (conversationId, asUserId, content, type = 'text', file_url = null) =>
+      nodeAPI.post('/railway-chat/send', { as_user: asUserId, conversation_id: conversationId, content, type, file_url })
+  }
 };
 
 export default api;

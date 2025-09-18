@@ -130,6 +130,16 @@ ALTER TABLE public.tournament_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournament_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+-- Simple posts table for quick, Twitter-like updates
+CREATE TABLE IF NOT EXISTS public.posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  visibility TEXT DEFAULT 'public' CHECK (visibility IN ('public','followers','private')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+
 -- RLS Policies
 
 -- Profiles policies
@@ -232,6 +242,7 @@ CREATE POLICY "Users can update own notifications" ON public.notifications
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_participants;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
 
 -- Functions and triggers
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -278,3 +289,20 @@ CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON public.conversat
 DROP TRIGGER IF EXISTS update_tournaments_updated_at ON public.tournaments;
 CREATE TRIGGER update_tournaments_updated_at BEFORE UPDATE ON public.tournaments
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+-- Posts policies
+DROP POLICY IF EXISTS "Posts are viewable by everyone" ON public.posts;
+CREATE POLICY "Posts are viewable by everyone" ON public.posts
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can create their own posts" ON public.posts;
+CREATE POLICY "Users can create their own posts" ON public.posts
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Post authors can update their posts" ON public.posts;
+CREATE POLICY "Post authors can update their posts" ON public.posts
+  FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Post authors can delete their posts" ON public.posts;
+CREATE POLICY "Post authors can delete their posts" ON public.posts
+  FOR DELETE USING (auth.uid() = user_id);
