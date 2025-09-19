@@ -1,26 +1,79 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
+import { useAuth } from "../../contexts/AuthContext";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen35 = () => {
   const mainContentTop = useHeaderOffset();
+  const { user } = useAuth();
+  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
-  
-  // メンバー配列に showButton を追加
-  const members = [
-    { name: "山田 太郎（ヤマダ タロウ）", age: 30, gender: "男", history: 5, area: "静岡市", showButton: true },
-    { name: "鈴木 花子（スズキ ハナコ）", age: 28, gender: "女", history: 3, area: "浜松市", showButton: true },
-    { name: "佐藤 一郎（サトウ イチロウ）", age: 35, gender: "男", history: 10, area: "静岡市", showButton: true },
-    { name: "田中 美咲（タナカ ミサキ）", age: 27, gender: "女", history: 4, area: "浜松市", showButton: true },
-    { name: "高橋 健（タカハシ ケン）", age: 32, gender: "男", history: 7, area: "静岡市", showButton: true },
-    { name: "中村 奈々（ナカムラ ナナ）", age: 29, gender: "女", history: 6, area: "浜松市", showButton: true },
-    { name: "小林 翔（コバヤシ ショウ）", age: 31, gender: "男", history: 8, area: "静岡市", showButton: true },
-    { name: "松本 さくら（マツモト サクラ）", age: 26, gender: "女", history: 3, area: "浜松市", showButton: true },
-    { name: "伊藤 大輔（イトウ ダイスケ）", age: 33, gender: "男", history: 9, area: "静岡市", showButton: true },
-    { name: "林 美優（ハヤシ ミユ）", age: 25, gender: "女", history: 2, area: "浜松市", showButton: true },
-  ];
+  const [ownerTeamId, setOwnerTeamId] = useState(null);
+  const [membersRaw, setMembersRaw] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!USE_RAILWAY) return; // 従来の静的表示のまま
+      const asUserId = RAILWAY_TEST_USER || user?.id;
+      if (!asUserId) return;
+      setLoading(true);
+      try {
+        const { data: ownerTeams } = await api.railwayTeams.getOwnerTeam(asUserId);
+        const teamId = ownerTeams?.[0]?.id || null;
+        setOwnerTeamId(teamId);
+        if (teamId) {
+          const { data } = await api.railwayTeams.getMembers(teamId);
+          setMembersRaw(data || []);
+        }
+      } catch (e) {
+        console.error('Failed to load team members:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [USE_RAILWAY, RAILWAY_TEST_USER, user]);
+
+  const currentRailId = useMemo(() => (RAILWAY_TEST_USER || user?.id) || null, [RAILWAY_TEST_USER, user]);
+
+  const mappedMembers = useMemo(() => {
+    if (!USE_RAILWAY) return [];
+    return (membersRaw || []).map((m) => {
+      const display = m.display_name || m.username || 'メンバー';
+      const area = m.location || '';
+      const gender = m.gender || '';
+      const isOwner = m.role === 'owner';
+      const isSelf = currentRailId && (m.user_id === currentRailId);
+      const showButton = !isOwner; // オーナーは削除不可
+      return {
+        _user_id: m.user_id,
+        name: `${display}`,
+        age: '',
+        gender: gender || '',
+        history: '',
+        area: area || '',
+        showButton,
+        _isSelf: !!isSelf,
+      };
+    });
+  }, [USE_RAILWAY, membersRaw, currentRailId]);
+
+  const handleRemove = async (targetUserId) => {
+    if (!USE_RAILWAY || !ownerTeamId || !currentRailId) return;
+    try {
+      await api.railwayTeams.removeMember(currentRailId, ownerTeamId, targetUserId);
+      const { data } = await api.railwayTeams.getMembers(ownerTeamId);
+      setMembersRaw(data || []);
+    } catch (e) {
+      console.error('Failed to remove member:', e);
+      alert('メンバーを削除できませんでした');
+    }
+  };
 
   return (
     <div className="screen-35">
@@ -64,7 +117,7 @@ export const Screen35 = () => {
 
         <div className="frame-167">
           <div className="frame-168">
-            {members.map((member, index) => (
+            {(USE_RAILWAY ? mappedMembers : []).map((member, index) => (
               <details key={index} className="member-item">
                 <summary className="member-name">{member.name}</summary>
                 <div className="member-details">
@@ -76,7 +129,7 @@ export const Screen35 = () => {
 
                 {member.showButton && (
                   <div className="frame-628">
-                    <div className="frame-629">
+                    <div className="frame-629" onClick={() => handleRemove(member._user_id)} style={{ cursor: 'pointer' }}>
                       <div className="text-wrapper-312">チームから削除</div>
                     </div>
                   </div>

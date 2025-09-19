@@ -249,6 +249,23 @@ export const getLatestPosts = async (limit = 20) => {
   return data || [];
 };
 
+export const getPostById = async (postId) => {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      profiles:user_id (username, display_name, avatar_url)
+    `)
+    .eq('id', postId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching post by id:', error);
+    throw error;
+  }
+  return data;
+};
+
 export const subscribeToPosts = (callback) => {
   const channel = supabase
     .channel('posts:public')

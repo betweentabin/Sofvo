@@ -7,11 +7,53 @@ import { HeaderShare } from "../../components/HeaderShare";
 import { Footer } from "../../components/Footer";
 import { FloatingPostButton } from "../../components/FloatingPostButton";
 import { PostComposer } from "../../components/PostComposer";
-import { supabase } from "../../lib/supabase";
+import {
+  supabase,
+  createPost,
+  getLatestPosts,
+  getPostById,
+  subscribeToPosts,
+} from "../../lib/supabase";
 import api from "../../services/api";
-import { createPost } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
+
+const TIMELINE_LIMIT = 50;
+
+const formatRelativeTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const diff = Date.now() - date.getTime();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diff < 0) {
+    return date.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+  if (diff < minute) {
+    const seconds = Math.max(0, Math.floor(diff / 1000));
+    return `${seconds}秒前`;
+  }
+  if (diff < hour) {
+    return `${Math.floor(diff / minute)}分前`;
+  }
+  if (diff < day) {
+    return `${Math.floor(diff / hour)}時間前`;
+  }
+  if (diff < 7 * day) {
+    return `${Math.floor(diff / day)}日前`;
+  }
+  return date.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+
+const resolveDisplayName = (profile) => profile?.display_name || profile?.username || "アカウント名";
+
+const resolveAvatarInitial = (profile) => {
+  const name = resolveDisplayName(profile);
+  return name.trim().charAt(0).toUpperCase() || "S";
+};
 
 export const HomeScreen = () => {
   const navigate = useNavigate();
@@ -24,6 +66,8 @@ export const HomeScreen = () => {
   const [followingPosts, setFollowingPosts] = useState([]);
   const [recommendedPosts, setRecommendedPosts] = useState([]);
   const [recommendedDiaries, setRecommendedDiaries] = useState([]);
+  const [timelinePosts, setTimelinePosts] = useState([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userCreatedPosts, setUserCreatedPosts] = useState([]);
   const [isComposerOpen, setIsComposerOpen] = useState(false); // tournament composer (existing)
@@ -136,6 +180,66 @@ export const HomeScreen = () => {
     }
   };
 
+  useEffect(() => {
+    if (USE_RAILWAY) return undefined;
+
+    let isActive = true;
+
+    const loadTimeline = async () => {
+      setTimelineLoading(true);
+      try {
+        const posts = await getLatestPosts(30);
+        if (isActive) {
+          setTimelinePosts(posts);
+        }
+      } catch (error) {
+        if (isActive) {
+          console.error('Error loading timeline posts:', error);
+          setTimelinePosts([]);
+        }
+      } finally {
+        if (isActive) {
+          setTimelineLoading(false);
+        }
+      }
+    };
+
+    loadTimeline();
+
+    return () => {
+      isActive = false;
+    };
+  }, [USE_RAILWAY, getLatestPosts]);
+
+  useEffect(() => {
+    if (USE_RAILWAY) return undefined;
+
+    let isActive = true;
+
+    const channel = subscribeToPosts(async (newPost) => {
+      try {
+        const enriched = await getPostById(newPost.id);
+        if (!isActive) return;
+        setTimelinePosts((prev) => {
+          const filtered = prev.filter((item) => item.id !== enriched.id);
+          return [enriched, ...filtered].slice(0, TIMELINE_LIMIT);
+        });
+      } catch (error) {
+        if (isActive) {
+          console.error('Error handling realtime post:', error);
+        }
+      }
+    });
+
+    return () => {
+      isActive = false;
+      if (channel) {
+        channel.unsubscribe();
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [USE_RAILWAY, subscribeToPosts, getPostById]);
+
   
   // Fetch data when component mounts or user changes
   useEffect(() => {
@@ -154,8 +258,6 @@ export const HomeScreen = () => {
     
     fetchData();
   }, [activeTab, user]);
-
-  console.log("HomeScreen - current mainContentTop:", mainContentTop);
 
   // いいねボタンのハンドラー
   const handleLike = (postId) => {
@@ -314,10 +416,13 @@ export const HomeScreen = () => {
       return;
     }
     try {
-      await createPost(user.id, text, 'public');
-      alert('投稿しました');
-    } catch (e) {
-      console.error(e);
+      const newPost = await createPost(user.id, text, 'public');
+      setTimelinePosts((prev) => {
+        const filtered = prev.filter((post) => post.id !== newPost.id);
+        return [newPost, ...filtered].slice(0, TIMELINE_LIMIT);
+      });
+    } catch (error) {
+      console.error('Error creating post:', error);
       alert('投稿に失敗しました');
     }
   };
@@ -348,6 +453,55 @@ export const HomeScreen = () => {
         {activeTab === "following" ? (
           // フォロー中の内容
           <div className="following-content">
+            {!USE_RAILWAY && (
+              <div className="quick-post-section">
+                <div className="quick-post-section-header">
+                  <div className="quick-post-title">みんなの投稿</div>
+                  <button type="button" className="quick-post-action" onClick={openQuickComposer}>
+                    いま投稿する
+                  </button>
+                </div>
+                {timelineLoading ? (
+                  <div className="quick-post-message">読み込み中...</div>
+                ) : timelinePosts.length > 0 ? (
+                  <div className="quick-post-list">
+                    {timelinePosts.map((post) => {
+                      const displayName = resolveDisplayName(post.profiles);
+                      return (
+                        <div className="quick-post-card" key={post.id}>
+                          <div className="quick-post-avatar">
+                            {post.profiles?.avatar_url ? (
+                              <img
+                                src={post.profiles.avatar_url}
+                                alt={`${displayName}のアイコン`}
+                                className="quick-post-avatar-image"
+                              />
+                            ) : (
+                              <span>{resolveAvatarInitial(post.profiles)}</span>
+                            )}
+                          </div>
+                          <div className="quick-post-body">
+                            <div className="quick-post-header">
+                              <div className="quick-post-author">{displayName}</div>
+                              <div className="quick-post-time">{formatRelativeTime(post.created_at)}</div>
+                            </div>
+                            <div className="quick-post-content">{post.content}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="quick-post-empty">
+                    まだ投稿がありません。
+                    <button type="button" className="quick-post-inline-action" onClick={openQuickComposer}>
+                      最初の投稿をする
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {isComposerOpen && (
               <div className="frame-75 home-post-composer">
                 <form className="frame-76 home-post-composer-form" onSubmit={handleSubmitComposer}>

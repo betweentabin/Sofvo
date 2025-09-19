@@ -16,8 +16,8 @@ export const SearchScreen = () => {
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     yearMonth: '2025年5月',
-    day: '',
     area: '',
+    type: '',
     followingOnly: false
   });
 
@@ -38,6 +38,10 @@ export const SearchScreen = () => {
       // Apply filters
       if (filters.area) {
         query = query.ilike('location', `%${filters.area}%`);
+      }
+
+      if (filters.type) {
+        query = query.ilike('sport_type', `%${filters.type}%`);
       }
 
       // Filter by following if checked
@@ -113,21 +117,6 @@ export const SearchScreen = () => {
                   </div>
 
                   <div className="frame-box2">
-                    <label className="dropdown-label" htmlFor="select-day">日</label>
-                    <select 
-                      id="select-day" 
-                      className="custom-select"
-                      value={filters.day}
-                      onChange={(e) => setFilters({...filters, day: e.target.value})}
-                    >
-                      <option value="">全て</option>
-                      <option value="18">18日</option>
-                      <option value="19">19日</option>
-                      <option value="20">20日</option>
-                    </select>
-                  </div>
-
-                  <div className="frame-box3">
                     <label className="dropdown-label" htmlFor="select-area">地域</label>
                     <select 
                       id="select-area" 
@@ -139,6 +128,22 @@ export const SearchScreen = () => {
                       <option value="静岡県">静岡県</option>
                       <option value="東京都">東京都</option>
                       <option value="大阪府">大阪府</option>
+                    </select>
+                  </div>
+
+                  <div className="frame-box3">
+                    <label className="dropdown-label" htmlFor="select-type">種別</label>
+                    <select 
+                      id="select-type" 
+                      className="custom-select"
+                      value={filters.type}
+                      onChange={(e) => setFilters({...filters, type: e.target.value})}
+                    >
+                      <option value="">全て</option>
+                      <option value="レディース">レディース</option>
+                      <option value="メンズ">メンズ</option>
+                      <option value="混合">混合</option>
+                      <option value="スポレク">スポレク</option>
                     </select>
                   </div>
                 </div>
@@ -266,21 +271,6 @@ export const SearchScreen = () => {
                   </div>
 
                   <div className="frame-box2">
-                    <label className="dropdown-label" htmlFor="select-day">日</label>
-                    <select 
-                      id="select-day" 
-                      className="custom-select"
-                      value={filters.day}
-                      onChange={(e) => setFilters({...filters, day: e.target.value})}
-                    >
-                      <option value="">全て</option>
-                      <option value="18">18日</option>
-                      <option value="19">19日</option>
-                      <option value="20">20日</option>
-                    </select>
-                  </div>
-
-                  <div className="frame-box3">
                     <label className="dropdown-label" htmlFor="select-area">地域</label>
                     <select 
                       id="select-area" 
@@ -292,6 +282,22 @@ export const SearchScreen = () => {
                       <option value="静岡県">静岡県</option>
                       <option value="東京都">東京都</option>
                       <option value="大阪府">大阪府</option>
+                    </select>
+                  </div>
+
+                  <div className="frame-box3">
+                    <label className="dropdown-label" htmlFor="select-type">種別</label>
+                    <select 
+                      id="select-type" 
+                      className="custom-select"
+                      value={filters.type}
+                      onChange={(e) => setFilters({...filters, type: e.target.value})}
+                    >
+                      <option value="">全て</option>
+                      <option value="レディース">レディース</option>
+                      <option value="メンズ">メンズ</option>
+                      <option value="混合">混合</option>
+                      <option value="スポレク">スポレク</option>
                     </select>
                   </div>
                 </div>
