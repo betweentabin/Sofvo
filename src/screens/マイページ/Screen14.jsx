@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen14 = () => {
-  const [mainContentTop, setMainContentTop] = useState(201);
+  const mainContentTop = useHeaderOffset();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -27,25 +29,10 @@ export const Screen14 = () => {
   const { userId } = useParams(); // URLからユーザーIDを取得
   const navigate = useNavigate();
   const { user } = useAuth();
+  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const headerRect = header.getBoundingClientRect();
-        setMainContentTop(headerRect.bottom);
-      }
-    };
-
-    const timer = setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updateMainContentPosition);
-    };
-  }, []);
-
+  
   useEffect(() => {
     fetchProfile();
   }, [userId, user]);
@@ -53,73 +40,62 @@ export const Screen14 = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      
-      // URLにuserIdがない場合は自分のプロフィールを表示
-      const targetUserId = userId || user?.id;
-      
+      const targetUserId = USE_RAILWAY ? (userId || RAILWAY_TEST_USER || user?.id) : (userId || user?.id);
       if (!targetUserId) {
         navigate('/login');
         return;
       }
 
-      console.log('Fetching profile for user:', targetUserId);
-
-      // プロフィール情報を取得
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', targetUserId)
-        .single();
-
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        // プロフィールが存在しない場合は作成
-        if (profileError.code === 'PGRST116') {
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: targetUserId,
-              display_name: user?.email?.split('@')[0] || 'ユーザー',
-              username: user?.email?.split('@')[0] || '',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('Profile creation error:', createError);
-            throw createError;
-          }
-          
-          setProfile(newProfile);
-        } else {
-          throw profileError;
+      if (USE_RAILWAY) {
+        const { data } = await api.railwayUsers.getProfile(targetUserId);
+        setProfile(data);
+        const currentRailId = RAILWAY_TEST_USER || user?.id;
+        setIsOwnProfile(targetUserId === currentRailId);
+        if (!isOwnProfile && currentRailId) {
+          const { data: fs } = await api.railwayUsers.getFollowStatus(currentRailId, targetUserId);
+          setFollowStatus(!!fs?.following);
         }
       } else {
-        console.log('Profile data received:', profileData);
-        setProfile(profileData);
-      }
-      setIsOwnProfile(targetUserId === user?.id);
-
-      // フォロー状態を確認（他人のプロフィールの場合）
-      if (!isOwnProfile && user) {
-        const { data: followData } = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', user.id)
-          .eq('following_id', targetUserId)
+        // Supabase path (existing)
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', targetUserId)
           .single();
-        
-        setFollowStatus(!!followData);
+        if (profileError) {
+          if (profileError.code === 'PGRST116') {
+            const { data: newProfile } = await supabase
+              .from('profiles')
+              .insert({
+                id: targetUserId,
+                display_name: user?.email?.split('@')[0] || 'ユーザー',
+                username: user?.email?.split('@')[0] || '',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select()
+              .single();
+            setProfile(newProfile);
+          } else {
+            throw profileError;
+          }
+        } else {
+          setProfile(profileData);
+        }
+        setIsOwnProfile(targetUserId === user?.id);
+        if (!isOwnProfile && user) {
+          const { data: followData } = await supabase
+            .from('follows')
+            .select('id')
+            .eq('follower_id', user.id)
+            .eq('following_id', targetUserId)
+            .single();
+          setFollowStatus(!!followData);
+        }
       }
 
-      // 統計情報を取得
       await fetchStats(targetUserId);
-      
-      // 大会履歴を取得
       await fetchTournaments(targetUserId);
-
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -129,56 +105,46 @@ export const Screen14 = () => {
 
   const fetchStats = async (targetUserId) => {
     try {
-      // フォロー・フォロワー数を取得
+      if (USE_RAILWAY) {
+        const { data } = await api.railwayUsers.getStats(targetUserId);
+        setStats({
+          yearlyPoints: data.yearlyPoints || 0,
+          totalPoints: data.totalPoints || 0,
+          followingCount: data.followingCount || 0,
+          followersCount: data.followersCount || 0,
+          tournamentCount: data.tournamentCount || 0,
+          teamCount: data.teamCount || 0,
+          awardsCount: data.awardsCount || 0,
+          badgesCount: data.badgesCount || 0,
+        });
+        return;
+      }
+      // Fallback: Supabase（従来処理）
       const { data: followingData } = await supabase
         .from('follows')
         .select('id')
         .eq('follower_id', targetUserId);
-      
       const { data: followersData } = await supabase
         .from('follows')
         .select('id')
         .eq('following_id', targetUserId);
-
-      // 大会参加数を取得
       const { data: tournamentsData } = await supabase
         .from('tournament_participants')
         .select('id')
         .eq('user_id', targetUserId);
-
-      // チーム所属数を取得
       const { data: teamsData } = await supabase
         .from('team_members')
         .select('id')
         .eq('user_id', targetUserId);
-
-      // ポイント計算（仮の実装）
-      const { data: resultsData } = await supabase
-        .from('tournament_results')
-        .select('points')
-        .eq('user_id', targetUserId);
-
-      const totalPoints = resultsData?.reduce((sum, result) => sum + (result.points || 0), 0) || 0;
-      
-      // 今年のポイント（仮の実装）
-      const currentYear = new Date().getFullYear();
-      const { data: yearlyResultsData } = await supabase
-        .from('tournament_results')
-        .select('points, created_at')
-        .eq('user_id', targetUserId)
-        .gte('created_at', `${currentYear}-01-01`);
-
-      const yearlyPoints = yearlyResultsData?.reduce((sum, result) => sum + (result.points || 0), 0) || 0;
-
       setStats({
-        yearlyPoints,
-        totalPoints,
+        yearlyPoints: 0,
+        totalPoints: 0,
         followingCount: followingData?.length || 0,
         followersCount: followersData?.length || 0,
         tournamentCount: tournamentsData?.length || 0,
         teamCount: teamsData?.length || 0,
-        awardsCount: 0, // 受賞数（実装待ち）
-        badgesCount: 0  // バッジ数（実装待ち）
+        awardsCount: 0,
+        badgesCount: 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -187,6 +153,11 @@ export const Screen14 = () => {
 
   const fetchTournaments = async (targetUserId) => {
     try {
+      if (USE_RAILWAY) {
+        const { data } = await api.railwayUsers.getTournaments(targetUserId, 5);
+        setTournaments(data || []);
+        return;
+      }
       const { data, error } = await supabase
         .from('tournament_participants')
         .select(`
@@ -196,16 +167,11 @@ export const Screen14 = () => {
             name,
             start_date,
             end_date
-          ),
-          tournament_results (
-            position,
-            points
           )
         `)
         .eq('user_id', targetUserId)
         .order('created_at', { ascending: false })
         .limit(5);
-
       if (error) throw error;
       setTournaments(data || []);
     } catch (error) {
@@ -217,25 +183,29 @@ export const Screen14 = () => {
     if (!user || !profile) return;
 
     try {
-      if (followStatus) {
-        // アンフォロー
-        await supabase
-          .from('follows')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('following_id', profile.id);
+      if (USE_RAILWAY) {
+        const currentRailId = RAILWAY_TEST_USER || user?.id;
+        if (!currentRailId || !profile?.id) return;
+        if (followStatus) {
+          await api.railwayUsers.unfollow(currentRailId, profile.id);
+        } else {
+          await api.railwayUsers.follow(currentRailId, profile.id);
+        }
       } else {
-        // フォロー
-        await supabase
-          .from('follows')
-          .insert({
-            follower_id: user.id,
-            following_id: profile.id
-          });
+        if (followStatus) {
+          await supabase
+            .from('follows')
+            .delete()
+            .eq('follower_id', user.id)
+            .eq('following_id', profile.id);
+        } else {
+          await supabase
+            .from('follows')
+            .insert({ follower_id: user.id, following_id: profile.id });
+        }
       }
-      
       setFollowStatus(!followStatus);
-      await fetchStats(profile.id); // フォロワー数を更新
+      await fetchStats(profile.id);
     } catch (error) {
       console.error('Error toggling follow:', error);
     }

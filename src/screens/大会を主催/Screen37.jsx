@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -9,7 +10,7 @@ import "./style.css";
 export const Screen37 = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [mainContentTop, setMainContentTop] = useState(0);
+  const mainContentTop = useHeaderOffset();
 
   // フォーム状態管理
   const [formData, setFormData] = useState({
@@ -26,20 +27,7 @@ export const Screen37 = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const rect = header.getBoundingClientRect();
-        setMainContentTop(rect.bottom);
-      }
-    };
-
-    setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-    return () => window.removeEventListener("resize", updateMainContentPosition);
-  }, []);
-
+  
   // 入力変更ハンドラー
   const handleInputChange = (field, value) => {
     setFormData(prev => ({

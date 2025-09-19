@@ -1,29 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 export const Screen19 = () => {
-  const [mainContentTop, setMainContentTop] = useState(0);
+  const mainContentTop = useHeaderOffset();
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const rect = header.getBoundingClientRect();
-        setMainContentTop(rect.bottom);
-      }
-    };
-
-    setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-    return () => window.removeEventListener("resize", updateMainContentPosition);
-  }, []);
-
+  
   const handleLogout = async () => {
     try {
       await signOut();

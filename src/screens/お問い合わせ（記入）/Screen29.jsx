@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const Screen29 = () => {
-  const [mainContentTop, setMainContentTop] = useState(0);
+  const mainContentTop = useHeaderOffset();
 
   // フォーム状態管理
   const [subject, setSubject] = useState("");
@@ -15,20 +16,7 @@ export const Screen29 = () => {
   const [phone, setPhone] = useState("");
   const [content, setContent] = useState("");
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const rect = header.getBoundingClientRect();
-        setMainContentTop(rect.bottom);
-      }
-    };
-
-    setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-    return () => window.removeEventListener("resize", updateMainContentPosition);
-  }, []);
-
+  
   return (
     <div className="screen-29">
       <HeaderContent />

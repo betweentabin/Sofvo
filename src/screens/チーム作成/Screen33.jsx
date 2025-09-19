@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -9,7 +10,7 @@ import "./style.css";
 export const Screen33 = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [mainContentTop, setMainContentTop] = useState(0);
+  const mainContentTop = useHeaderOffset();
   const [formData, setFormData] = useState({
     teamName: "",
     activityArea: "",
@@ -21,20 +22,7 @@ export const Screen33 = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const rect = header.getBoundingClientRect();
-        setMainContentTop(rect.bottom);
-      }
-    };
-
-    setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-    return () => window.removeEventListener("resize", updateMainContentPosition);
-  }, []);
-
+  
   const roles = ["代表", "副代表", "メンバー"];
   const permissions = [
     "管理者任命",

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { HeaderTabsSearch } from "../../components/HeaderTabsSearch";
 import { Footer } from "../../components/Footer";
 import { supabase } from "../../lib/supabase";
@@ -10,7 +11,7 @@ import "./style.css";
 export const SearchScreen = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('team'); // 'team' or 'individual'
-  const [mainContentTop, setMainContentTop] = useState(201);
+  const mainContentTop = useHeaderOffset();
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
@@ -64,30 +65,7 @@ export const SearchScreen = () => {
     }
   };
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const headerTabsSearch = document.querySelector('.header-tabs-search-outer');
-      if (headerTabsSearch) {
-        const headerTabsSearchRect = headerTabsSearch.getBoundingClientRect();
-        const headerTabsSearchBottom = headerTabsSearchRect.bottom;
-        console.log('SearchScreen - headerTabsSearchRect:', headerTabsSearchRect);
-        console.log('SearchScreen - headerTabsSearchBottom:', headerTabsSearchBottom);
-        setMainContentTop(headerTabsSearchBottom);
-      } else {
-        console.log('SearchScreen - header-tabs-search-outer not found');
-      }
-    };
-
-    // 少し遅延させてDOMが完全に読み込まれてから実行
-    const timer = setTimeout(updateMainContentPosition, 200);
-    window.addEventListener('resize', updateMainContentPosition);
-    
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', updateMainContentPosition);
-    };
-  }, []);
-
+  
   // Load tournaments on mount
   useEffect(() => {
     searchTournaments();

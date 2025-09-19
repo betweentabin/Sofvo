@@ -209,6 +209,21 @@ export const api = {
       nodeAPI.get(`/railway-chat/conversations/${conversationId}/messages`, { params: { as_user: asUserId, ...params } }),
     sendMessage: (conversationId, asUserId, content, type = 'text', file_url = null) =>
       nodeAPI.post('/railway-chat/send', { as_user: asUserId, conversation_id: conversationId, content, type, file_url })
+  },
+  // ===== Railway (PostgreSQL) Home feed =====
+  railwayHome: {
+    getFollowing: (asUserId, limit = 10) => nodeAPI.get('/railway-home/following', { params: { as_user: asUserId, limit } }),
+    getRecommended: (limit = 10) => nodeAPI.get('/railway-home/recommended', { params: { limit } }),
+    getRecommendedDiaries: (limit = 3) => nodeAPI.get('/railway-home/recommended-diaries', { params: { limit } }),
+  },
+  // ===== Railway (PostgreSQL) Users / Profile =====
+  railwayUsers: {
+    getProfile: (userId) => nodeAPI.get('/railway-users/profile', { params: { user_id: userId } }),
+    getFollowStatus: (asUser, targetId) => nodeAPI.get('/railway-users/follow-status', { params: { as_user: asUser, target_id: targetId } }),
+    follow: (asUser, targetId) => nodeAPI.post('/railway-users/follow', { as_user: asUser, target_id: targetId }),
+    unfollow: (asUser, targetId) => nodeAPI.delete('/railway-users/follow', { data: { as_user: asUser, target_id: targetId } }),
+    getStats: (userId) => nodeAPI.get('/railway-users/stats', { params: { user_id: userId } }),
+    getTournaments: (userId, limit = 5) => nodeAPI.get('/railway-users/tournaments', { params: { user_id: userId, limit } }),
   }
 };
 

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import pushNotificationService from "../../services/pushNotification";
 import { Capacitor } from '@capacitor/core';
 import "./style.css";
 
 export const Screen30 = () => {
-  const [mainContentTop, setMainContentTop] = useState(0);
+  const mainContentTop = useHeaderOffset();
   const [isLoading, setIsLoading] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [showPermissionAlert, setShowPermissionAlert] = useState(false);
@@ -93,20 +94,7 @@ export const Screen30 = () => {
     }
   };
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const rect = header.getBoundingClientRect();
-        setMainContentTop(rect.bottom);
-      }
-    };
-
-    setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-    return () => window.removeEventListener("resize", updateMainContentPosition);
-  }, []);
-
+  
   return (
     <div className="screen-30">
       <HeaderContent />

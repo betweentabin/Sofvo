@@ -130,6 +130,17 @@ ALTER TABLE public.tournament_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournament_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+-- Follows table (フォロー関係)
+CREATE TABLE IF NOT EXISTS public.follows (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  follower_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  following_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(follower_id, following_id),
+  CHECK (follower_id <> following_id)
+);
+ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
+
 -- Simple posts table for quick, Twitter-like updates
 CREATE TABLE IF NOT EXISTS public.posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -243,6 +254,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_participants;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.follows;
 
 -- Functions and triggers
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -289,6 +301,21 @@ CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON public.conversat
 DROP TRIGGER IF EXISTS update_tournaments_updated_at ON public.tournaments;
 CREATE TRIGGER update_tournaments_updated_at BEFORE UPDATE ON public.tournaments
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+-- Follows policies
+DROP POLICY IF EXISTS "Users can view own follow relationships" ON public.follows;
+CREATE POLICY "Users can view own follow relationships" ON public.follows
+  FOR SELECT USING (
+    auth.uid() = follower_id OR auth.uid() = following_id
+  );
+
+DROP POLICY IF EXISTS "Users can follow others" ON public.follows;
+CREATE POLICY "Users can follow others" ON public.follows
+  FOR INSERT WITH CHECK (auth.uid() = follower_id);
+
+DROP POLICY IF EXISTS "Users can unfollow" ON public.follows;
+CREATE POLICY "Users can unfollow" ON public.follows
+  FOR DELETE USING (auth.uid() = follower_id);
 
 -- Posts policies
 DROP POLICY IF EXISTS "Posts are viewable by everyone" ON public.posts;

@@ -1,29 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const Screen35 = () => {
-  const [mainContentTop, setMainContentTop] = useState(201);
+  const mainContentTop = useHeaderOffset();
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const headerRect = header.getBoundingClientRect();
-        setMainContentTop(headerRect.bottom);
-      }
-    };
-
-    const timer = setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updateMainContentPosition);
-    };
-  }, []);
-
+  
   // メンバー配列に showButton を追加
   const members = [
     { name: "山田 太郎（ヤマダ タロウ）", age: 30, gender: "男", history: 5, area: "静岡市", showButton: true },

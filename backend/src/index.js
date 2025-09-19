@@ -15,6 +15,8 @@ import contactRoutes from './routes/contact.routes.js';
 import railwayChatRoutes from './routes/railway-chat.routes.js';
 import mediaRoutes from './routes/media.routes.js';
 import homeRoutes from './routes/home.routes.js';
+import railwayHomeRoutes from './routes/railway-home.routes.js';
+import railwayUsersRoutes from './routes/railway-users.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 dotenv.config();
@@ -60,6 +62,8 @@ app.use('/api/railway-chat', railwayChatRoutes);
 
 // Mixed routes (some endpoints require auth, some don't)
 app.use('/api/home', homeRoutes);
+app.use('/api/railway-home', railwayHomeRoutes);
+app.use('/api/railway-users', railwayUsersRoutes);
 app.use('/api/contact', contactRoutes); // Contact doesn't require auth
 
 // Health check

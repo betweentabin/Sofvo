@@ -1,29 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const Screen36 = () => {
-  const [mainContentTop, setMainContentTop] = useState(201);
+  const mainContentTop = useHeaderOffset();
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const headerRect = header.getBoundingClientRect();
-        setMainContentTop(headerRect.bottom);
-      }
-    };
-
-    const timer = setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updateMainContentPosition);
-    };
-  }, []);
-
+  
   const tournaments = [
     { name: "第15回 〇〇カップ", date: "2025年5月18日（日）", region: "静岡県", place: "〇〇体育館", address: "静岡県〇〇市〇〇町1-2-3", ball: "ミカサ", type: "混合フリー", method: "〇〇〇〇〇〇", ranking: "〇〇〇〇〇〇", showButton: true },
     { name: "第16回 △△大会", date: "2025年6月10日（火）", region: "静岡県", place: "△△アリーナ", address: "静岡県△△市△△町4-5-6", ball: "モルテン", type: "男子6人制", method: "予選リーグ＋決勝トーナメント", ranking: "勝率→得失点差", showButton: true },

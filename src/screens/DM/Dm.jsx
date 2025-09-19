@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import ChatRoom from "../../components/Chat/ChatRoom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -10,7 +11,7 @@ import { supabase } from "../../lib/supabase";
 import "./style.css";
 
 export const Dm = () => {
-  const [mainContentTop, setMainContentTop] = useState(0);
+  const mainContentTop = useHeaderOffset();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [showNewMessage, setShowNewMessage] = useState(false);
   const [searchUser, setSearchUser] = useState("");
@@ -27,20 +28,7 @@ export const Dm = () => {
   const [railwayConversations, setRailwayConversations] = useState([]);
   const [railwayLoading, setRailwayLoading] = useState(false);
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const rect = header.getBoundingClientRect();
-        setMainContentTop(rect.bottom);
-      }
-    };
-
-    setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-    return () => window.removeEventListener("resize", updateMainContentPosition);
-  }, []);
-
+  
   // Fetch test accounts (Railway) when test mode enabled
   useEffect(() => {
     const load = async () => {

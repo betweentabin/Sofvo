@@ -1,31 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import "./style.css";
 
 export const Screen11 = () => {
-  const [mainContentTop, setMainContentTop] = useState(201);
+  const mainContentTop = useHeaderOffset();
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const headerRect = header.getBoundingClientRect();
-        const headerBottom = headerRect.bottom;
-        setMainContentTop(headerBottom);
-      }
-    };
-
-    const timer = setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updateMainContentPosition);
-    };
-  }, []);
-
+  
   return (
     <div className="screen-11">
       <HeaderContent />

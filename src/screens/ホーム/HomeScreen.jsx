@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { HeaderTabs } from "../../components/HeaderTabs";
 import { HeaderShare } from "../../components/HeaderShare";
 import { Footer } from "../../components/Footer";
 import { FloatingPostButton } from "../../components/FloatingPostButton";
 import { PostComposer } from "../../components/PostComposer";
 import { supabase } from "../../lib/supabase";
+import api from "../../services/api";
 import { createPost } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
@@ -16,7 +18,7 @@ export const HomeScreen = () => {
   const location = useLocation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("following"); // 'following' or 'recommend'
-  const [mainContentTop, setMainContentTop] = useState(201);
+  const mainContentTop = useHeaderOffset();
   const [likedPosts, setLikedPosts] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [followingPosts, setFollowingPosts] = useState([]);
@@ -26,6 +28,8 @@ export const HomeScreen = () => {
   const [userCreatedPosts, setUserCreatedPosts] = useState([]);
   const [isComposerOpen, setIsComposerOpen] = useState(false); // tournament composer (existing)
   const [isQuickComposerOpen, setIsQuickComposerOpen] = useState(false); // simple post composer
+  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
   const composerInitialState = {
     tournamentName: '',
     date: '',
@@ -45,20 +49,23 @@ export const HomeScreen = () => {
   // Fetch following posts
   const fetchFollowingPosts = async () => {
     if (!user) return;
-    
+
     try {
-      // Get users that current user follows
+      if (USE_RAILWAY) {
+        const asUserId = RAILWAY_TEST_USER || user.id; // 注意: SupabaseとRailwayのIDは別物。テスト時はENVで指定推奨
+        const { data } = await api.railwayHome.getFollowing(asUserId, 10);
+        setFollowingPosts(data || []);
+        return;
+      }
+
+      // Supabaseルート（従来）
       const { data: followingUsers, error: followError } = await supabase
         .from('follows')
         .select('following_id')
         .eq('follower_id', user.id);
-      
       if (followError) throw followError;
-      
       if (followingUsers && followingUsers.length > 0) {
         const followingIds = followingUsers.map(f => f.following_id);
-        
-        // Get tournament results from followed users
         const { data: posts, error: postsError } = await supabase
           .from('tournament_results')
           .select(`
@@ -70,18 +77,25 @@ export const HomeScreen = () => {
           .in('tournament_participants.user_id', followingIds)
           .order('created_at', { ascending: false })
           .limit(10);
-        
         if (postsError) throw postsError;
         setFollowingPosts(posts || []);
+      } else {
+        setFollowingPosts([]);
       }
     } catch (error) {
       console.error('Error fetching following posts:', error);
+      setFollowingPosts([]);
     }
   };
 
   // Fetch recommended posts (latest tournament results)
   const fetchRecommendedPosts = async () => {
     try {
+      if (USE_RAILWAY) {
+        const { data } = await api.railwayHome.getRecommended(10);
+        setRecommendedPosts(data || []);
+        return;
+      }
       const { data: posts, error } = await supabase
         .from('tournament_results')
         .select(`
@@ -92,55 +106,37 @@ export const HomeScreen = () => {
         `)
         .order('created_at', { ascending: false })
         .limit(10);
-      
       if (error) throw error;
       setRecommendedPosts(posts || []);
     } catch (error) {
       console.error('Error fetching recommended posts:', error);
+      setRecommendedPosts([]);
     }
   };
 
   // Fetch recommended diaries (placeholder for now - could be a future feature)
   const fetchRecommendedDiaries = async () => {
     try {
-      // For now, just fetch recent profiles with bio
+      if (USE_RAILWAY) {
+        const { data } = await api.railwayHome.getRecommendedDiaries(3);
+        setRecommendedDiaries(data || []);
+        return;
+      }
       const { data: diaries, error } = await supabase
         .from('profiles')
         .select('*')
         .not('bio', 'is', null)
         .order('updated_at', { ascending: false })
         .limit(3);
-      
       if (error) throw error;
       setRecommendedDiaries(diaries || []);
     } catch (error) {
       console.error('Error fetching recommended diaries:', error);
+      setRecommendedDiaries([]);
     }
   };
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const headerShare = document.querySelector(".header-share-outer");
-      if (headerShare) {
-        const headerShareRect = headerShare.getBoundingClientRect();
-        const headerShareBottom = headerShareRect.bottom;
-        console.log("HomeScreen - headerShareRect:", headerShareRect);
-        console.log("HomeScreen - headerShareBottom:", headerShareBottom);
-        setMainContentTop(headerShareBottom);
-      } else {
-        console.log("HomeScreen - header-share-outer not found");
-      }
-    };
-
-    const timer = setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updateMainContentPosition);
-    };
-  }, []);
-
+  
   // Fetch data when component mounts or user changes
   useEffect(() => {
     const fetchData = async () => {

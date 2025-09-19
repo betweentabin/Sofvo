@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { HeaderContent } from "../../components/HeaderContent";
+import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -9,28 +10,11 @@ import "./style.css";
 export const Screen17 = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [mainContentTop, setMainContentTop] = useState(201);
+  const mainContentTop = useHeaderOffset();
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const updateMainContentPosition = () => {
-      const header = document.querySelector(".header-content-outer");
-      if (header) {
-        const headerRect = header.getBoundingClientRect();
-        setMainContentTop(headerRect.bottom);
-      }
-    };
-
-    const timer = setTimeout(updateMainContentPosition, 200);
-    window.addEventListener("resize", updateMainContentPosition);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updateMainContentPosition);
-    };
-  }, []);
-
+  
   // チームデータを取得
   useEffect(() => {
     const fetchTeamData = async () => {
