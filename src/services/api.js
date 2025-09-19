@@ -224,6 +224,18 @@ export const api = {
     unfollow: (asUser, targetId) => nodeAPI.delete('/railway-users/follow', { data: { as_user: asUser, target_id: targetId } }),
     getStats: (userId) => nodeAPI.get('/railway-users/stats', { params: { user_id: userId } }),
     getTournaments: (userId, limit = 5) => nodeAPI.get('/railway-users/tournaments', { params: { user_id: userId, limit } }),
+  },
+  // ===== Railway (PostgreSQL) Teams =====
+  railwayTeams: {
+    getOwnerTeam: (asUserId) => nodeAPI.get('/railway-teams/owner', { params: { as_user: asUserId, limit: 1 } }),
+    createTeam: (asUserId, { name, description, sport_type }) => nodeAPI.post('/railway-teams/create', { as_user: asUserId, name, description, sport_type }),
+    getMembers: (teamId) => nodeAPI.get('/railway-teams/members', { params: { team_id: teamId } }),
+    removeMember: (asUserId, teamId, userId) => nodeAPI.delete('/railway-teams/members', { data: { as_user: asUserId, team_id: teamId, user_id: userId } }),
+  },
+  // ===== Railway (PostgreSQL) Tournaments =====
+  railwayTournaments: {
+    create: (asUserId, payload) => nodeAPI.post('/railway-tournaments/create', { as_user: asUserId, ...payload }),
+    listMyHosted: (asUserId) => nodeAPI.get('/railway-tournaments/my-hosted', { params: { as_user: asUserId } }),
   }
 };
 

@@ -5,6 +5,7 @@ import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen37 = () => {
@@ -26,6 +27,8 @@ export const Screen37 = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
   
   // 入力変更ハンドラー
@@ -71,25 +74,38 @@ export const Screen37 = () => {
     setErrors({});
 
     try {
-      // Supabaseに大会を作成
-      const { data: tournament, error: tournamentError } = await supabase
-        .from('tournaments')
-        .insert({
+      if (USE_RAILWAY) {
+        const asUserId = RAILWAY_TEST_USER || user.id;
+        const payload = {
           name: formData.tournamentName,
           description: `競技方法: ${formData.competitionMethod}, 順位方法: ${formData.rankingMethod}`,
-          sport_type: "バドミントン",
+          sport_type: 'バレーボール',
           start_date: formData.date,
           location: `${formData.location} ${formData.venue} (${formData.address})`,
-          organizer_id: user.id,
-          status: 'upcoming'
-        })
-        .select()
-        .single();
-
-      if (tournamentError) throw tournamentError;
-
-      console.log("大会作成成功:", tournament);
-      navigate("/tournament-manage");
+          status: 'upcoming',
+        };
+        const { data } = await api.railwayTournaments.create(asUserId, payload);
+        console.log('大会作成成功(railway):', data);
+        navigate('/tournament-manage');
+      } else {
+        // Supabaseに大会を作成
+        const { data: tournament, error: tournamentError } = await supabase
+          .from('tournaments')
+          .insert({
+            name: formData.tournamentName,
+            description: `競技方法: ${formData.competitionMethod}, 順位方法: ${formData.rankingMethod}`,
+            sport_type: "バドミントン",
+            start_date: formData.date,
+            location: `${formData.location} ${formData.venue} (${formData.address})`,
+            organizer_id: user.id,
+            status: 'upcoming'
+          })
+          .select()
+          .single();
+        if (tournamentError) throw tournamentError;
+        console.log('大会作成成功:', tournament);
+        navigate('/tournament-manage');
+      }
     } catch (error) {
       console.error("大会作成エラー:", error);
       setErrors({ 

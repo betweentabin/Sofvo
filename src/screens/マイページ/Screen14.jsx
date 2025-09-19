@@ -50,8 +50,9 @@ export const Screen14 = () => {
         const { data } = await api.railwayUsers.getProfile(targetUserId);
         setProfile(data);
         const currentRailId = RAILWAY_TEST_USER || user?.id;
-        setIsOwnProfile(targetUserId === currentRailId);
-        if (!isOwnProfile && currentRailId) {
+        const isOwn = targetUserId === currentRailId;
+        setIsOwnProfile(isOwn);
+        if (!isOwn && currentRailId) {
           const { data: fs } = await api.railwayUsers.getFollowStatus(currentRailId, targetUserId);
           setFollowStatus(!!fs?.following);
         }
@@ -82,8 +83,9 @@ export const Screen14 = () => {
         } else {
           setProfile(profileData);
         }
-        setIsOwnProfile(targetUserId === user?.id);
-        if (!isOwnProfile && user) {
+        const isOwn = targetUserId === user?.id;
+        setIsOwnProfile(isOwn);
+        if (!isOwn && user) {
           const { data: followData } = await supabase
             .from('follows')
             .select('id')

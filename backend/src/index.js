@@ -17,6 +17,8 @@ import mediaRoutes from './routes/media.routes.js';
 import homeRoutes from './routes/home.routes.js';
 import railwayHomeRoutes from './routes/railway-home.routes.js';
 import railwayUsersRoutes from './routes/railway-users.routes.js';
+import railwayTeamsRoutes from './routes/railway-teams.routes.js';
+import railwayTournamentsRoutes from './routes/railway-tournaments.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 dotenv.config();
@@ -64,6 +66,8 @@ app.use('/api/railway-chat', railwayChatRoutes);
 app.use('/api/home', homeRoutes);
 app.use('/api/railway-home', railwayHomeRoutes);
 app.use('/api/railway-users', railwayUsersRoutes);
+app.use('/api/railway-teams', railwayTeamsRoutes);
+app.use('/api/railway-tournaments', railwayTournamentsRoutes);
 app.use('/api/contact', contactRoutes); // Contact doesn't require auth
 
 // Health check

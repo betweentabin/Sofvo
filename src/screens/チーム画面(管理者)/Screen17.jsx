@@ -5,6 +5,7 @@ import { Footer } from "../../components/Footer";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen17 = () => {
@@ -13,6 +14,8 @@ export const Screen17 = () => {
   const mainContentTop = useHeaderOffset();
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
   
   // チームデータを取得
@@ -21,28 +24,26 @@ export const Screen17 = () => {
       if (!user) return;
 
       try {
-        // ユーザーが作成したチームを取得
-        const { data: teams, error } = await supabase
-          .from('teams')
-          .select(`
-            *,
-            team_members!inner(
-              user_id,
-              role
-            )
-          `)
-          .eq('team_members.user_id', user.id)
-          .eq('team_members.role', 'owner')
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (error) {
-          console.error('チームデータ取得エラー:', error);
-          return;
-        }
-
-        if (teams && teams.length > 0) {
-          setTeamData(teams[0]);
+        if (USE_RAILWAY) {
+          const asUserId = RAILWAY_TEST_USER || user.id;
+          const { data } = await api.railwayTeams.getOwnerTeam(asUserId);
+          if (Array.isArray(data) && data.length > 0) setTeamData(data[0]);
+        } else {
+          // ユーザーが作成したチームを取得（Supabase）
+          const { data: teams, error } = await supabase
+            .from('teams')
+            .select(`
+              *,
+              team_members!inner(
+                user_id,
+                role
+              )
+            `)
+            .eq('team_members.user_id', user.id)
+            .eq('team_members.role', 'owner')
+            .order('created_at', { ascending: false })
+            .limit(1);
+          if (!error && teams && teams.length > 0) setTeamData(teams[0]);
         }
       } catch (error) {
         console.error('チームデータ取得エラー:', error);

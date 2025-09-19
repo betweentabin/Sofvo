@@ -1,20 +1,75 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
+import { useAuth } from "../../contexts/AuthContext";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen36 = () => {
   const mainContentTop = useHeaderOffset();
+  const { user } = useAuth();
+  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
-  
-  const tournaments = [
-    { name: "第15回 〇〇カップ", date: "2025年5月18日（日）", region: "静岡県", place: "〇〇体育館", address: "静岡県〇〇市〇〇町1-2-3", ball: "ミカサ", type: "混合フリー", method: "〇〇〇〇〇〇", ranking: "〇〇〇〇〇〇", showButton: true },
-    { name: "第16回 △△大会", date: "2025年6月10日（火）", region: "静岡県", place: "△△アリーナ", address: "静岡県△△市△△町4-5-6", ball: "モルテン", type: "男子6人制", method: "予選リーグ＋決勝トーナメント", ranking: "勝率→得失点差", showButton: true },
-    { name: "第17回 ××カップ", date: "2025年7月5日（土）", region: "東京都", place: "××ドーム", address: "東京都××区××1-2-3", ball: "モルテン", type: "女子6人制", method: "リーグ戦", ranking: "勝率→得失点差", showButton: true },
-    { name: "第18回 ◎◎大会", date: "2025年8月20日（水）", region: "大阪府", place: "◎◎体育館", address: "大阪府◎◎市◎◎町4-5-6", ball: "ミカサ", type: "混合フリー", method: "トーナメント戦", ranking: "勝率→得失点差", showButton: true },
-    { name: "第19回 □□カップ", date: "2025年9月15日（日）", region: "愛知県", place: "□□アリーナ", address: "愛知県□□市□□町7-8-9", ball: "モルテン", type: "男子6人制", method: "予選リーグ＋決勝トーナメント", ranking: "勝率→得失点差", showButton: true }
-  ];
+  const [tournaments, setTournaments] = useState([]);
+
+  const parseLocation = (loc) => {
+    if (!loc) return { region: "", place: "", address: "" };
+    let address = "";
+    let rest = loc;
+    const m = loc.match(/^(.*)\((.*)\)\s*$/);
+    if (m) {
+      rest = m[1].trim();
+      address = m[2].trim();
+    }
+    const parts = rest.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return { region: rest, place: "", address };
+    const region = parts[0];
+    const place = parts.slice(1).join(" ");
+    return { region, place, address };
+  };
+
+  const parseDescription = (desc) => {
+    const methodMatch = desc?.match(/競技方法\s*[:：]\s*([^,，]+)/);
+    const rankingMatch = desc?.match(/順位方法\s*[:：]\s*([^,，]+)/);
+    return {
+      method: methodMatch ? methodMatch[1].trim() : "",
+      ranking: rankingMatch ? rankingMatch[1].trim() : "",
+    };
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      if (!USE_RAILWAY) return; // 従来の静的表示のまま
+      const asUserId = RAILWAY_TEST_USER || user?.id;
+      if (!asUserId) return;
+      try {
+        const { data } = await api.railwayTournaments.listMyHosted(asUserId);
+        const mapped = (data || []).map((t) => {
+          const { region, place, address } = parseLocation(t.location);
+          const { method, ranking } = parseDescription(t.description);
+          const date = t.start_date ? new Date(t.start_date).toLocaleDateString('ja-JP') : "";
+          return {
+            name: t.name,
+            date,
+            region,
+            place,
+            address,
+            ball: "", // 未設定（必要に応じてdescription等から拡張）
+            type: t.sport_type || "",
+            method: method || "",
+            ranking: ranking || "",
+            showButton: true,
+          };
+        });
+        setTournaments(mapped);
+      } catch (e) {
+        console.error('Failed to load hosted tournaments:', e);
+      }
+    };
+    load();
+  }, [USE_RAILWAY, RAILWAY_TEST_USER, user]);
 
   return (
     <div className="screen-36">
