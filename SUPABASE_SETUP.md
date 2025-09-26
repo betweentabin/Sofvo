@@ -37,6 +37,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    - tournament_participants（大会参加者）
    - tournament_results（大会結果）
    - notifications（通知）
+   - posts（ホームタイムライン用の簡易投稿）
 
 ### 4. 認証設定
 
@@ -54,6 +55,7 @@ Supabaseダッシュボードの「Database」→「Replication」から：
    - messages
    - notifications
    - conversation_participants
+   - posts（新着投稿をホーム画面へ即時反映させるため）
 
 ## プロジェクト構造
 

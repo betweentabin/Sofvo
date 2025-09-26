@@ -290,6 +290,12 @@
   word-break: break-word;
 }
 
+.HOME-screen .quick-post-pending {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #c62828;
+}
+
 .HOME-screen .quick-post-message {
   text-align: center;
   color: #7a8ca5;

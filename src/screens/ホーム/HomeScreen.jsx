@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { HeaderTabs } from "../../components/HeaderTabs";
-import { HeaderShare } from "../../components/HeaderShare";
 import { Footer } from "../../components/Footer";
 import { FloatingPostButton } from "../../components/FloatingPostButton";
 import { PostComposer } from "../../components/PostComposer";
@@ -84,11 +83,6 @@ export const HomeScreen = () => {
     memo: '',
   };
   const [composerData, setComposerData] = useState(composerInitialState);
-  const [filters, setFilters] = useState({
-    yearMonth: 'all',
-    region: 'all',
-    category: 'all',
-  });
 
   // Fetch following posts
   const fetchFollowingPosts = async () => {
@@ -267,98 +261,6 @@ export const HomeScreen = () => {
     }));
   };
 
-  const formatYearMonth = (dateString) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) {
-      return null;
-    }
-    return `${date.getFullYear()}年${date.getMonth() + 1}月`;
-  };
-
-  const parseYearMonth = (label) => {
-    if (!label) return 0;
-    const match = label.match(/(\d{4})年(\d{1,2})月/);
-    if (!match) return 0;
-    const year = Number(match[1]);
-    const month = Number(match[2]) - 1;
-    return new Date(year, month).getTime();
-  };
-
-  const allPosts = useMemo(() => {
-    return [...userCreatedPosts, ...followingPosts, ...recommendedPosts];
-  }, [userCreatedPosts, followingPosts, recommendedPosts]);
-
-  const yearMonthOptions = useMemo(() => {
-    const values = new Set();
-    allPosts.forEach((post) => {
-      const label = formatYearMonth(post?.tournaments?.start_date);
-      if (label) {
-        values.add(label);
-      }
-    });
-    return Array.from(values).sort((a, b) => parseYearMonth(b) - parseYearMonth(a));
-  }, [allPosts]);
-
-  const regionOptions = useMemo(() => {
-    const values = new Set();
-    allPosts.forEach((post) => {
-      if (post?.tournaments?.location) {
-        values.add(post.tournaments.location);
-      }
-    });
-    return Array.from(values).sort();
-  }, [allPosts]);
-
-  const categoryOptions = useMemo(() => {
-    const values = new Set();
-    allPosts.forEach((post) => {
-      if (post?.tournaments?.sport_type) {
-        values.add(post.tournaments.sport_type);
-      }
-    });
-    return Array.from(values).sort();
-  }, [allPosts]);
-
-  const matchesFilters = (post) => {
-    const tournament = post?.tournaments;
-    if (filters.yearMonth !== 'all') {
-      const label = formatYearMonth(tournament?.start_date);
-      if (label !== filters.yearMonth) {
-        return false;
-      }
-    }
-
-    if (filters.region !== 'all') {
-      if (!tournament?.location || tournament.location !== filters.region) {
-        return false;
-      }
-    }
-
-    if (filters.category !== 'all') {
-      if (!tournament?.sport_type || tournament.sport_type !== filters.category) {
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const filteredFollowingPosts = useMemo(() => {
-    const combined = [...userCreatedPosts, ...followingPosts];
-    return combined.filter((post) => matchesFilters(post));
-  }, [userCreatedPosts, followingPosts, filters]);
-
-  const filteredRecommendedPosts = useMemo(() => {
-    return recommendedPosts.filter((post) => matchesFilters(post));
-  }, [recommendedPosts, filters]);
-
-  const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
 
   const handleComposerChange = (field) => (event) => {
     setComposerData((prev) => ({
@@ -403,9 +305,6 @@ export const HomeScreen = () => {
     resetComposer();
   };
 
-  const handleOpenComposer = () => {
-    setIsComposerOpen(true);
-  };
 
   const openQuickComposer = () => setIsQuickComposerOpen(true);
   const closeQuickComposer = () => setIsQuickComposerOpen(false);
@@ -423,6 +322,26 @@ export const HomeScreen = () => {
       });
     } catch (error) {
       console.error('Error creating post:', error);
+
+      if (error?.code === 'PGRST205' || /public\.posts/.test(error?.message || '')) {
+        const fallbackPost = {
+          id: `local-${Date.now()}`,
+          content: text,
+          created_at: new Date().toISOString(),
+          profiles: {
+            display_name: user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'あなた',
+            username: user?.email || 'あなた',
+            avatar_url: user?.user_metadata?.avatar_url || null,
+          },
+          isLocal: true,
+        };
+
+        setTimelinePosts((prev) => [fallbackPost, ...prev].slice(0, TIMELINE_LIMIT));
+
+        alert('投稿テーブルがまだセットアップされていないためローカル表示のみ行いました。\nSupabaseのSQLエディタでpostsテーブルを作成してください。');
+        return;
+      }
+
       alert('投稿に失敗しました');
     }
   };
@@ -438,15 +357,6 @@ export const HomeScreen = () => {
     <div className="HOME-screen">
       <HeaderContent showSettings={false} />
       <HeaderTabs onTabChange={setActiveTab} activeTab={activeTab} />
-      <HeaderShare
-        filters={filters}
-        options={{
-          yearMonths: yearMonthOptions,
-          regions: regionOptions,
-          categories: categoryOptions,
-        }}
-        onFilterChange={handleFilterChange}
-      />
 
       {/* 本文セクション - ヘッダーとフッターの間 */}
       <div className="main-content" style={{ top: `${mainContentTop}px` }}>
@@ -486,6 +396,9 @@ export const HomeScreen = () => {
                               <div className="quick-post-time">{formatRelativeTime(post.created_at)}</div>
                             </div>
                             <div className="quick-post-content">{post.content}</div>
+                            {post.isLocal && (
+                              <div className="quick-post-pending">Supabase未反映（DBセットアップが必要です）</div>
+                            )}
                           </div>
                         </div>
                       );
@@ -614,8 +527,8 @@ export const HomeScreen = () => {
 
             {loading ? (
               <div style={{ padding: '20px', textAlign: 'center' }}>読み込み中...</div>
-            ) : filteredFollowingPosts.length > 0 ? (
-              filteredFollowingPosts.map((post) => (
+            ) : [...userCreatedPosts, ...followingPosts].length > 0 ? (
+              [...userCreatedPosts, ...followingPosts].map((post) => (
                 <div className="frame-75" key={post.id}>
                   <div className="frame-76">
                     <div className="frame-77">
@@ -708,7 +621,7 @@ export const HomeScreen = () => {
                   </div>
                 </div>
                 <div className="text-wrapper-39">
-                  大会を検索（チーム参加）
+                  大会を検索
                 </div>
               </div>
 
@@ -721,7 +634,7 @@ export const HomeScreen = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="大会名を入力"
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         handleSearch();
                       }
@@ -747,8 +660,8 @@ export const HomeScreen = () => {
             <div className="activity-items">
                 {loading ? (
                   <div style={{ padding: '20px', textAlign: 'center' }}>読み込み中...</div>
-                ) : filteredRecommendedPosts.length > 0 ? (
-                  filteredRecommendedPosts.slice(0, 3).map((post) => (
+                ) : recommendedPosts.length > 0 ? (
+                  recommendedPosts.slice(0, 3).map((post) => (
                     <div className="activity-item" key={post.id}>
                       <div className="rectangle-6" />
                       <div className="activity-item-content">
