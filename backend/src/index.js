@@ -16,6 +16,7 @@ import railwayChatRoutes from './routes/railway-chat.routes.js';
 import mediaRoutes from './routes/media.routes.js';
 import homeRoutes from './routes/home.routes.js';
 import railwayHomeRoutes from './routes/railway-home.routes.js';
+import railwayAuthRoutes from './routes/railway-auth.routes.js';
 import railwayUsersRoutes from './routes/railway-users.routes.js';
 import railwayTeamsRoutes from './routes/railway-teams.routes.js';
 import railwayTournamentsRoutes from './routes/railway-tournaments.routes.js';
@@ -65,6 +66,7 @@ app.use('/api/railway-chat', railwayChatRoutes);
 // Mixed routes (some endpoints require auth, some don't)
 app.use('/api/home', homeRoutes);
 app.use('/api/railway-home', railwayHomeRoutes);
+app.use('/api/railway-auth', railwayAuthRoutes);
 app.use('/api/railway-users', railwayUsersRoutes);
 app.use('/api/railway-teams', railwayTeamsRoutes);
 app.use('/api/railway-tournaments', railwayTournamentsRoutes);

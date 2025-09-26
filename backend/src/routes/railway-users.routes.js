@@ -1,11 +1,11 @@
 import express from 'express';
 import { query } from '../config/database.js';
-import { verifySupabaseToken } from '../middleware/supabase-auth.middleware.js';
+import { verifyAnyAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // GET /api/railway-users/profile?user_id=<uuid>
-router.get('/profile', verifySupabaseToken, async (req, res) => {
+router.get('/profile', verifyAnyAuth, async (req, res) => {
   const userId = req.query.user_id;
   if (!userId) return res.status(400).json({ message: 'user_id is required' });
   try {
@@ -19,7 +19,7 @@ router.get('/profile', verifySupabaseToken, async (req, res) => {
 });
 
 // GET /api/railway-users/follow-status?as_user=<uuid>&target_id=<uuid>
-router.get('/follow-status', verifySupabaseToken, async (req, res) => {
+router.get('/follow-status', verifyAnyAuth, async (req, res) => {
   const { as_user: asUser, target_id: targetId } = req.query;
   if (!asUser || !targetId) return res.status(400).json({ message: 'as_user and target_id are required' });
   try {
@@ -35,7 +35,7 @@ router.get('/follow-status', verifySupabaseToken, async (req, res) => {
 });
 
 // POST /api/railway-users/follow { as_user, target_id }
-router.post('/follow', verifySupabaseToken, async (req, res) => {
+router.post('/follow', verifyAnyAuth, async (req, res) => {
   const { as_user: asUser, target_id: targetId } = req.body || {};
   if (!asUser || !targetId) return res.status(400).json({ message: 'as_user and target_id are required' });
   try {
@@ -52,7 +52,7 @@ router.post('/follow', verifySupabaseToken, async (req, res) => {
 });
 
 // DELETE /api/railway-users/follow { as_user, target_id }
-router.delete('/follow', verifySupabaseToken, async (req, res) => {
+router.delete('/follow', verifyAnyAuth, async (req, res) => {
   const { as_user: asUser, target_id: targetId } = req.body || {};
   if (!asUser || !targetId) return res.status(400).json({ message: 'as_user and target_id are required' });
   try {
@@ -68,7 +68,7 @@ router.delete('/follow', verifySupabaseToken, async (req, res) => {
 });
 
 // GET /api/railway-users/stats?user_id=<uuid>
-router.get('/stats', verifySupabaseToken, async (req, res) => {
+router.get('/stats', verifyAnyAuth, async (req, res) => {
   const userId = req.query.user_id;
   if (!userId) return res.status(400).json({ message: 'user_id is required' });
   try {
@@ -112,7 +112,7 @@ router.get('/stats', verifySupabaseToken, async (req, res) => {
 });
 
 // GET /api/railway-users/tournaments?user_id=<uuid>&limit=5
-router.get('/tournaments', verifySupabaseToken, async (req, res) => {
+router.get('/tournaments', verifyAnyAuth, async (req, res) => {
   const userId = req.query.user_id;
   const limit = Number(req.query.limit) || 5;
   if (!userId) return res.status(400).json({ message: 'user_id is required' });
@@ -154,4 +154,3 @@ router.get('/tournaments', verifySupabaseToken, async (req, res) => {
 });
 
 export default router;
-

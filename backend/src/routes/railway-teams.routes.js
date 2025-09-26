@@ -1,11 +1,11 @@
 import express from 'express';
 import { query } from '../config/database.js';
-import { verifySupabaseToken } from '../middleware/supabase-auth.middleware.js';
+import { verifyAnyAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // GET /api/railway-teams/owner?as_user=<uuid>&limit=1
-router.get('/owner', verifySupabaseToken, async (req, res) => {
+router.get('/owner', verifyAnyAuth, async (req, res) => {
   const asUser = req.query.as_user;
   const limit = Number(req.query.limit) || 1;
   if (!asUser) return res.status(400).json({ message: 'as_user is required' });
@@ -27,7 +27,7 @@ router.get('/owner', verifySupabaseToken, async (req, res) => {
 });
 
 // POST /api/railway-teams/create { as_user, name, description, sport_type }
-router.post('/create', verifySupabaseToken, async (req, res) => {
+router.post('/create', verifyAnyAuth, async (req, res) => {
   const { as_user: asUser, name, description = null, sport_type = null } = req.body || {};
   if (!asUser || !name) return res.status(400).json({ message: 'as_user and name are required' });
   try {
@@ -55,7 +55,7 @@ export default router;
 
 // ============ Members ============
 // GET /api/railway-teams/members?team_id=<uuid>
-router.get('/members', verifySupabaseToken, async (req, res) => {
+router.get('/members', verifyAnyAuth, async (req, res) => {
   const teamId = req.query.team_id;
   if (!teamId) return res.status(400).json({ message: 'team_id is required' });
   try {
@@ -76,7 +76,7 @@ router.get('/members', verifySupabaseToken, async (req, res) => {
 });
 
 // DELETE /api/railway-teams/members { as_user, team_id, user_id }
-router.delete('/members', verifySupabaseToken, async (req, res) => {
+router.delete('/members', verifyAnyAuth, async (req, res) => {
   const { as_user: asUser, team_id: teamId, user_id: targetUserId } = req.body || {};
   if (!asUser || !teamId || !targetUserId) return res.status(400).json({ message: 'as_user, team_id and user_id are required' });
   try {

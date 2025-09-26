@@ -1,6 +1,6 @@
 import express from 'express';
 import { query } from '../config/database.js';
-import { verifySupabaseToken } from '../middleware/supabase-auth.middleware.js';
+import { verifyAnyAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -29,7 +29,7 @@ const mapResultRow = (r) => ({
 });
 
 // GET /api/railway-home/following?as_user=<uuid>&limit=10
-router.get('/following', verifySupabaseToken, async (req, res) => {
+router.get('/following', verifyAnyAuth, async (req, res) => {
   const { as_user: asUser, limit = 10 } = req.query;
   if (!asUser) return res.status(400).json({ message: 'as_user is required' });
   try {
@@ -127,4 +127,3 @@ router.get('/recommended-diaries', async (req, res) => {
 });
 
 export default router;
-

@@ -1,12 +1,12 @@
 import express from 'express';
 import { query } from '../config/database.js';
-import { verifySupabaseToken } from '../middleware/supabase-auth.middleware.js';
+import { verifyAnyAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // POST /api/railway-tournaments/create
 // body: { as_user, name, description, sport_type, start_date, location, status }
-router.post('/create', verifySupabaseToken, async (req, res) => {
+router.post('/create', verifyAnyAuth, async (req, res) => {
   const { as_user: asUser, name, description = null, sport_type = null, start_date = null, location = null, status = 'upcoming' } = req.body || {};
   if (!asUser || !name || !start_date || !location) {
     return res.status(400).json({ message: 'as_user, name, start_date, location are required' });
@@ -26,7 +26,7 @@ router.post('/create', verifySupabaseToken, async (req, res) => {
 });
 
 // GET /api/railway-tournaments/my-hosted?as_user=<uuid>
-router.get('/my-hosted', verifySupabaseToken, async (req, res) => {
+router.get('/my-hosted', verifyAnyAuth, async (req, res) => {
   const asUser = req.query.as_user;
   if (!asUser) return res.status(400).json({ message: 'as_user is required' });
   try {
@@ -42,4 +42,3 @@ router.get('/my-hosted', verifySupabaseToken, async (req, res) => {
 });
 
 export default router;
-

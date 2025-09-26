@@ -136,9 +136,15 @@ export const useConversations = () => {
   const [conversations, setConversations] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const TEST_RAILWAY = import.meta.env.VITE_RAILWAY_CHAT_TEST === 'true'
 
   const fetchConversations = useCallback(async () => {
-    if (!user) return
+    if (!user || TEST_RAILWAY) {
+      // Railwayテストモード時はSupabaseには問い合わせない
+      setLoading(false)
+      setConversations([])
+      return
+    }
 
     try {
       setLoading(true)
@@ -162,7 +168,7 @@ export const useConversations = () => {
           )
         `)
         .eq('user_id', user.id)
-        .order('conversation.updated_at', { ascending: false })
+        .order('updated_at', { ascending: false, foreignTable: 'conversations' })
 
       if (error) throw error
 

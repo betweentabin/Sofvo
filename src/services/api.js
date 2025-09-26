@@ -10,32 +10,31 @@ const nodeAPI = axios.create({
 });
 
 // リクエストインターセプター（認証トークン自動付与）
+const USE_RAILWAY_AUTH = import.meta.env.VITE_USE_RAILWAY_AUTH === 'true';
+
 nodeAPI.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
+  if (USE_RAILWAY_AUTH) {
+    const token = localStorage.getItem('JWT');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
   }
+  // Supabase default
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) config.headers.Authorization = `Bearer ${session.access_token}`;
   return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+}, (error) => Promise.reject(error));
 
 // レスポンスインターセプター（エラーハンドリング）
-nodeAPI.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      // トークン期限切れの場合、リフレッシュを試みる
-      const { data: { session } } = await supabase.auth.refreshSession();
-      if (session) {
-        // リトライ
-        error.config.headers.Authorization = `Bearer ${session.access_token}`;
-        return nodeAPI.request(error.config);
-      }
+nodeAPI.interceptors.response.use((r) => r, async (error) => {
+  if (error.response?.status === 401 && !USE_RAILWAY_AUTH) {
+    const { data: { session } } = await supabase.auth.refreshSession();
+    if (session) {
+      error.config.headers.Authorization = `Bearer ${session.access_token}`;
+      return nodeAPI.request(error.config);
     }
-    return Promise.reject(error);
   }
-);
+  return Promise.reject(error);
+});
 
 export const api = {
   // ===== Supabase直接使用（リアルタイム機能） =====

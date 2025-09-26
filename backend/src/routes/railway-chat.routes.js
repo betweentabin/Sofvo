@@ -1,6 +1,6 @@
 import express from 'express';
 import { query } from '../config/database.js';
-import { verifySupabaseToken } from '../middleware/supabase-auth.middleware.js';
+import { verifyAnyAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -34,7 +34,7 @@ router.get('/test-accounts', verifySupabaseToken, async (req, res) => {
 });
 
 // GET /api/railway-chat/conversations?as_user=<uuid>
-router.get('/conversations', verifySupabaseToken, async (req, res) => {
+router.get('/conversations', verifyAnyAuth, async (req, res) => {
   const asUser = req.query.as_user;
   if (!asUser) return res.status(400).json({ message: 'as_user is required' });
   try {
@@ -71,7 +71,7 @@ router.get('/conversations', verifySupabaseToken, async (req, res) => {
 
 // POST /api/railway-chat/conversations
 // body: { as_user: uuid, type?: 'direct'|'group', participant_ids: uuid[], name? }
-router.post('/conversations', verifySupabaseToken, async (req, res) => {
+router.post('/conversations', verifyAnyAuth, async (req, res) => {
   try {
     const { as_user: asUser, type = 'direct', participant_ids = [], name = null } = req.body;
     if (!asUser) return res.status(400).json({ message: 'as_user is required' });
@@ -119,7 +119,7 @@ router.post('/conversations', verifySupabaseToken, async (req, res) => {
 });
 
 // GET /api/railway-chat/conversations/:id/messages?as_user=<uuid>&limit=50&before=<iso>
-router.get('/conversations/:id/messages', verifySupabaseToken, async (req, res) => {
+router.get('/conversations/:id/messages', verifyAnyAuth, async (req, res) => {
   const { id } = req.params;
   const { as_user: asUser, limit = 50, before } = req.query;
   if (!asUser) return res.status(400).json({ message: 'as_user is required' });
@@ -157,7 +157,7 @@ router.get('/conversations/:id/messages', verifySupabaseToken, async (req, res) 
 
 // POST /api/railway-chat/send
 // body: { as_user, conversation_id, content, type, file_url }
-router.post('/send', verifySupabaseToken, async (req, res) => {
+router.post('/send', verifyAnyAuth, async (req, res) => {
   try {
     const { as_user: asUser, conversation_id, content, type = 'text', file_url = null } = req.body;
     if (!asUser || !conversation_id || !content) {
@@ -186,4 +186,3 @@ router.post('/send', verifySupabaseToken, async (req, res) => {
 });
 
 export default router;
-

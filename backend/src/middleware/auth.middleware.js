@@ -1,35 +1,35 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/User.model.js';
+import { verifyJwt } from '../utils/jwt.js';
+import { createClient } from '@supabase/supabase-js';
 
-export const protect = async (req, res, next) => {
-  let token;
+const supabaseEnabled = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
+const supabase = supabaseEnabled ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY) : null;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+export const verifyAnyAuth = async (req, res, next) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!token) return res.status(401).json({ message: 'Missing Authorization header' });
+
+  // 1) Try Railway JWT first
+  const jwtSecret = process.env.JWT_SECRET || 'dev-secret';
+  const payload = verifyJwt(token, { secret: jwtSecret });
+  if (payload?.sub) {
+    req.userId = payload.sub;
+    req.user = { id: payload.sub, email: payload.email };
+    return next();
+  }
+
+  // 2) Fallback to Supabase token (for transition period)
+  if (supabase) {
     try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      req.user = await User.findById(decoded.id).select('-password');
-      
-      if (!req.user) {
-        return res.status(401).json({ message: 'User not found' });
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (!error && user) {
+        req.userId = user.id;
+        req.user = user;
+        return next();
       }
-      
-      next();
-    } catch (error) {
-      return res.status(401).json({ message: 'Not authorized, token failed' });
-    }
+    } catch {}
   }
 
-  if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
-  }
+  return res.status(401).json({ message: 'Invalid or expired token' });
 };
 
-export const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ message: 'Not authorized as admin' });
-  }
-};
