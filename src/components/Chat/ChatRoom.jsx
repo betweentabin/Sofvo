@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useChat } from '../../hooks/useChat'
 import { useChatRailway } from '../../hooks/useChatRailway'
 import ChatMessage from './ChatMessage'
 
-const ChatRoom = ({ conversationId, useRailway = false, asUserId = null }) => {
-  const chat = useRailway ? useChatRailway(conversationId, asUserId) : useChat(conversationId)
+const ChatRoom = ({ conversationId, asUserId = null }) => {
+  const chat = useChatRailway(conversationId, asUserId)
   const { messages, loading, error, sendMessage } = chat
   const [inputMessage, setInputMessage] = useState('')
   const [sending, setSending] = useState(false)

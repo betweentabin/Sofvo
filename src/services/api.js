@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { supabase } from '../lib/supabase';
+// Supabase removed: Railway-only implementation
 
 // Node.js バックエンドAPI設定
 const nodeAPI = axios.create({
@@ -10,114 +10,38 @@ const nodeAPI = axios.create({
 });
 
 // リクエストインターセプター（認証トークン自動付与）
-const USE_RAILWAY_AUTH = import.meta.env.VITE_USE_RAILWAY_AUTH === 'true';
+const USE_RAILWAY_AUTH = true; // Railway-only
 
 nodeAPI.interceptors.request.use(async (config) => {
-  if (USE_RAILWAY_AUTH) {
-    const token = localStorage.getItem('JWT');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  }
-  // Supabase default
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.access_token) config.headers.Authorization = `Bearer ${session.access_token}`;
+  const token = localStorage.getItem('JWT');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 }, (error) => Promise.reject(error));
 
 // レスポンスインターセプター（エラーハンドリング）
-nodeAPI.interceptors.response.use((r) => r, async (error) => {
-  if (error.response?.status === 401 && !USE_RAILWAY_AUTH) {
-    const { data: { session } } = await supabase.auth.refreshSession();
-    if (session) {
-      error.config.headers.Authorization = `Bearer ${session.access_token}`;
-      return nodeAPI.request(error.config);
-    }
-  }
-  return Promise.reject(error);
-});
+nodeAPI.interceptors.response.use((r) => r, async (error) => Promise.reject(error));
 
 export const api = {
-  // ===== Supabase直接使用（リアルタイム機能） =====
-  chat: {
-    // メッセージ送信
-    sendMessage: async (conversationId, content, type = 'text') => {
-      const { data: { user } } = await supabase.auth.getUser();
-      return supabase
-        .from('messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          content,
-          type
-        })
-        .select()
-        .single();
+  // Supabase chat removed
+  // ===== Railway (PostgreSQL) Notifications =====
+  railwayNotifications: {
+    list: (limit = 50, offset = 0) => nodeAPI.get('/railway-notifications', { params: { limit, offset } }),
+    unreadCount: () => nodeAPI.get('/railway-notifications/unread-count'),
+    markRead: (id) => nodeAPI.put(`/railway-notifications/${id}/read`),
+    readAll: () => nodeAPI.put('/railway-notifications/read-all'),
+    delete: (id) => nodeAPI.delete(`/railway-notifications/${id}`),
+    clearAll: () => nodeAPI.delete('/railway-notifications/clear-all'),
+    sseUrl: (asUserId) => {
+      const base = (import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api').replace(/\/?api\/?$/, '');
+      const token = localStorage.getItem('JWT') || '';
+      return `${base}/api/realtime/notifications?as_user=${encodeURIComponent(asUserId)}&token=${encodeURIComponent(token)}`;
     },
-    
-    // メッセージ取得
-    getMessages: (conversationId) => {
-      return supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:profiles(id, username, display_name, avatar_url)
-        `)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-    },
-    
-    // 会話作成
-    createConversation: async (recipientId) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // 既存の会話をチェック
-      const { data: existing } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('type', 'direct')
-        .contains('participants', [user.id, recipientId]);
-      
-      if (existing?.length > 0) {
-        return { data: existing[0] };
-      }
-      
-      // 新規作成
-      const { data: conversation } = await supabase
-        .from('conversations')
-        .insert({ type: 'direct' })
-        .select()
-        .single();
-      
-      // 参加者追加
-      await supabase
-        .from('conversation_participants')
-        .insert([
-          { conversation_id: conversation.id, user_id: user.id },
-          { conversation_id: conversation.id, user_id: recipientId }
-        ]);
-      
-      return { data: conversation };
-    }
+    saveDeviceToken: (token, platform, device_info = {}) => nodeAPI.post('/railway-notifications/device-tokens', { token, platform, device_info }),
+    deleteDeviceToken: (token) => nodeAPI.delete('/railway-notifications/device-tokens', { data: { token } }),
+    getSettings: () => nodeAPI.get('/railway-notifications/settings'),
+    updateSettings: (settings) => nodeAPI.put('/railway-notifications/settings', settings)
   },
-  
-  notifications: {
-    // リアルタイム通知の購読
-    subscribe: (userId, callback) => {
-      return supabase
-        .channel(`notifications:${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${userId}`
-          },
-          callback
-        )
-        .subscribe();
-    }
-  },
+  // Supabase notifications removed
   
   // ===== Node.js API使用（ビジネスロジック） =====
   
@@ -215,14 +139,22 @@ export const api = {
     getRecommended: (limit = 10) => nodeAPI.get('/railway-home/recommended', { params: { limit } }),
     getRecommendedDiaries: (limit = 3) => nodeAPI.get('/railway-home/recommended-diaries', { params: { limit } }),
   },
+  // ===== Railway (PostgreSQL) Posts =====
+  railwayPosts: {
+    latest: (limit = 30) => nodeAPI.get('/railway-posts/latest', { params: { limit } }),
+    following: (asUserId, limit = 30) => nodeAPI.get('/railway-posts/following', { params: { as_user: asUserId, limit } }),
+    create: (asUserId, content, visibility = 'public') => nodeAPI.post('/railway-posts/create', { as_user: asUserId, content, visibility }),
+  },
   // ===== Railway (PostgreSQL) Users / Profile =====
   railwayUsers: {
     getProfile: (userId) => nodeAPI.get('/railway-users/profile', { params: { user_id: userId } }),
+    updateProfile: (payload) => nodeAPI.put('/railway-users/profile', payload),
     getFollowStatus: (asUser, targetId) => nodeAPI.get('/railway-users/follow-status', { params: { as_user: asUser, target_id: targetId } }),
     follow: (asUser, targetId) => nodeAPI.post('/railway-users/follow', { as_user: asUser, target_id: targetId }),
     unfollow: (asUser, targetId) => nodeAPI.delete('/railway-users/follow', { data: { as_user: asUser, target_id: targetId } }),
     getStats: (userId) => nodeAPI.get('/railway-users/stats', { params: { user_id: userId } }),
     getTournaments: (userId, limit = 5) => nodeAPI.get('/railway-users/tournaments', { params: { user_id: userId, limit } }),
+    search: (term, limit = 10) => nodeAPI.get('/railway-users/search', { params: { term, limit } }),
   },
   // ===== Railway (PostgreSQL) Teams =====
   railwayTeams: {
@@ -235,6 +167,7 @@ export const api = {
   railwayTournaments: {
     create: (asUserId, payload) => nodeAPI.post('/railway-tournaments/create', { as_user: asUserId, ...payload }),
     listMyHosted: (asUserId) => nodeAPI.get('/railway-tournaments/my-hosted', { params: { as_user: asUserId } }),
+    search: (params = {}) => nodeAPI.get('/railway-tournaments/search', { params }),
   }
 };
 

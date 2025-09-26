@@ -3,23 +3,18 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import { testConnection } from './config/supabase.js';
-import { verifySupabaseToken } from './middleware/supabase-auth.middleware.js';
-import authRoutes from './routes/auth.routes.js';
-import userRoutes from './routes/user.routes.js';
-import teamRoutes from './routes/team.routes.js';
-import tournamentRoutes from './routes/tournament.routes.js';
-import messageRoutes from './routes/message.routes.js';
-import notificationRoutes from './routes/notification.routes.js';
-import contactRoutes from './routes/contact.routes.js';
+import { connectDB } from './config/database.js';
 import railwayChatRoutes from './routes/railway-chat.routes.js';
 import mediaRoutes from './routes/media.routes.js';
-import homeRoutes from './routes/home.routes.js';
+import localAuthRoutes from './routes/auth-local.routes.js';
 import railwayHomeRoutes from './routes/railway-home.routes.js';
 import railwayAuthRoutes from './routes/railway-auth.routes.js';
 import railwayUsersRoutes from './routes/railway-users.routes.js';
 import railwayTeamsRoutes from './routes/railway-teams.routes.js';
 import railwayTournamentsRoutes from './routes/railway-tournaments.routes.js';
+import railwayPostsRoutes from './routes/railway-posts.routes.js';
+import railwayNotificationsRoutes from './routes/railway-notifications.routes.js';
+import realtimeRoutes from './routes/railway-realtime.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 dotenv.config();
@@ -52,25 +47,22 @@ app.use('/uploads', express.static('uploads'));
 
 // API Routes
 // Auth routes (no middleware needed - handles its own auth)
-app.use('/api/auth', authRoutes);
+app.use('/api/local-auth', localAuthRoutes);
 
-// Protected routes (require authentication)
-app.use('/api/users', verifySupabaseToken, userRoutes);
-app.use('/api/teams', verifySupabaseToken, teamRoutes);
-app.use('/api/tournaments', verifySupabaseToken, tournamentRoutes);
-app.use('/api/messages', verifySupabaseToken, messageRoutes);
-app.use('/api/notifications', verifySupabaseToken, notificationRoutes);
-app.use('/api/media', verifySupabaseToken, mediaRoutes);
+// Optional media route (kept if not Supabase-dependent)
+app.use('/api/media', mediaRoutes);
 app.use('/api/railway-chat', railwayChatRoutes);
 
 // Mixed routes (some endpoints require auth, some don't)
-app.use('/api/home', homeRoutes);
 app.use('/api/railway-home', railwayHomeRoutes);
 app.use('/api/railway-auth', railwayAuthRoutes);
 app.use('/api/railway-users', railwayUsersRoutes);
 app.use('/api/railway-teams', railwayTeamsRoutes);
 app.use('/api/railway-tournaments', railwayTournamentsRoutes);
-app.use('/api/contact', contactRoutes); // Contact doesn't require auth
+app.use('/api/railway-posts', railwayPostsRoutes);
+app.use('/api/railway-notifications', railwayNotificationsRoutes);
+app.use('/api/realtime', realtimeRoutes);
+// Removed Supabase-dependent routes (users, teams, tournaments, messages, notifications, contact)
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -83,17 +75,12 @@ app.use(errorHandler);
 // Connect to database and start server
 const startServer = async () => {
   try {
-    // Test Supabase database connection
-    const isConnected = await testConnection();
-    if (!isConnected) {
-      throw new Error('Failed to connect to Supabase database');
-    }
-    
+    await connectDB();
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
       console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
-      console.log(`Supabase integration: Active`);
+      console.log(`Railway DB: Connected`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

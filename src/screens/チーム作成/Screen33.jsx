@@ -4,7 +4,7 @@ import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { useAuth } from "../../contexts/AuthContext";
-import { supabase } from "../../lib/supabase";
+// Supabase removed: Railway-only
 import api from "../../services/api";
 import "./style.css";
 
@@ -22,7 +22,7 @@ export const Screen33 = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const USE_RAILWAY = true;
   const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
   
@@ -86,35 +86,14 @@ export const Screen33 = () => {
     setErrors({});
 
     try {
-      if (USE_RAILWAY) {
-        const asUserId = RAILWAY_TEST_USER || user.id;
-        const { data: team } = await api.railwayTeams.createTeam(asUserId, {
-          name: formData.teamName,
-          description: formData.selfIntroduction,
-          sport_type: 'バレーボール',
-        });
-        console.log('チーム作成成功(railway):', team);
-        navigate('/team-management');
-      } else {
-        // Supabaseにチームを作成
-        const { data: team, error: teamError } = await supabase
-          .from('teams')
-          .insert({
-            name: formData.teamName,
-            description: formData.selfIntroduction,
-            sport_type: "バドミントン", // デフォルト値
-            created_by: user.id
-          })
-          .select()
-          .single();
-        if (teamError) throw teamError;
-        const { error: memberError } = await supabase
-          .from('team_members')
-          .insert({ team_id: team.id, user_id: user.id, role: 'owner' });
-        if (memberError) throw memberError;
-        console.log('チーム作成成功:', team);
-        navigate('/team-management');
-      }
+      const asUserId = RAILWAY_TEST_USER || user.id;
+      const { data: team } = await api.railwayTeams.createTeam(asUserId, {
+        name: formData.teamName,
+        description: formData.selfIntroduction,
+        sport_type: 'バレーボール',
+      });
+      console.log('チーム作成成功(railway):', team);
+      navigate('/team-management');
     } catch (error) {
       console.error("チーム作成エラー:", error);
       setErrors({ 

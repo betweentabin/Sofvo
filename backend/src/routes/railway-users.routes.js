@@ -153,4 +153,54 @@ router.get('/tournaments', verifyAnyAuth, async (req, res) => {
   }
 });
 
+// GET /api/railway-users/search?term=<text>&limit=10
+router.get('/search', verifyAnyAuth, async (req, res) => {
+  const term = (req.query.term || '').toString().trim();
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+  if (!term) return res.json([]);
+  try {
+    const like = `%${term}%`;
+    const { rows } = await query(
+      `SELECT id, username, display_name, avatar_url
+       FROM profiles
+       WHERE (username ILIKE $1 OR display_name ILIKE $1)
+       ORDER BY updated_at DESC
+       LIMIT $2`,
+      [like, limit]
+    );
+    res.json(rows || []);
+  } catch (e) {
+    console.error('railway-users/search error:', e);
+    res.status(500).json({ message: 'Failed to search users' });
+  }
+});
+
+// PUT /api/railway-users/profile
+router.put('/profile', verifyAnyAuth, async (req, res) => {
+  try {
+    const fields = req.body || {};
+    const allowed = ['display_name','username','age','gender','experience_years','team_name','location','bio','privacy_settings'];
+    const updateCols = [];
+    const params = [];
+    let idx = 1;
+    for (const k of allowed) {
+      if (k in fields) {
+        updateCols.push(`${k}=$${idx++}`);
+        params.push(fields[k]);
+      }
+    }
+    if (!updateCols.length) return res.status(400).json({ message: 'No fields to update' });
+    params.push(req.userId);
+    const { rows } = await query(
+      `UPDATE profiles SET ${updateCols.join(', ')}, updated_at=NOW() WHERE id=$${idx} RETURNING *`,
+      params
+    );
+    if (!rows?.length) return res.status(404).json({ message: 'Profile not found' });
+    res.json(rows[0]);
+  } catch (e) {
+    console.error('railway-users/profile update error:', e);
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
+});
+
 export default router;

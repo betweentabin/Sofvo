@@ -17,7 +17,7 @@ const getParticipants = async (conversationId) => {
 };
 
 // GET /api/railway-chat/test-accounts
-router.get('/test-accounts', verifySupabaseToken, async (req, res) => {
+router.get('/test-accounts', verifyAnyAuth, async (req, res) => {
   try {
     const { rows } = await query(
       `SELECT id, username, display_name, avatar_url

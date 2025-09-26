@@ -4,7 +4,7 @@ import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { useAuth } from "../../contexts/AuthContext";
-import { supabase } from "../../lib/supabase";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen13 = () => {
@@ -41,14 +41,7 @@ export const Screen13 = () => {
 
   const fetchProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
+      const { data } = await api.railwayUsers.getProfile(user.id);
       if (data) {
         setProfile({
           display_name: data.display_name || "",
@@ -115,15 +108,8 @@ export const Screen13 = () => {
 
       console.log('Updating profile with data:', updateData);
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', user.id)
-        .select();
-
-      if (error) throw error;
-
-      console.log('Profile updated successfully:', data);
+      await api.railwayUsers.updateProfile(updateData);
+      console.log('Profile updated successfully');
       alert('プロフィールを更新しました');
       navigate('/my-profile');
     } catch (error) {

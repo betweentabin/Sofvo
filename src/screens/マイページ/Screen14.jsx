@@ -4,7 +4,7 @@ import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { supabase } from "../../lib/supabase";
+// Supabase removed: Railway-only
 import api from "../../services/api";
 import "./style.css";
 
@@ -29,7 +29,7 @@ export const Screen14 = () => {
   const { userId } = useParams(); // URLからユーザーIDを取得
   const navigate = useNavigate();
   const { user } = useAuth();
-  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const USE_RAILWAY = true;
   const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
   
@@ -46,54 +46,14 @@ export const Screen14 = () => {
         return;
       }
 
-      if (USE_RAILWAY) {
-        const { data } = await api.railwayUsers.getProfile(targetUserId);
-        setProfile(data);
-        const currentRailId = RAILWAY_TEST_USER || user?.id;
-        const isOwn = targetUserId === currentRailId;
-        setIsOwnProfile(isOwn);
-        if (!isOwn && currentRailId) {
-          const { data: fs } = await api.railwayUsers.getFollowStatus(currentRailId, targetUserId);
-          setFollowStatus(!!fs?.following);
-        }
-      } else {
-        // Supabase path (existing)
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', targetUserId)
-          .single();
-        if (profileError) {
-          if (profileError.code === 'PGRST116') {
-            const { data: newProfile } = await supabase
-              .from('profiles')
-              .insert({
-                id: targetUserId,
-                display_name: user?.email?.split('@')[0] || 'ユーザー',
-                username: user?.email?.split('@')[0] || '',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .select()
-              .single();
-            setProfile(newProfile);
-          } else {
-            throw profileError;
-          }
-        } else {
-          setProfile(profileData);
-        }
-        const isOwn = targetUserId === user?.id;
-        setIsOwnProfile(isOwn);
-        if (!isOwn && user) {
-          const { data: followData } = await supabase
-            .from('follows')
-            .select('id')
-            .eq('follower_id', user.id)
-            .eq('following_id', targetUserId)
-            .single();
-          setFollowStatus(!!followData);
-        }
+      const { data } = await api.railwayUsers.getProfile(targetUserId);
+      setProfile(data);
+      const currentRailId = RAILWAY_TEST_USER || user?.id;
+      const isOwn = targetUserId === currentRailId;
+      setIsOwnProfile(isOwn);
+      if (!isOwn && currentRailId) {
+        const { data: fs } = await api.railwayUsers.getFollowStatus(currentRailId, targetUserId);
+        setFollowStatus(!!fs?.following);
       }
 
       await fetchStats(targetUserId);
@@ -107,46 +67,16 @@ export const Screen14 = () => {
 
   const fetchStats = async (targetUserId) => {
     try {
-      if (USE_RAILWAY) {
-        const { data } = await api.railwayUsers.getStats(targetUserId);
-        setStats({
-          yearlyPoints: data.yearlyPoints || 0,
-          totalPoints: data.totalPoints || 0,
-          followingCount: data.followingCount || 0,
-          followersCount: data.followersCount || 0,
-          tournamentCount: data.tournamentCount || 0,
-          teamCount: data.teamCount || 0,
-          awardsCount: data.awardsCount || 0,
-          badgesCount: data.badgesCount || 0,
-        });
-        return;
-      }
-      // Fallback: Supabase（従来処理）
-      const { data: followingData } = await supabase
-        .from('follows')
-        .select('id')
-        .eq('follower_id', targetUserId);
-      const { data: followersData } = await supabase
-        .from('follows')
-        .select('id')
-        .eq('following_id', targetUserId);
-      const { data: tournamentsData } = await supabase
-        .from('tournament_participants')
-        .select('id')
-        .eq('user_id', targetUserId);
-      const { data: teamsData } = await supabase
-        .from('team_members')
-        .select('id')
-        .eq('user_id', targetUserId);
+      const { data } = await api.railwayUsers.getStats(targetUserId);
       setStats({
-        yearlyPoints: 0,
-        totalPoints: 0,
-        followingCount: followingData?.length || 0,
-        followersCount: followersData?.length || 0,
-        tournamentCount: tournamentsData?.length || 0,
-        teamCount: teamsData?.length || 0,
-        awardsCount: 0,
-        badgesCount: 0
+        yearlyPoints: data.yearlyPoints || 0,
+        totalPoints: data.totalPoints || 0,
+        followingCount: data.followingCount || 0,
+        followersCount: data.followersCount || 0,
+        tournamentCount: data.tournamentCount || 0,
+        teamCount: data.teamCount || 0,
+        awardsCount: data.awardsCount || 0,
+        badgesCount: data.badgesCount || 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -155,26 +85,7 @@ export const Screen14 = () => {
 
   const fetchTournaments = async (targetUserId) => {
     try {
-      if (USE_RAILWAY) {
-        const { data } = await api.railwayUsers.getTournaments(targetUserId, 5);
-        setTournaments(data || []);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('tournament_participants')
-        .select(`
-          tournament_id,
-          tournaments (
-            id,
-            name,
-            start_date,
-            end_date
-          )
-        `)
-        .eq('user_id', targetUserId)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (error) throw error;
+      const { data } = await api.railwayUsers.getTournaments(targetUserId, 5);
       setTournaments(data || []);
     } catch (error) {
       console.error('Error fetching tournaments:', error);
@@ -185,26 +96,12 @@ export const Screen14 = () => {
     if (!user || !profile) return;
 
     try {
-      if (USE_RAILWAY) {
-        const currentRailId = RAILWAY_TEST_USER || user?.id;
-        if (!currentRailId || !profile?.id) return;
-        if (followStatus) {
-          await api.railwayUsers.unfollow(currentRailId, profile.id);
-        } else {
-          await api.railwayUsers.follow(currentRailId, profile.id);
-        }
+      const currentRailId = RAILWAY_TEST_USER || user?.id;
+      if (!currentRailId || !profile?.id) return;
+      if (followStatus) {
+        await api.railwayUsers.unfollow(currentRailId, profile.id);
       } else {
-        if (followStatus) {
-          await supabase
-            .from('follows')
-            .delete()
-            .eq('follower_id', user.id)
-            .eq('following_id', profile.id);
-        } else {
-          await supabase
-            .from('follows')
-            .insert({ follower_id: user.id, following_id: profile.id });
-        }
+        await api.railwayUsers.follow(currentRailId, profile.id);
       }
       setFollowStatus(!followStatus);
       await fetchStats(profile.id);

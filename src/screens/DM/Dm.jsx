@@ -5,9 +5,7 @@ import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import ChatRoom from "../../components/Chat/ChatRoom";
 import { useAuth } from "../../contexts/AuthContext";
-import { useConversations } from "../../hooks/useChat";
 import api from "../../services/api";
-import { supabase } from "../../lib/supabase";
 import "./style.css";
 
 export const Dm = () => {
@@ -19,11 +17,10 @@ export const Dm = () => {
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { conversations, loading, createDirectConversation, refetch } = useConversations();
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // Railway chat test mode
-  const TEST_RAILWAY = import.meta.env.VITE_RAILWAY_CHAT_TEST === 'true';
-  const [testAccounts, setTestAccounts] = useState([]);
   const [railwayUserId, setRailwayUserId] = useState(null);
   const [railwayConversations, setRailwayConversations] = useState([]);
   const [railwayLoading, setRailwayLoading] = useState(false);
@@ -31,25 +28,13 @@ export const Dm = () => {
   
   // Fetch test accounts (Railway) when test mode enabled
   useEffect(() => {
-    const load = async () => {
-      if (!TEST_RAILWAY) return;
-      try {
-        const { data } = await api.railwayChat.listTestAccounts();
-        setTestAccounts(data || []);
-        if (!railwayUserId && data?.[0]?.id) {
-          setRailwayUserId(data[0].id);
-        }
-      } catch (e) {
-        console.error('Failed to load test accounts:', e);
-      }
-    };
-    load();
-  }, [TEST_RAILWAY]);
+    if (user?.id) setRailwayUserId(user.id);
+  }, [user]);
 
   // Fetch railway conversations for selected test user
   useEffect(() => {
     const loadConvs = async () => {
-      if (!TEST_RAILWAY || !railwayUserId) return;
+      if (!railwayUserId) return;
       setRailwayLoading(true);
       try {
         const { data } = await api.railwayChat.getConversations(railwayUserId);
@@ -61,7 +46,7 @@ export const Dm = () => {
       }
     };
     loadConvs();
-  }, [TEST_RAILWAY, railwayUserId]);
+  }, [railwayUserId]);
 
   useEffect(() => {
     if (conversationId && conversations.length > 0) {
@@ -73,54 +58,27 @@ export const Dm = () => {
   const handleSearchUser = async () => {
     if (!searchUser.trim()) return;
 
-    // Railway テストモードでは、バックエンドのテストアカウント一覧からクライアント側で絞り込み
-    if (TEST_RAILWAY) {
-      const term = searchUser.trim().toLowerCase();
-      const list = (testAccounts || [])
-        .filter(u => (u.username || '').toLowerCase().includes(term) || (u.display_name || '').toLowerCase().includes(term))
-        .filter(u => u.id !== railwayUserId);
-      setSearchResults(list);
-      return;
-    }
-
-    // 通常モード（Supabaseで検索）
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, avatar_url')
-      .or(`username.ilike.%${searchUser}%,display_name.ilike.%${searchUser}%`)
-      .limit(10);
-    const list = (data || []).filter(u => u.id !== user?.id);
+    const { data } = await api.railwayUsers.search(searchUser.trim(), 10);
+    const list = (data || []).filter(u => u.id !== railwayUserId);
     setSearchResults(list);
   };
 
   const handleStartConversation = async (recipientId) => {
     try {
       // Railway テストモード: Node/Railway API で会話作成
-      if (TEST_RAILWAY) {
-        if (!railwayUserId) {
-          console.error('Railway user is not selected');
-          return;
+      if (!railwayUserId) return;
+      setRailwayLoading(true);
+      try {
+        const { data } = await api.railwayChat.createConversation(railwayUserId, [recipientId], 'direct', null);
+        const newId = data?.conversation_id || data?.conversation?.id;
+        if (newId) {
+          const { data: convs } = await api.railwayChat.getConversations(railwayUserId);
+          setRailwayConversations(convs || []);
+          navigate(`/dm/${newId}`);
+          setSelectedConversation((convs || []).find(c => c.id === newId) || { id: newId, type: 'direct' });
         }
-        setRailwayLoading(true);
-        try {
-          const { data } = await api.railwayChat.createConversation(railwayUserId, [recipientId], 'direct', null);
-          const newId = data?.conversation_id || data?.conversation?.id;
-          if (newId) {
-            // 一覧を再取得してスレッドへ
-            const { data: convs } = await api.railwayChat.getConversations(railwayUserId);
-            setRailwayConversations(convs || []);
-            navigate(`/dm/${newId}`);
-            setSelectedConversation((convs || []).find(c => c.id === newId) || { id: newId, type: 'direct' });
-          }
-        } finally {
-          setRailwayLoading(false);
-        }
-      } else {
-        // 通常モード（Supabase）
-        if (recipientId === user?.id) return;
-        const conversation = await createDirectConversation(recipientId);
-        navigate(`/dm/${conversation.id}`);
-        await refetch();
+      } finally {
+        setRailwayLoading(false);
       }
 
       // 共通: モーダルと検索状態のリセット
@@ -282,11 +240,7 @@ export const Dm = () => {
 
           <div className="chat-area">
             {(selectedConversation || conversationId) ? (
-              TEST_RAILWAY ? (
-                <ChatRoom conversationId={selectedConversation?.id || conversationId} useRailway asUserId={railwayUserId} />
-              ) : (
-                <ChatRoom conversationId={selectedConversation?.id || conversationId} />
-              )
+              <ChatRoom conversationId={selectedConversation?.id || conversationId} asUserId={railwayUserId} />
             ) : (
               <div className="no-conversation-selected">
                 <p>会話を選択するか、新しい会話を始めてください</p>

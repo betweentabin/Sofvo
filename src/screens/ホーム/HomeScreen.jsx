@@ -6,13 +6,7 @@ import { HeaderTabs } from "../../components/HeaderTabs";
 import { Footer } from "../../components/Footer";
 import { FloatingPostButton } from "../../components/FloatingPostButton";
 import { PostComposer } from "../../components/PostComposer";
-import {
-  supabase,
-  createPost,
-  getLatestPosts,
-  getPostById,
-  subscribeToPosts,
-} from "../../lib/supabase";
+// Supabase removed: Railway-only
 import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
@@ -71,7 +65,7 @@ export const HomeScreen = () => {
   const [userCreatedPosts, setUserCreatedPosts] = useState([]);
   const [isComposerOpen, setIsComposerOpen] = useState(false); // tournament composer (existing)
   const [isQuickComposerOpen, setIsQuickComposerOpen] = useState(false); // simple post composer
-  const USE_RAILWAY = import.meta.env.VITE_RAILWAY_DATA === 'true';
+  const USE_RAILWAY = true;
   const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
   const composerInitialState = {
     tournamentName: '',
@@ -89,37 +83,9 @@ export const HomeScreen = () => {
     if (!user) return;
 
     try {
-      if (USE_RAILWAY) {
-        const asUserId = RAILWAY_TEST_USER || user.id; // 注意: SupabaseとRailwayのIDは別物。テスト時はENVで指定推奨
-        const { data } = await api.railwayHome.getFollowing(asUserId, 10);
-        setFollowingPosts(data || []);
-        return;
-      }
-
-      // Supabaseルート（従来）
-      const { data: followingUsers, error: followError } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', user.id);
-      if (followError) throw followError;
-      if (followingUsers && followingUsers.length > 0) {
-        const followingIds = followingUsers.map(f => f.following_id);
-        const { data: posts, error: postsError } = await supabase
-          .from('tournament_results')
-          .select(`
-            *,
-            tournament_participants!inner(user_id, team_id),
-            tournaments!inner(*),
-            profiles!tournament_participants(username, display_name, avatar_url)
-          `)
-          .in('tournament_participants.user_id', followingIds)
-          .order('created_at', { ascending: false })
-          .limit(10);
-        if (postsError) throw postsError;
-        setFollowingPosts(posts || []);
-      } else {
-        setFollowingPosts([]);
-      }
+      const asUserId = RAILWAY_TEST_USER || user.id;
+      const { data } = await api.railwayHome.getFollowing(asUserId, 10);
+      setFollowingPosts(data || []);
     } catch (error) {
       console.error('Error fetching following posts:', error);
       setFollowingPosts([]);
@@ -129,23 +95,8 @@ export const HomeScreen = () => {
   // Fetch recommended posts (latest tournament results)
   const fetchRecommendedPosts = async () => {
     try {
-      if (USE_RAILWAY) {
-        const { data } = await api.railwayHome.getRecommended(10);
-        setRecommendedPosts(data || []);
-        return;
-      }
-      const { data: posts, error } = await supabase
-        .from('tournament_results')
-        .select(`
-          *,
-          tournament_participants!inner(*),
-          tournaments!inner(*),
-          profiles:tournament_participants(user_id).user_id(username, display_name, avatar_url)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      setRecommendedPosts(posts || []);
+      const { data } = await api.railwayHome.getRecommended(10);
+      setRecommendedPosts(data || []);
     } catch (error) {
       console.error('Error fetching recommended posts:', error);
       setRecommendedPosts([]);
@@ -155,19 +106,8 @@ export const HomeScreen = () => {
   // Fetch recommended diaries (placeholder for now - could be a future feature)
   const fetchRecommendedDiaries = async () => {
     try {
-      if (USE_RAILWAY) {
-        const { data } = await api.railwayHome.getRecommendedDiaries(3);
-        setRecommendedDiaries(data || []);
-        return;
-      }
-      const { data: diaries, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .not('bio', 'is', null)
-        .order('updated_at', { ascending: false })
-        .limit(3);
-      if (error) throw error;
-      setRecommendedDiaries(diaries || []);
+      const { data } = await api.railwayHome.getRecommendedDiaries(3);
+      setRecommendedDiaries(data || []);
     } catch (error) {
       console.error('Error fetching recommended diaries:', error);
       setRecommendedDiaries([]);
@@ -175,64 +115,26 @@ export const HomeScreen = () => {
   };
 
   useEffect(() => {
-    if (USE_RAILWAY) return undefined;
-
     let isActive = true;
-
     const loadTimeline = async () => {
       setTimelineLoading(true);
       try {
-        const posts = await getLatestPosts(30);
-        if (isActive) {
-          setTimelinePosts(posts);
-        }
+        const { data } = await api.railwayPosts.latest(30);
+        if (isActive) setTimelinePosts(data || []);
       } catch (error) {
         if (isActive) {
           console.error('Error loading timeline posts:', error);
           setTimelinePosts([]);
         }
       } finally {
-        if (isActive) {
-          setTimelineLoading(false);
-        }
+        if (isActive) setTimelineLoading(false);
       }
     };
-
     loadTimeline();
+    return () => { isActive = false; };
+  }, []);
 
-    return () => {
-      isActive = false;
-    };
-  }, [USE_RAILWAY, getLatestPosts]);
-
-  useEffect(() => {
-    if (USE_RAILWAY) return undefined;
-
-    let isActive = true;
-
-    const channel = subscribeToPosts(async (newPost) => {
-      try {
-        const enriched = await getPostById(newPost.id);
-        if (!isActive) return;
-        setTimelinePosts((prev) => {
-          const filtered = prev.filter((item) => item.id !== enriched.id);
-          return [enriched, ...filtered].slice(0, TIMELINE_LIMIT);
-        });
-      } catch (error) {
-        if (isActive) {
-          console.error('Error handling realtime post:', error);
-        }
-      }
-    });
-
-    return () => {
-      isActive = false;
-      if (channel) {
-        channel.unsubscribe();
-        supabase.removeChannel(channel);
-      }
-    };
-  }, [USE_RAILWAY, subscribeToPosts, getPostById]);
+  // Realtime for posts is disabled (SSE not implemented for posts)
 
   
   // Fetch data when component mounts or user changes
@@ -315,15 +217,15 @@ export const HomeScreen = () => {
       return;
     }
     try {
-      const newPost = await createPost(user.id, text, 'public');
+      const asUserId = RAILWAY_TEST_USER || user.id;
+      const { data: newPost } = await api.railwayPosts.create(asUserId, text, 'public');
       setTimelinePosts((prev) => {
         const filtered = prev.filter((post) => post.id !== newPost.id);
         return [newPost, ...filtered].slice(0, TIMELINE_LIMIT);
       });
     } catch (error) {
       console.error('Error creating post:', error);
-
-      if (error?.code === 'PGRST205' || /public\.posts/.test(error?.message || '')) {
+      if (true) {
         const fallbackPost = {
           id: `local-${Date.now()}`,
           content: text,
@@ -337,8 +239,7 @@ export const HomeScreen = () => {
         };
 
         setTimelinePosts((prev) => [fallbackPost, ...prev].slice(0, TIMELINE_LIMIT));
-
-        alert('投稿テーブルがまだセットアップされていないためローカル表示のみ行いました。\nSupabaseのSQLエディタでpostsテーブルを作成してください。');
+        if (!USE_RAILWAY) alert('投稿テーブルがまだセットアップされていないためローカル表示のみ行いました。\nSupabaseのSQLエディタでpostsテーブルを作成してください。');
         return;
       }
 

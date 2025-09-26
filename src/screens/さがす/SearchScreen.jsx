@@ -4,12 +4,15 @@ import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { HeaderTabsSearch } from "../../components/HeaderTabsSearch";
 import { Footer } from "../../components/Footer";
-import { supabase } from "../../lib/supabase";
+// Supabase removed: Railway-only
+import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 export const SearchScreen = () => {
   const { user } = useAuth();
+  const USE_RAILWAY = true;
+  const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
   const [activeTab, setActiveTab] = useState('team'); // 'team' or 'individual'
   const mainContentTop = useHeaderOffset();
   const [tournaments, setTournaments] = useState([]);
@@ -25,41 +28,15 @@ export const SearchScreen = () => {
   const searchTournaments = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('tournaments')
-        .select(`
-          *,
-          organizer:organizer_id(username, display_name),
-          tournament_participants(count)
-        `)
-        .eq('status', 'upcoming')
-        .order('start_date', { ascending: true });
-
-      // Apply filters
-      if (filters.area) {
-        query = query.ilike('location', `%${filters.area}%`);
-      }
-
-      if (filters.type) {
-        query = query.ilike('sport_type', `%${filters.type}%`);
-      }
-
-      // Filter by following if checked
-      if (filters.followingOnly && user) {
-        const { data: following } = await supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', user.id);
-        
-        if (following && following.length > 0) {
-          const followingIds = following.map(f => f.following_id);
-          query = query.in('organizer_id', followingIds);
-        }
-      }
-
-      const { data, error } = await query;
-      
-      if (error) throw error;
+      const asUserId = RAILWAY_TEST_USER || user?.id || null;
+      const { data } = await api.railwayTournaments.search({
+        status: 'upcoming',
+        area: filters.area || '',
+        type: filters.type || '',
+        followingOnly: filters.followingOnly ? 'true' : 'false',
+        as_user: asUserId,
+        limit: 50,
+      });
       setTournaments(data || []);
     } catch (error) {
       console.error('Error searching tournaments:', error);

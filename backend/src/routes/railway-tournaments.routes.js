@@ -42,3 +42,41 @@ router.get('/my-hosted', verifyAnyAuth, async (req, res) => {
 });
 
 export default router;
+
+// GET /api/railway-tournaments/search?status=upcoming&area=&type=&followingOnly=false&as_user=&limit=50
+router.get('/search', async (req, res) => {
+  try {
+    const {
+      status = 'upcoming',
+      area = '',
+      type = '',
+      followingOnly = 'false',
+      as_user: asUser = null,
+      limit = '50',
+    } = req.query;
+
+    const params = [];
+    let where = 'WHERE 1=1';
+    if (status) { where += ` AND t.status = $${params.push(status)}`; }
+    if (area) { where += ` AND t.location ILIKE $${params.push(`%${area}%`)}`; }
+    if (type) { where += ` AND t.sport_type ILIKE $${params.push(`%${type}%`)}`; }
+    if (followingOnly === 'true' && asUser) {
+      where += ` AND t.organizer_id IN (SELECT following_id FROM follows WHERE follower_id = $${params.push(asUser)})`;
+    }
+    const lim = Math.min(Number(limit) || 50, 100);
+
+    const { rows } = await query(
+      `SELECT t.*, 
+              (SELECT COUNT(*)::int FROM tournament_participants tp WHERE tp.tournament_id = t.id) as participants_count
+       FROM tournaments t
+       ${where}
+       ORDER BY t.start_date ASC
+       LIMIT ${lim}`,
+      params
+    );
+    res.json(rows);
+  } catch (e) {
+    console.error('railway-tournaments/search error:', e);
+    res.status(500).json({ message: 'Failed to search tournaments' });
+  }
+});

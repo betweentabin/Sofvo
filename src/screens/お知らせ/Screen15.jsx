@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
-import { supabase } from "../../lib/supabase";
+import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
@@ -16,17 +16,9 @@ export const Screen15 = () => {
   // Fetch notifications
   const fetchNotifications = async () => {
     if (!user) return;
-    
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      
-      if (error) throw error;
+      const { data } = await api.railwayNotifications.list(50, 0);
       setNotifications(data || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -39,18 +31,8 @@ export const Screen15 = () => {
   // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId)
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      );
+      await api.railwayNotifications.markRead(notificationId);
+      setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -84,29 +66,18 @@ export const Screen15 = () => {
     }
   }, [user]);
 
-  // Set up real-time subscription
+  // SSE realtime subscription (Railway)
   useEffect(() => {
     if (!user) return;
-
-    const channel = supabase
-      .channel(`notifications:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          setNotifications(prev => [payload.new, ...prev]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const url = api.railwayNotifications.sseUrl(user.id);
+    const es = new EventSource(url);
+    es.addEventListener('notification', (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        setNotifications(prev => [data, ...prev]);
+      } catch {}
+    });
+    return () => es.close();
   }, [user]);
 
   return (

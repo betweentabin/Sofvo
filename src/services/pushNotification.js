@@ -1,6 +1,6 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
-import { supabase } from '../lib/supabase';
+import api from '../services/api';
 
 class PushNotificationService {
   constructor() {
@@ -78,33 +78,13 @@ class PushNotificationService {
 
   async saveDeviceToken(token) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('No user logged in, skipping token save');
-        return;
-      }
-
       const platform = Capacitor.getPlatform();
       const deviceInfo = await this.getDeviceInfo();
-
-      // デバイストークンを保存/更新
-      const { error } = await supabase
-        .from('device_tokens')
-        .upsert({
-          user_id: user.id,
-          token: token,
-          platform: platform,
-          device_info: deviceInfo,
-          is_active: true,
-          last_used_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,token'
-        });
-
-      if (error) {
-        console.error('Failed to save device token:', error);
-      } else {
+      try {
+        await api.railwayNotifications.saveDeviceToken(token, platform, deviceInfo);
         console.log('Device token saved successfully');
+      } catch (e) {
+        console.error('Failed to save device token:', e);
       }
     } catch (error) {
       console.error('Error saving device token:', error);
@@ -129,19 +109,8 @@ class PushNotificationService {
     try {
       if (!this.currentToken) return;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // トークンを非アクティブ化
-      const { error } = await supabase
-        .from('device_tokens')
-        .update({ is_active: false })
-        .eq('user_id', user.id)
-        .eq('token', this.currentToken);
-
-      if (error) {
-        console.error('Failed to remove device token:', error);
-      }
+      // Auth via JWT handled by axios interceptor
+      await api.railwayNotifications.deleteDeviceToken(this.currentToken);
     } catch (error) {
       console.error('Error removing device token:', error);
     }
@@ -196,16 +165,8 @@ class PushNotificationService {
 
   async getNotificationSettings() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const { data, error } = await supabase
-        .from('notification_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code === 'PGRST116') {
+      const { data } = await api.railwayNotifications.getSettings();
+      if (!data) {
         // 設定が存在しない場合はデフォルト値を返す
         return {
           enabled: true,
@@ -217,7 +178,6 @@ class PushNotificationService {
           vibration: true
         };
       }
-
       return data;
     } catch (error) {
       console.error('Error getting notification settings:', error);
@@ -227,23 +187,7 @@ class PushNotificationService {
 
   async updateNotificationSettings(settings) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      const { error } = await supabase
-        .from('notification_settings')
-        .upsert({
-          user_id: user.id,
-          ...settings,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (error) {
-        console.error('Failed to update notification settings:', error);
-        return false;
-      }
+      await api.railwayNotifications.updateSettings(settings);
 
       // 通知が無効化された場合、デバイストークンも無効化
       if (!settings.enabled && this.currentToken) {
