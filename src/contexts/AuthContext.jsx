@@ -15,13 +15,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const nodeBase = import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
+  const http = axios.create({ baseURL: nodeBase })
 
   useEffect(() => {
     const init = async () => {
       const token = localStorage.getItem('JWT')
       if (token) {
         try {
-          const { data } = await axios.get(`${nodeBase}/railway-auth/me`, { headers: { Authorization: `Bearer ${token}` }})
+          const { data } = await http.get('/railway-auth/me', { headers: { Authorization: `Bearer ${token}` }})
           setUser({ id: data.user.id, email: data.user.email })
         } catch { setUser(null) }
       }
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const signIn = async (email, password) => {
-    const { data } = await axios.post(`${nodeBase}/railway-auth/login`, { email, password })
+    const { data } = await http.post('/railway-auth/login', { email, password })
     localStorage.setItem('JWT', data.token)
     setUser({ id: data.user.id, email: data.user.email })
     return data
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password, metadata = {}) => {
     const payload = { email, password, username: metadata.username || email.split('@')[0], display_name: metadata.display_name || metadata.username || 'User' }
-    const { data } = await axios.post(`${nodeBase}/railway-auth/register`, payload)
+    const { data } = await http.post('/railway-auth/register', payload)
     localStorage.setItem('JWT', data.token)
     setUser({ id: data.user.id, email: data.user.email })
     return data
