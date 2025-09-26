@@ -72,24 +72,58 @@ export const Dm = () => {
 
   const handleSearchUser = async () => {
     if (!searchUser.trim()) return;
-    
+
+    // Railway テストモードでは、バックエンドのテストアカウント一覧からクライアント側で絞り込み
+    if (TEST_RAILWAY) {
+      const term = searchUser.trim().toLowerCase();
+      const list = (testAccounts || [])
+        .filter(u => (u.username || '').toLowerCase().includes(term) || (u.display_name || '').toLowerCase().includes(term))
+        .filter(u => u.id !== railwayUserId);
+      setSearchResults(list);
+      return;
+    }
+
+    // 通常モード（Supabaseで検索）
     const { data } = await supabase
       .from('profiles')
       .select('id, username, display_name, avatar_url')
       .or(`username.ilike.%${searchUser}%,display_name.ilike.%${searchUser}%`)
       .limit(10);
-    
     const list = (data || []).filter(u => u.id !== user?.id);
     setSearchResults(list);
   };
 
   const handleStartConversation = async (recipientId) => {
     try {
-      if (recipientId === user?.id) return;
-      const conversation = await createDirectConversation(recipientId);
-      // すぐにスレッドへ遷移し、一覧も更新
-      navigate(`/dm/${conversation.id}`);
-      await refetch();
+      // Railway テストモード: Node/Railway API で会話作成
+      if (TEST_RAILWAY) {
+        if (!railwayUserId) {
+          console.error('Railway user is not selected');
+          return;
+        }
+        setRailwayLoading(true);
+        try {
+          const { data } = await api.railwayChat.createConversation(railwayUserId, [recipientId], 'direct', null);
+          const newId = data?.conversation_id || data?.conversation?.id;
+          if (newId) {
+            // 一覧を再取得してスレッドへ
+            const { data: convs } = await api.railwayChat.getConversations(railwayUserId);
+            setRailwayConversations(convs || []);
+            navigate(`/dm/${newId}`);
+            setSelectedConversation((convs || []).find(c => c.id === newId) || { id: newId, type: 'direct' });
+          }
+        } finally {
+          setRailwayLoading(false);
+        }
+      } else {
+        // 通常モード（Supabase）
+        if (recipientId === user?.id) return;
+        const conversation = await createDirectConversation(recipientId);
+        navigate(`/dm/${conversation.id}`);
+        await refetch();
+      }
+
+      // 共通: モーダルと検索状態のリセット
       setShowNewMessage(false);
       setSearchUser("");
       setSearchResults([]);
