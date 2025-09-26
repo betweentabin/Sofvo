@@ -88,6 +88,14 @@
 - [ ] バックアップ体制
 - [ ] CDN設定
 
+### 環境変数・シークレット管理（追記）
+- [ ] 本番用`.env.production`の用意（フロント）
+- [ ] バックエンド用環境変数の安全管理（環境/Vault/Secret Manager）
+- [ ] Supabase ANON/SERVICE KEYのローテーション（リポジトリからの秘匿）
+- [ ] FCM_SERVER_KEY（Edge Functions）の登録（Supabase Secrets）
+- [ ] App Store Connect API Key / Google Play Service Account JSON（CI用）
+- [ ] Android keystore（安全保管・バックアップ）/ iOS 配布証明書・プロファイル
+
 ## 📊 データベース要件
 
 ### 必須テーブル（実装済み）
@@ -120,6 +128,12 @@
 - [ ] GDPRコンプライアンス
 - [ ] データ削除機能
 
+### シークレット/鍵管理（追記）
+- [ ] リポジトリに秘密情報を含めない（環境変数・接続文字列の除去）
+- [ ] すでにコミット済みの秘密情報のローテーション（DB/キー類）
+- [ ] Android keystoreの安全保管（複製/保管手順）
+- [ ] iOS 証明書/プロファイルの管理（担当者/更新日）
+
 ## 📱 モバイルアプリ要件
 
 ### iOS
@@ -128,6 +142,11 @@
 - [ ] TestFlight配信準備
 - [ ] プッシュ通知証明書
 - [ ] App Store Connect設定
+- [ ] Capabilities設定（Push Notifications, Background Modes: Remote notifications）
+- [ ] App Privacy（データの収集・追跡に関する申告）
+- [ ] ATT（App Tracking Transparency）対応（トラッキングを行う場合）
+- [ ] Info.plistのUsageDescription整備（通知/カメラ/写真/位置情報 等）
+- [ ] バージョン/ビルド番号運用ルール（CFBundleShortVersionString / CFBundleVersion）
 
 ### Android
 - [ ] Android 7.0以上対応
@@ -135,6 +154,11 @@
 - [ ] 内部テスト配信準備
 - [ ] Firebase設定
 - [ ] Google Play Console設定
+- [ ] Data safetyフォームの提出（収集/共有データの申告）
+- [ ] App signing（Google Play アプリ署名）/ keystore管理
+- [ ] `POST_NOTIFICATIONS`権限および通知チャンネル設定
+- [ ] minSdk/targetSdkの整合（minSdk >= 24: Android 7.0）
+- [ ] バージョンコード/バージョン名運用ルール（versionCode / versionName）
 
 ### 共通
 - [x] Capacitor設定
@@ -142,6 +166,11 @@
 - [ ] スプラッシュスクリーン
 - [ ] アプリ内課金設定
 - [ ] クラッシュレポート
+- [ ] ディープリンク/ユニバーサルリンク（通知/共有からの遷移）
+- [ ] ローカライゼーション（日本語既定、ストア文言揃え）
+- [ ] ストア用メタデータ（説明/スクショ/ポリシーURL/サポート）整備
+- [ ] 端末パーミッションの文言・挙動レビュー（iOS/Android）
+- [ ] 署名・証明書の期限管理（更新フロー）
 
 ## 🧪 テスト要件
 
@@ -150,6 +179,12 @@
 - [ ] 統合テスト
 - [ ] E2Eテスト
 - [ ] 手動テストシナリオ
+
+### 配信・受け入れテスト（追記）
+- [ ] TestFlight内部テスト（iOS）テスターアカウント準備
+- [ ] Google Play内部テスト（Android）テスターリスト準備
+- [ ] プッシュ通知（FG/BG/終了時）動作確認
+- [ ] Deep Link/起動パラメータの遷移確認
 
 ### 非機能テスト
 - [ ] パフォーマンステスト
@@ -183,6 +218,9 @@
 - [ ] ユーザーガイド
 - [ ] 利用規約（最終版）
 - [ ] プライバシーポリシー（最終版）
+- [ ] App Privacy（Apple）/ Data safety（Google）提出用回答集
+- [ ] OSSライセンス表記一覧（使用ライブラリの著作権/ライセンス明記）
+- [ ] 運用Runbook（障害/連絡/エスカレーション/鍵復旧手順）
 
 ## 🚀 リリース前チェックリスト
 
@@ -192,11 +230,20 @@
 - [ ] コードレビュー実施
 - [ ] テスト完了（カバレッジ80%以上）
 
+### 設定整合チェック（追記）
+- [ ] iOS Deployment Target = 14.0（Xcodeプロジェクト）
+- [ ] Android minSdkVersion >= 24（現在: 23 → 要引き上げ）
+- [ ] HashRouter使用/`base: "./"`設定（Vite）
+- [ ] index.htmlのCSPが本番API/Realtimeに適合
+- [ ] 本番用API URL・Supabase URL/Keyの適用確認
+
 ### 法務・コンプライアンス
 - [ ] 利用規約の法務確認
 - [ ] プライバシーポリシーの確認
 - [ ] 特定商取引法対応（必要な場合）
 - [ ] 個人情報保護方針策定
+- [ ] Apple App Privacy回答/レビュー
+- [ ] Google Play Data safety/コンテンツレーティング回答
 
 ### マーケティング準備
 - [ ] App Store最適化（ASO）
@@ -211,6 +258,9 @@
 - [ ] 監視・アラート設定
 - [ ] バックアップ・復旧手順
 - [ ] インシデント対応計画
+- [ ] クラッシュレポート（Crashlytics/Sentry）設定・DSN/鍵登録
+- [ ] 監視ダッシュボード（メトリクス/ログ）作成
+- [ ] 署名鍵・証明書の保全/権限管理
 
 ## 📅 推奨リリーススケジュール
 
@@ -242,6 +292,8 @@
 3. 基本的なチャット機能
 4. セキュリティ対策
 5. ストア審査対応
+6. 秘密情報の除去とローテーション（漏洩対策）
+7. 署名・証明書/keystoreの整備
 
 ### 🟡 高優先度（早期実装推奨）
 1. 大会作成・管理機能
@@ -299,6 +351,8 @@
 ### セキュリティリスク
 - **リスク**: 個人情報漏洩
 - **対策**: 暗号化、定期的セキュリティ監査
+- **リスク**: 秘密情報のコミット（例: DB接続文字列）
+- **対策**: 直ちにキーをローテーションし、環境変数へ移行
 
 ### ビジネスリスク
 - **リスク**: ユーザー獲得の遅れ
