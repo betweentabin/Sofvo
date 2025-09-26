@@ -40,19 +40,44 @@ export const Screen19 = () => {
           <div className="text-wrapper-179">設定画面</div>
         </div>
 
-        <div className="frame-350">
-          <Link to="/team-create" className="text-wrapper-178">・チームを作成する</Link>
-          <Link to="/account-info" className="text-wrapper-178">・登録情報変更</Link>
-          <Link to="/notification-settings" className="text-wrapper-178">・通知設定</Link>
-          <Link to="/contact" className="text-wrapper-178">・お問い合わせ</Link>
-          <Link to="/terms" className="text-wrapper-178">・利用規約</Link>
-          <Link to="/privacy" className="text-wrapper-178">・プライバシーポリシー</Link>
-          <Link to="/account-delete" className="text-wrapper-178">・退会する</Link>
-          <Link to="/team-member" className="text-wrapper-178">・参加チーム詳細</Link>
-          <Link to="/team-management" className="text-wrapper-178">・作成チーム詳細</Link>
-          <button type="button" className="text-wrapper-178 logout-button" onClick={handleLogout}>
-            ・ログアウト
-          </button>
+        <div className="frame-350 settings-container">
+          {/* アカウント */}
+          <section className="settings-section">
+            <div className="settings-section-title">アカウント</div>
+            <div className="settings-list">
+              <Link to="/account-info" className="text-wrapper-178">・登録情報変更</Link>
+              <Link to="/account-delete" className="text-wrapper-178">・退会する</Link>
+              <button type="button" className="text-wrapper-178 logout-button" onClick={handleLogout}>・ログアウト</button>
+            </div>
+          </section>
+
+          {/* チーム */}
+          <section className="settings-section">
+            <div className="settings-section-title">チーム</div>
+            <div className="settings-list">
+              <Link to="/team-create" className="text-wrapper-178">・チームを作成する</Link>
+              <Link to="/team-member" className="text-wrapper-178">・参加チーム詳細</Link>
+              <Link to="/team-management" className="text-wrapper-178">・作成チーム詳細</Link>
+            </div>
+          </section>
+
+          {/* 通知 */}
+          <section className="settings-section">
+            <div className="settings-section-title">通知</div>
+            <div className="settings-list">
+              <Link to="/notification-settings" className="text-wrapper-178">・通知設定</Link>
+            </div>
+          </section>
+
+          {/* サポート・情報 */}
+          <section className="settings-section">
+            <div className="settings-section-title">サポート・情報</div>
+            <div className="settings-list">
+              <Link to="/contact" className="text-wrapper-178">・お問い合わせ</Link>
+              <Link to="/terms" className="text-wrapper-178">・利用規約</Link>
+              <Link to="/privacy" className="text-wrapper-178">・プライバシーポリシー</Link>
+            </div>
+          </section>
         </div>
 
 

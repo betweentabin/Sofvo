@@ -101,6 +101,38 @@
   width: 100%;
 }
 
+/* Settings sectionized layout */
+.screen-19 .settings-container {
+  gap: 24px;
+}
+
+.screen-19 .settings-section {
+  width: 100%;
+  padding: 8px 4px 0 4px;
+  border-top: 1px solid #eee;
+}
+
+.screen-19 .settings-section:first-of-type {
+  border-top: none;
+}
+
+.screen-19 .settings-section-title {
+  color: #0B4F7F;
+  font-family: Arial, Helvetica; font-weight: bold;
+  font-size: 16px;
+  margin: 6px 0 8px 0;
+}
+
+.screen-19 .settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.screen-19 .settings-list .text-wrapper-178 {
+  text-align: left;
+}
+
 .screen-19 .text-wrapper-178 {
   color: var(--4);
   font-family: Arial, Helvetica; font-weight: bold;
