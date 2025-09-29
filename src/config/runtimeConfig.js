@@ -1,8 +1,13 @@
 // Loads runtime config from /app-config.json (overrides Vite env at runtime)
 // Exposes window.__APP_CONFIG__ for modules to read
 
+const isBrowser = typeof window !== 'undefined';
+const host = isBrowser ? window.location.hostname : '';
+const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app';
+
 const defaults = {
-  nodeApiUrl: import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api',
+  // Vercel本番ではrewriteを使うため相対`/api`を既定に
+  nodeApiUrl: (import.meta.env.PROD && inVercel) ? '/api' : (import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'),
   railwayData: true,
   railwayChatTest: true,
   testUserId: import.meta.env.VITE_RAILWAY_TEST_USER_ID || ''

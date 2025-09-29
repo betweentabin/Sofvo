@@ -3,7 +3,26 @@ import axios from 'axios';
 
 // Node.js バックエンドAPI設定（runtime config優先）
 const runtimeCfg = typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {};
-const BASE_URL = runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';
+
+function resolveBaseUrl() {
+  const isBrowser = typeof window !== 'undefined';
+  const host = isBrowser ? window.location.hostname : '';
+  const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app';
+  const isCapacitor = isBrowser && (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:' || !!window.Capacitor);
+
+  if (isCapacitor) {
+    return runtimeCfg.nodeApiUrl || import.meta.env.VITE_MOBILE_API_URL || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';
+  }
+
+  // On Vercel production, force relative path to use rewrites and avoid CORS
+  if (inVercel) {
+    return '/api';
+  }
+
+  return runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';
+}
+
+const BASE_URL = resolveBaseUrl();
 const nodeAPI = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' }

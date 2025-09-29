@@ -244,9 +244,10 @@ export const DivWrapper = () => {
               </div>
 
               <div className="frame-3">
-                <div className="frame-4" style={{ cursor: "pointer" }} onClick={() => handleCheckboxChange("agreeTerms")}>
-                  <div className="text-wrapper-27">利用規約に同意する</div>
+                <div className="frame-4" style={{ cursor: "pointer" }}>
+                  <label htmlFor="agreeTerms" className="text-wrapper-27">利用規約に同意する</label>
                   <input
+                    id="agreeTerms"
                     type="checkbox"
                     className="rectangle-2"
                     checked={formData.agreeTerms}
@@ -259,11 +260,12 @@ export const DivWrapper = () => {
               </div>
 
               <div className="frame-3">
-                <div className="frame-4" style={{ cursor: "pointer" }} onClick={() => handleCheckboxChange("agreePrivacy")}>
-                  <div className="text-wrapper-27">
+                <div className="frame-4" style={{ cursor: "pointer" }}>
+                  <label htmlFor="agreePrivacy" className="text-wrapper-27">
                     プライバシーポリシーに同意する
-                  </div>
+                  </label>
                   <input
+                    id="agreePrivacy"
                     type="checkbox"
                     className="rectangle-2"
                     checked={formData.agreePrivacy}

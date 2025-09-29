@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
   if (isCapacitor) {
     // In Capacitor, relative '/api' won't work. Use explicit mobile API URL.
     nodeBase = import.meta.env.VITE_MOBILE_API_URL || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
-  } else if (import.meta.env.PROD && inVercel) {
+  } else if (inVercel) {
     // On Vercel, prefer relative path to use rewrites and avoid CORS.
     nodeBase = '/api'
   } else {
