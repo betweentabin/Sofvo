@@ -14,7 +14,23 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const nodeBase = import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
+  // Prefer relative API base in production (Vercel rewrite) to avoid CORS
+  const isBrowser = typeof window !== 'undefined'
+  const host = isBrowser ? window.location.hostname : ''
+  const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app'
+  const isCapacitor = isBrowser && (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:' || !!window.Capacitor)
+
+  let nodeBase
+  if (isCapacitor) {
+    // In Capacitor, relative '/api' won't work. Use explicit mobile API URL.
+    nodeBase = import.meta.env.VITE_MOBILE_API_URL || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
+  } else if (import.meta.env.PROD && inVercel) {
+    // On Vercel, prefer relative path to use rewrites and avoid CORS.
+    nodeBase = '/api'
+  } else {
+    nodeBase = import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
+  }
+
   const http = axios.create({ baseURL: nodeBase })
 
   useEffect(() => {
