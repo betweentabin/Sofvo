@@ -8,7 +8,7 @@ export const ScreenScreen = () => {
   const { signIn, user, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: "test@sofvo.com", // デフォルト値でテストしやすく
-    password: "testpass123"
+    password: "Sofvo123!"
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

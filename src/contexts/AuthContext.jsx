@@ -18,7 +18,12 @@ export const AuthProvider = ({ children }) => {
   const isBrowser = typeof window !== 'undefined'
   const host = isBrowser ? window.location.hostname : ''
   const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app'
-  const isCapacitor = isBrowser && (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:' || !!window.Capacitor)
+  // Detect native Capacitor only (web also defines window.Capacitor)
+  const isCapacitor = isBrowser && (
+    window.location.protocol === 'capacitor:' ||
+    window.location.protocol === 'ionic:' ||
+    (window.Capacitor?.getPlatform && window.Capacitor.getPlatform() !== 'web')
+  )
 
   let nodeBase
   if (isCapacitor) {
