@@ -1,12 +1,12 @@
 import axios from 'axios';
 // Supabase removed: Railway-only implementation
 
-// Node.js バックエンドAPI設定
+// Node.js バックエンドAPI設定（runtime config優先）
+const runtimeCfg = typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {};
+const BASE_URL = runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';
 const nodeAPI = axios.create({
-  baseURL: import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: BASE_URL,
+  headers: { 'Content-Type': 'application/json' }
 });
 
 // リクエストインターセプター（認証トークン自動付与）

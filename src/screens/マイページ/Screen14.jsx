@@ -30,7 +30,8 @@ export const Screen14 = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const USE_RAILWAY = true;
-  const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
+  const RUNTIME = typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {};
+  const RAILWAY_TEST_USER = RUNTIME.testUserId || import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
   
   useEffect(() => {

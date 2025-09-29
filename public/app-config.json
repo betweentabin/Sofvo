@@ -1,0 +1,7 @@
+{
+  "nodeApiUrl": "http://localhost:5000/api",
+  "railwayData": true,
+  "railwayChatTest": true,
+  "testUserId": ""
+}
+

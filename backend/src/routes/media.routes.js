@@ -2,8 +2,8 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
-import { supabase } from '../config/supabase.js';
-import { verifySupabaseToken } from '../middleware/supabase-auth.middleware.js';
+import { query } from '../config/database.js';
+import { verifyAnyAuth } from '../middleware/auth.middleware.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -70,7 +70,7 @@ const upload = multer({
 // @desc    Upload a file
 // @access  Private
 router.post('/upload', [
-  verifySupabaseToken,
+  verifyAnyAuth,
   upload.single('file')
 ], async (req, res) => {
   try {
@@ -83,7 +83,7 @@ router.post('/upload', [
     // Build file URL
     const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${type}/${req.file.filename}`;
     
-    // Save file info to database (optional - create media table if needed)
+    // Save file info to database
     const mediaData = {
       user_id: req.userId,
       file_name: req.file.originalname,
@@ -96,47 +96,15 @@ router.post('/upload', [
       entity_id
     };
 
-    // Try to save to database (create table if needed)
     try {
-      const { data: media, error } = await supabase
-        .from('media')
-        .insert(mediaData)
-        .select()
-        .single();
-
-      if (error && error.code === '42P01') {
-        // Table doesn't exist, create it
-        await supabase.rpc('create_media_table', {
-          sql: `
-            CREATE TABLE IF NOT EXISTS public.media (
-              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-              user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-              file_name TEXT NOT NULL,
-              file_path TEXT NOT NULL,
-              file_url TEXT NOT NULL,
-              file_size INTEGER,
-              mime_type TEXT,
-              type TEXT,
-              entity_type TEXT,
-              entity_id UUID,
-              created_at TIMESTAMPTZ DEFAULT NOW()
-            );
-          `
-        }).single();
-
-        // Retry insertion
-        const { data: retryMedia } = await supabase
-          .from('media')
-          .insert(mediaData)
-          .select()
-          .single();
-        
-        if (retryMedia) {
-          mediaData.id = retryMedia.id;
-        }
-      } else if (!error && media) {
-        mediaData.id = media.id;
-      }
+      const { rows } = await query(
+        `INSERT INTO media (
+          user_id, file_name, file_path, file_url, file_size, mime_type, type, entity_type, entity_id
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        RETURNING id`,
+        [mediaData.user_id, mediaData.file_name, mediaData.file_path, mediaData.file_url, mediaData.file_size, mediaData.mime_type, mediaData.type, mediaData.entity_type, mediaData.entity_id]
+      );
+      mediaData.id = rows?.[0]?.id;
     } catch (dbError) {
       console.error('Database error (non-critical):', dbError);
     }
@@ -164,7 +132,7 @@ router.post('/upload', [
 // @desc    Upload multiple files
 // @access  Private
 router.post('/upload-multiple', [
-  verifySupabaseToken,
+  verifyAnyAuth,
   upload.array('files', 10) // Max 10 files
 ], async (req, res) => {
   try {
@@ -185,21 +153,13 @@ router.post('/upload-multiple', [
         type: file.mimetype
       });
 
-      // Save to database (optional)
+      // Save to database
       try {
-        await supabase
-          .from('media')
-          .insert({
-            user_id: req.userId,
-            file_name: file.originalname,
-            file_path: file.path,
-            file_url: fileUrl,
-            file_size: file.size,
-            mime_type: file.mimetype,
-            type,
-            entity_type,
-            entity_id
-          });
+        await query(
+          `INSERT INTO media (user_id, file_name, file_path, file_url, file_size, mime_type, type, entity_type, entity_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+          [req.userId, file.originalname, file.path, fileUrl, file.size, file.mimetype, type, entity_type, entity_id]
+        );
       } catch (dbError) {
         console.error('Database error (non-critical):', dbError);
       }
@@ -226,27 +186,20 @@ router.post('/upload-multiple', [
 // @route   DELETE /api/media/:id
 // @desc    Delete a media file
 // @access  Private
-router.delete('/:id', verifySupabaseToken, async (req, res) => {
+router.delete('/:id', verifyAnyAuth, async (req, res) => {
   try {
     // Get media info from database
-    const { data: media, error } = await supabase
-      .from('media')
-      .select('*')
-      .eq('id', req.params.id)
-      .single();
-
-    if (error || !media) {
+    const { rows } = await query('SELECT * FROM media WHERE id = $1 LIMIT 1', [req.params.id]);
+    const media = rows?.[0];
+    if (!media) {
       return res.status(404).json({ message: 'Media not found' });
     }
 
     // Check ownership
     if (media.user_id !== req.userId) {
       // Check if user is admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', req.userId)
-        .single();
+      const { rows: profileRows } = await query('SELECT role FROM profiles WHERE id = $1', [req.userId]);
+      const profile = profileRows?.[0];
 
       if (!profile || profile.role !== 'admin') {
         return res.status(403).json({ message: 'Not authorized to delete this file' });
@@ -262,12 +215,7 @@ router.delete('/:id', verifySupabaseToken, async (req, res) => {
     }
 
     // Delete from database
-    const { error: deleteError } = await supabase
-      .from('media')
-      .delete()
-      .eq('id', req.params.id);
-
-    if (deleteError) throw deleteError;
+    await query('DELETE FROM media WHERE id = $1', [req.params.id]);
 
     res.json({ message: 'File deleted successfully' });
   } catch (error) {
@@ -279,15 +227,11 @@ router.delete('/:id', verifySupabaseToken, async (req, res) => {
 // @route   GET /api/media/:id
 // @desc    Get media info
 // @access  Private
-router.get('/:id', verifySupabaseToken, async (req, res) => {
+router.get('/:id', verifyAnyAuth, async (req, res) => {
   try {
-    const { data: media, error } = await supabase
-      .from('media')
-      .select('*')
-      .eq('id', req.params.id)
-      .single();
-
-    if (error || !media) {
+    const { rows } = await query('SELECT * FROM media WHERE id = $1 LIMIT 1', [req.params.id]);
+    const media = rows?.[0];
+    if (!media) {
       return res.status(404).json({ message: 'Media not found' });
     }
 
@@ -301,44 +245,38 @@ router.get('/:id', verifySupabaseToken, async (req, res) => {
 // @route   GET /api/media/user/:userId
 // @desc    Get user's uploaded media
 // @access  Private
-router.get('/user/:userId', verifySupabaseToken, async (req, res) => {
+router.get('/user/:userId', verifyAnyAuth, async (req, res) => {
   try {
     const { type, limit = 50, offset = 0 } = req.query;
     
     // Check if requesting own media or if admin
     if (req.userId !== req.params.userId) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', req.userId)
-        .single();
+      const { rows: profileRows } = await query('SELECT role FROM profiles WHERE id = $1', [req.userId]);
+      const profile = profileRows?.[0];
 
       if (!profile || profile.role !== 'admin') {
         return res.status(403).json({ message: 'Not authorized' });
       }
     }
 
-    let query = supabase
-      .from('media')
-      .select('*')
-      .eq('user_id', req.params.userId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
+    const baseParams = [req.params.userId];
+    const where = ['user_id = $1'];
     if (type) {
-      query = query.eq('type', type);
+      where.push(`type = $2`);
+      baseParams.push(type);
     }
+    const limOff = [Number(limit) || 50, Number(offset) || 0];
 
-    const { data: media, error, count } = await query;
+    const { rows: mediaRows } = await query(
+      `SELECT * FROM media WHERE ${where.join(' AND ')} ORDER BY created_at DESC LIMIT $${baseParams.length + 1} OFFSET $${baseParams.length + 2}`,
+      [...baseParams, ...limOff]
+    );
+    const { rows: countRows } = await query(
+      `SELECT COUNT(*)::int as c FROM media WHERE ${where.join(' AND ')}`,
+      baseParams
+    );
 
-    if (error) throw error;
-
-    res.json({
-      media: media || [],
-      total: count,
-      limit,
-      offset
-    });
+    res.json({ media: mediaRows || [], total: countRows?.[0]?.c || 0, limit: Number(limit) || 50, offset: Number(offset) || 0 });
   } catch (error) {
     console.error('Error fetching user media:', error);
     res.status(500).json({ message: 'Failed to fetch media' });
@@ -349,7 +287,7 @@ router.get('/user/:userId', verifySupabaseToken, async (req, res) => {
 // @desc    Upload user avatar
 // @access  Private
 router.post('/upload-avatar', [
-  verifySupabaseToken,
+  verifyAnyAuth,
   upload.single('avatar')
 ], async (req, res) => {
   try {
@@ -360,30 +298,19 @@ router.post('/upload-avatar', [
     const fileUrl = `${req.protocol}://${req.get('host')}/uploads/image/${req.file.filename}`;
     
     // Update user profile with new avatar
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .update({ avatar_url: fileUrl })
-      .eq('id', req.userId)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const { rows: profileRows } = await query(
+      'UPDATE profiles SET avatar_url = $1, updated_at = NOW() WHERE id = $2 RETURNING id, username, display_name, avatar_url',
+      [fileUrl, req.userId]
+    );
+    const profile = profileRows?.[0];
 
     // Save to media table
     try {
-      await supabase
-        .from('media')
-        .insert({
-          user_id: req.userId,
-          file_name: req.file.originalname,
-          file_path: req.file.path,
-          file_url: fileUrl,
-          file_size: req.file.size,
-          mime_type: req.file.mimetype,
-          type: 'avatar',
-          entity_type: 'profile',
-          entity_id: req.userId
-        });
+      await query(
+        `INSERT INTO media (user_id, file_name, file_path, file_url, file_size, mime_type, type, entity_type, entity_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [req.userId, req.file.originalname, req.file.path, fileUrl, req.file.size, req.file.mimetype, 'avatar', 'profile', req.userId]
+      );
     } catch (dbError) {
       console.error('Database error (non-critical):', dbError);
     }
@@ -407,7 +334,7 @@ router.post('/upload-avatar', [
 // @desc    Upload team logo
 // @access  Private (Team Admin)
 router.post('/upload-team-logo/:teamId', [
-  verifySupabaseToken,
+  verifyAnyAuth,
   upload.single('logo')
 ], async (req, res) => {
   try {
@@ -416,12 +343,8 @@ router.post('/upload-team-logo/:teamId', [
     }
 
     // Check if user is team admin
-    const { data: member } = await supabase
-      .from('team_members')
-      .select('role')
-      .eq('team_id', req.params.teamId)
-      .eq('user_id', req.userId)
-      .single();
+    const { rows: memberRows } = await query('SELECT role FROM team_members WHERE team_id=$1 AND user_id=$2', [req.params.teamId, req.userId]);
+    const member = memberRows?.[0];
 
     if (!member || !['owner', 'admin'].includes(member.role)) {
       fs.unlink(req.file.path).catch(console.error);
@@ -431,30 +354,16 @@ router.post('/upload-team-logo/:teamId', [
     const fileUrl = `${req.protocol}://${req.get('host')}/uploads/image/${req.file.filename}`;
     
     // Update team with new logo
-    const { data: team, error } = await supabase
-      .from('teams')
-      .update({ logo_url: fileUrl })
-      .eq('id', req.params.teamId)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const { rows: teamRows } = await query('UPDATE teams SET logo_url=$1, updated_at=NOW() WHERE id=$2 RETURNING *', [fileUrl, req.params.teamId]);
+    const team = teamRows?.[0];
 
     // Save to media table
     try {
-      await supabase
-        .from('media')
-        .insert({
-          user_id: req.userId,
-          file_name: req.file.originalname,
-          file_path: req.file.path,
-          file_url: fileUrl,
-          file_size: req.file.size,
-          mime_type: req.file.mimetype,
-          type: 'logo',
-          entity_type: 'team',
-          entity_id: req.params.teamId
-        });
+      await query(
+        `INSERT INTO media (user_id, file_name, file_path, file_url, file_size, mime_type, type, entity_type, entity_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [req.userId, req.file.originalname, req.file.path, fileUrl, req.file.size, req.file.mimetype, 'logo', 'team', req.params.teamId]
+      );
     } catch (dbError) {
       console.error('Database error (non-critical):', dbError);
     }

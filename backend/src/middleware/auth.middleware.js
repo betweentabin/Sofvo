@@ -1,8 +1,4 @@
 import { verifyJwt } from '../utils/jwt.js';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseEnabled = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
-const supabase = supabaseEnabled ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY) : null;
 
 export const verifyAnyAuth = async (req, res, next) => {
   const auth = req.headers.authorization || '';
@@ -18,18 +14,5 @@ export const verifyAnyAuth = async (req, res, next) => {
     return next();
   }
 
-  // 2) Fallback to Supabase token (for transition period)
-  if (supabase) {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser(token);
-      if (!error && user) {
-        req.userId = user.id;
-        req.user = user;
-        return next();
-      }
-    } catch {}
-  }
-
   return res.status(401).json({ message: 'Invalid or expired token' });
 };
-
