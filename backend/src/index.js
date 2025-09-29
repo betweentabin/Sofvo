@@ -22,10 +22,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware
-app.use(helmet());
-
-// CORS configuration (web + mobile webview friendly)
+// CORS configuration (web + mobile webview friendly) — placed before Helmet
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://sofvo.vercel.app',
@@ -65,6 +62,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // Explicitly handle preflight for all routes
 app.options('*', cors(corsOptions));
+
+// Security middleware
+app.use(helmet());
 
 // Rate limiting
 const limiter = rateLimit({
