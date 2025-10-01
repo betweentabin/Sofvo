@@ -24,16 +24,18 @@ export const AuthProvider = ({ children }) => {
     window.location.protocol === 'ionic:' ||
     (window.Capacitor?.getPlatform && window.Capacitor.getPlatform() !== 'web')
   )
+  // Runtime config (loaded in src/index.jsx before mount)
+  const RUNTIME = isBrowser ? (window.__APP_CONFIG__ || {}) : {}
 
   let nodeBase
   if (isCapacitor) {
     // In Capacitor, relative '/api' won't work. Use explicit mobile API URL.
-    nodeBase = import.meta.env.VITE_MOBILE_API_URL || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
+    nodeBase = RUNTIME.nodeApiUrl || import.meta.env.VITE_MOBILE_API_URL || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
   } else if (inVercel) {
-    // On Vercel, prefer relative path to use rewrites and avoid CORS.
-    nodeBase = '/api'
+    // On Vercel, allow runtime/env override to bypass proxy if needed.
+    nodeBase = RUNTIME.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || '/api'
   } else {
-    nodeBase = import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
+    nodeBase = RUNTIME.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
   }
 
   const http = axios.create({ baseURL: nodeBase })

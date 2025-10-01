@@ -21,7 +21,8 @@ function resolveBaseUrl() {
 
   // On Vercel production, force relative path to use rewrites and avoid CORS
   if (inVercel) {
-    return '/api';
+    // Allow runtime override or env override to call Railway directly if needed
+    return runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || '/api';
   }
 
   return runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';

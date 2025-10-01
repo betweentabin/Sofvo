@@ -1,7 +1,6 @@
 {
-  "nodeApiUrl": "http://localhost:5000/api",
+  "nodeApiUrl": "https://angelic-rebirth-production-769f.up.railway.app/api",
   "railwayData": true,
   "railwayChatTest": true,
   "testUserId": ""
 }
-

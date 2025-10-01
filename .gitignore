@@ -45,3 +45,5 @@ ios/App/Podfile.lock
 # Build outputs
 build/
 .vercel
+.env.production
+.env.vercel
