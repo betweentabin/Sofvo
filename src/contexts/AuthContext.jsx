@@ -43,9 +43,24 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('JWT')
       if (token) {
         try {
+          // Try new Railway auth route first
           const { data } = await http.get('/railway-auth/me', { headers: { Authorization: `Bearer ${token}` }})
           setUser({ id: data.user.id, email: data.user.email })
-        } catch { setUser(null) }
+        } catch (err) {
+          // Fallback to older local-auth if Railway route not present
+          const status = err?.response?.status
+          if (status === 404) {
+            try {
+              const { data } = await http.get('/local-auth/me', { headers: { Authorization: `Bearer ${token}` }})
+              // local-auth/me returns user fields directly
+              setUser({ id: data.id, email: data.email })
+            } catch {
+              setUser(null)
+            }
+          } else {
+            setUser(null)
+          }
+        }
       }
       setLoading(false)
     }
@@ -53,18 +68,39 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const signIn = async (email, password) => {
-    const { data } = await http.post('/railway-auth/login', { email, password })
-    localStorage.setItem('JWT', data.token)
-    setUser({ id: data.user.id, email: data.user.email })
-    return data
+    try {
+      const { data } = await http.post('/railway-auth/login', { email, password })
+      localStorage.setItem('JWT', data.token)
+      setUser({ id: data.user.id, email: data.user.email })
+      return data
+    } catch (err) {
+      // Retry against legacy local-auth if Railway route is missing
+      if (err?.response?.status === 404) {
+        const { data } = await http.post('/local-auth/login', { email, password })
+        localStorage.setItem('JWT', data.token)
+        setUser({ id: data.user.id, email: data.user.email })
+        return data
+      }
+      throw err
+    }
   }
 
   const signUp = async (email, password, metadata = {}) => {
     const payload = { email, password, username: metadata.username || email.split('@')[0], display_name: metadata.display_name || metadata.username || 'User' }
-    const { data } = await http.post('/railway-auth/register', payload)
-    localStorage.setItem('JWT', data.token)
-    setUser({ id: data.user.id, email: data.user.email })
-    return data
+    try {
+      const { data } = await http.post('/railway-auth/register', payload)
+      localStorage.setItem('JWT', data.token)
+      setUser({ id: data.user.id, email: data.user.email })
+      return data
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        const { data } = await http.post('/local-auth/register', payload)
+        localStorage.setItem('JWT', data.token)
+        setUser({ id: data.user.id, email: data.user.email })
+        return data
+      }
+      throw err
+    }
   }
 
   const signOut = async () => {
