@@ -5,7 +5,8 @@
   "devCommand": "npm run dev",
   "framework": "vite",
   "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
     { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+    { "src": "/(?!api/).*", "methods": ["GET", "HEAD"], "dest": "/index.html" }
   ]
 }
