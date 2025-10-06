@@ -39,11 +39,16 @@ import { Screen36 } from "./screens/主催大会管理/Screen36";
 import { Screen37 } from "./screens/大会を主催/Screen37";
 import { Screen38 } from "./screens/大会を編集/Screen38";
 import { ScreenScreen } from "./screens/ログイン/ScreenScreen";
+import { ResetPassword } from "./screens/パスワードリセット/ResetPassword";
 
 const router = createHashRouter([
   {
     path: "/",
     element: <ScreenScreen />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPassword />,
   },
   {
     path: "/splash",

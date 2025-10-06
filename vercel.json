@@ -4,9 +4,8 @@
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "framework": "vite",
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/[...path].js" },
-    { "handle": "filesystem" },
-    { "src": "/(?!api/).*", "methods": ["GET", "HEAD"], "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/(.*)", "destination": "/" }
   ]
 }

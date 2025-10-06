@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
         } catch (err) {
           // Fallback to older local-auth if Railway route not present
           const status = err?.response?.status
-          if (status === 404) {
+          if (status === 404 || status === 401) {
             try {
               const { data } = await http.get('/local-auth/me', { headers: { Authorization: `Bearer ${token}` }})
               // local-auth/me returns user fields directly
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
       return data
     } catch (err) {
       // Retry against legacy local-auth if Railway route is missing
-      if (err?.response?.status === 404) {
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
         const { data } = await http.post('/local-auth/login', { email, password })
         localStorage.setItem('JWT', data.token)
         setUser({ id: data.user.id, email: data.user.email })
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
       setUser({ id: data.user.id, email: data.user.email })
       return data
     } catch (err) {
-      if (err?.response?.status === 404) {
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
         const { data } = await http.post('/local-auth/register', payload)
         localStorage.setItem('JWT', data.token)
         setUser({ id: data.user.id, email: data.user.email })

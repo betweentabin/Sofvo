@@ -57,9 +57,11 @@ export const api = {
     delete: (id) => nodeAPI.delete(`/railway-notifications/${id}`),
     clearAll: () => nodeAPI.delete('/railway-notifications/clear-all'),
     sseUrl: (asUserId) => {
-      const base = (import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api').replace(/\/?api\/?$/, '');
+      // Prefer runtime override to ensure absolute upstream base in production
+      const upstreamBase = (runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api');
+      const baseRoot = upstreamBase.replace(/\/?api\/?$/, '');
       const token = localStorage.getItem('JWT') || '';
-      return `${base}/api/realtime/notifications?as_user=${encodeURIComponent(asUserId)}&token=${encodeURIComponent(token)}`;
+      return `${baseRoot}/api/realtime/notifications?as_user=${encodeURIComponent(asUserId)}&token=${encodeURIComponent(token)}`;
     },
     saveDeviceToken: (token, platform, device_info = {}) => nodeAPI.post('/railway-notifications/device-tokens', { token, platform, device_info }),
     deleteDeviceToken: (token) => nodeAPI.delete('/railway-notifications/device-tokens', { data: { token } }),

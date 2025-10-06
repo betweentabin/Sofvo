@@ -3,10 +3,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Railway PostgreSQL接続設定
+const connStr = process.env.DATABASE_URL_EXTERNAL || process.env.DATABASE_URL;
+if (!connStr) {
+  console.error('Database URL not set. Define DATABASE_URL_EXTERNAL (local) or DATABASE_URL (Railway internal).');
+  process.exit(1);
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_EXTERNAL || 'postgresql://postgres:DNqaDqFjyphTNKTtazhhsJyRDFrPtNWz@maglev.proxy.rlwy.net:49323/railway',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  connectionString: connStr,
+  ssl: connStr.includes('railway.app') || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 export const connectDB = async () => {
