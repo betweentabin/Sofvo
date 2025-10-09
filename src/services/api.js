@@ -2,12 +2,19 @@ import axios from 'axios';
 // Supabase removed: Railway-only implementation
 
 // Node.js バックエンドAPI設定（runtime config優先）
-const runtimeCfg = typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {};
+function getRuntimeCfg() {
+  try {
+    return (typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {});
+  } catch {
+    return {};
+  }
+}
 
 function resolveBaseUrl() {
   const isBrowser = typeof window !== 'undefined';
   const host = isBrowser ? window.location.hostname : '';
   const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app';
+  const runtimeCfg = getRuntimeCfg();
   // Treat as native Capacitor only when platform is not 'web'
   const isCapacitor = isBrowser && (
     window.location.protocol === 'capacitor:' ||
@@ -28,9 +35,8 @@ function resolveBaseUrl() {
   return runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';
 }
 
-const BASE_URL = resolveBaseUrl();
 const nodeAPI = axios.create({
-  baseURL: BASE_URL,
+  baseURL: resolveBaseUrl(),
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -38,6 +44,10 @@ const nodeAPI = axios.create({
 const USE_RAILWAY_AUTH = true; // Railway-only
 
 nodeAPI.interceptors.request.use(async (config) => {
+  // Refresh baseURL every request in case runtime config loaded late
+  try {
+    config.baseURL = resolveBaseUrl();
+  } catch {}
   const token = localStorage.getItem('JWT');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -58,7 +68,8 @@ export const api = {
     clearAll: () => nodeAPI.delete('/railway-notifications/clear-all'),
     sseUrl: (asUserId) => {
       // Prefer runtime override to ensure absolute upstream base in production
-      const upstreamBase = (runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api');
+      const cfgNow = getRuntimeCfg();
+      const upstreamBase = (cfgNow.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api');
       const baseRoot = upstreamBase.replace(/\/?api\/?$/, '');
       const token = localStorage.getItem('JWT') || '';
       return `${baseRoot}/api/realtime/notifications?as_user=${encodeURIComponent(asUserId)}&token=${encodeURIComponent(token)}`;
