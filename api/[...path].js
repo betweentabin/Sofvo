@@ -1,11 +1,17 @@
 export const config = { runtime: 'edge' };
-const TARGET_ORIGIN = process.env.RAILWAY_API_ORIGIN;
+
+// Prefer env on Vercel, but allow a safe default so that
+// /api works even if the env var isn't configured yet.
+// NOTE: Change DEFAULT_ORIGIN to your Railway Node API origin if different.
+const DEFAULT_ORIGIN = 'https://angelic-rebirth-production-769f.up.railway.app';
+const TARGET_ORIGIN = process.env.RAILWAY_API_ORIGIN || DEFAULT_ORIGIN;
 
 export default async function handler(req) {
   try {
-    if (!TARGET_ORIGIN) {
+    // Defensive: basic validation for origin format
+    if (!/^https?:\/\//.test(TARGET_ORIGIN)) {
       return new Response(JSON.stringify({
-        message: 'Missing RAILWAY_API_ORIGIN env. Set it to your Railway Node API origin (e.g., https://<your-backend>.up.railway.app)'
+        message: 'Invalid upstream origin',
       }), { status: 500, headers: { 'content-type': 'application/json' } });
     }
     const url = new URL(req.url);
