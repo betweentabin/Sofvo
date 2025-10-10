@@ -4,7 +4,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { AuthGuard } from "./components/AuthGuard";
 import pushNotificationService from "./services/pushNotification";
 import { DivWrapper } from "./screens/アカウント作成/DivWrapper";
-import { SearchScreen } from "./screens/さがす/SearchScreen";
+import { SearchScreen } from "./screens/さがす";
 import { Dm } from "./screens/DM/Dm";
 import { HomeScreen } from "./screens/ホーム/HomeScreen";
 import { NumberCircleFive } from "./screens/空コンポーネント/NumberCircleFive";
