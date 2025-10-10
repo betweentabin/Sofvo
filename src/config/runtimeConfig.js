@@ -4,10 +4,15 @@
 const isBrowser = typeof window !== 'undefined';
 const host = isBrowser ? window.location.hostname : '';
 const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app';
+const PROD_RAILWAY_API = 'https://angelic-rebirth-production-769f.up.railway.app/api';
 
 const defaults = {
-  // Vercel本番ではrewriteを使うため相対`/api`を既定に
-  nodeApiUrl: ((import.meta.env.PROD && inVercel) ? '/api' : (import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'))?.toString().trim(),
+  // Vercel本番では app-config.json が取得できない場合に備え、絶対URLを既定に
+  nodeApiUrl: (
+    (import.meta.env.PROD && inVercel)
+      ? (import.meta.env.VITE_NODE_API_URL || PROD_RAILWAY_API)
+      : (import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api')
+  )?.toString().trim(),
   railwayData: true,
   railwayChatTest: true,
   // 改行や空白が混入した環境変数を安全化
