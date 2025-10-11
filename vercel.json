@@ -5,17 +5,12 @@
   "devCommand": "npm run dev",
   "framework": "vite",
   "rewrites": [
-    // Serve critical static files directly (avoid SPA fallback)
     { "source": "/app-config.json", "destination": "/app-config.json" },
     { "source": "/assets/:path*", "destination": "/assets/:path*" },
     { "source": "/favicon.ico", "destination": "/favicon.ico" },
     { "source": "/robots.txt", "destination": "/robots.txt" },
     { "source": "/manifest.webmanifest", "destination": "/manifest.webmanifest" },
-
-    // Ensure API traffic is not captured by SPA fallback
     { "source": "/api/:path*", "destination": "/api/:path*" },
-
-    // SPA fallback for everything else
     { "source": "/(.*)", "destination": "/" }
   ]
 }
