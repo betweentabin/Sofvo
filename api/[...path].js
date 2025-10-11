@@ -3,7 +3,7 @@ export const config = { runtime: 'edge' };
 // Prefer env on Vercel, but allow a safe default so that
 // /api works even if the env var isn't configured yet.
 // NOTE: Change DEFAULT_ORIGIN to your Railway Node API origin if different.
-const DEFAULT_ORIGIN = 'https://angelic-rebirth-production-769f.up.railway.app';
+const DEFAULT_ORIGIN = 'https://sofvo-api-production.up.railway.app';
 const TARGET_ORIGIN = process.env.RAILWAY_API_ORIGIN || DEFAULT_ORIGIN;
 
 export default async function handler(req) {

@@ -1,5 +1,5 @@
 {
-  "nodeApiUrl": "https://angelic-rebirth-production-769f.up.railway.app/api",
+  "nodeApiUrl": "https://sofvo-api-production.up.railway.app/api",
   "railwayData": true,
   "railwayChatTest": true,
   "testUserId": ""

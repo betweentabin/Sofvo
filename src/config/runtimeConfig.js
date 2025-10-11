@@ -4,7 +4,7 @@
 const isBrowser = typeof window !== 'undefined';
 const host = isBrowser ? window.location.hostname : '';
 const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app';
-const PROD_RAILWAY_API = 'https://angelic-rebirth-production-769f.up.railway.app/api';
+const PROD_RAILWAY_API = 'https://sofvo-api-production.up.railway.app/api';
 
 const defaults = {
   // Vercel本番では app-config.json が取得できない場合に備え、絶対URLを既定に
