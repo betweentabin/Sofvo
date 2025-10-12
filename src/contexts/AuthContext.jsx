@@ -29,13 +29,13 @@ export const AuthProvider = ({ children }) => {
 
   let nodeBase
   if (isCapacitor) {
-    // In Capacitor, relative '/api' won't work. Use explicit mobile API URL.
-    nodeBase = RUNTIME.nodeApiUrl || import.meta.env.VITE_MOBILE_API_URL || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
+    // In Capacitor, relative '/api' won't work. Prefer runtime URL only (no build-time env)
+    nodeBase = RUNTIME.nodeApiUrl || 'http://localhost:5000/api'
   } else if (inVercel) {
-    // On Vercel, allow runtime/env override to bypass proxy if needed.
-    nodeBase = RUNTIME.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || '/api'
+    // On Vercel, prefer runtime or relative '/api' to avoid build-time env inlining
+    nodeBase = RUNTIME.nodeApiUrl || '/api'
   } else {
-    nodeBase = RUNTIME.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api'
+    nodeBase = RUNTIME.nodeApiUrl || 'http://localhost:5000/api'
   }
 
   const http = axios.create({ baseURL: nodeBase })

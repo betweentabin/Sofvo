@@ -23,16 +23,16 @@ function resolveBaseUrl() {
   );
 
   if (isCapacitor) {
-    return runtimeCfg.nodeApiUrl || import.meta.env.VITE_MOBILE_API_URL || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';
+    return runtimeCfg.nodeApiUrl || 'http://localhost:5000/api';
   }
 
   // On Vercel production, force relative path to use rewrites and avoid CORS
   if (inVercel) {
-    // Allow runtime override or env override to call Railway directly if needed
-    return runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || '/api';
+    // Use runtime override or relative path; avoid build-time env inlining
+    return runtimeCfg.nodeApiUrl || '/api';
   }
 
-  return runtimeCfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';
+  return runtimeCfg.nodeApiUrl || 'http://localhost:5000/api';
 }
 
 const nodeAPI = axios.create({
@@ -69,7 +69,7 @@ export const api = {
     sseUrl: (asUserId) => {
       // Prefer runtime override to ensure absolute upstream base in production
       const cfgNow = getRuntimeCfg();
-      const upstreamBase = (cfgNow.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api');
+      const upstreamBase = (cfgNow.nodeApiUrl || 'http://localhost:5000/api');
       const baseRoot = upstreamBase.replace(/\/?api\/?$/, '');
       const token = localStorage.getItem('JWT') || '';
       return `${baseRoot}/api/realtime/notifications?as_user=${encodeURIComponent(asUserId)}&token=${encodeURIComponent(token)}`;

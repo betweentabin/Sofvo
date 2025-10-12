@@ -36,7 +36,7 @@ export const useChatRailway = (conversationId, asUserId) => {
   useEffect(() => {
     if (!conversationId || !asUserId) return;
     const cfg = typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {};
-    const upstream = (cfg.nodeApiUrl || import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api');
+    const upstream = (cfg.nodeApiUrl || 'http://localhost:5000/api');
     const baseRoot = upstream.replace(/\/?api\/?$/, '');
     const token = localStorage.getItem('JWT');
     const url = `${baseRoot}/api/realtime/chat?conversation_id=${encodeURIComponent(conversationId)}&as_user=${encodeURIComponent(asUserId)}&token=${encodeURIComponent(token || '')}`;
