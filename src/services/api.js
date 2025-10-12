@@ -48,8 +48,15 @@ nodeAPI.interceptors.request.use(async (config) => {
   try {
     config.baseURL = resolveBaseUrl();
   } catch {}
+  // Ensure headers object exists
+  if (!config.headers) config.headers = {};
+  // Attach JWT if present
   const token = localStorage.getItem('JWT');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    // Set for case-sensitive and lowercase keys to avoid adapter differences
+    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.authorization = `Bearer ${token}`;
+  }
   return config;
 }, (error) => Promise.reject(error));
 

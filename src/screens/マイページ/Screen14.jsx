@@ -25,6 +25,8 @@ export const Screen14 = () => {
     badgesCount: 0
   });
   const [tournaments, setTournaments] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
   
   const { userId } = useParams(); // URLからユーザーIDを取得
   const navigate = useNavigate();
@@ -59,6 +61,7 @@ export const Screen14 = () => {
 
       await fetchStats(targetUserId);
       await fetchTournaments(targetUserId);
+      await fetchActivities(targetUserId);
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -90,6 +93,22 @@ export const Screen14 = () => {
       setTournaments(data || []);
     } catch (error) {
       console.error('Error fetching tournaments:', error);
+    }
+  };
+
+  // 最近の活動（投稿）を取得し、対象ユーザーのものだけに絞り込み
+  const fetchActivities = async (targetUserId) => {
+    try {
+      setActivitiesLoading(true);
+      // 直近の投稿から自分の投稿のみを抽出（最大10件）
+      const { data } = await api.railwayPosts.latest(50);
+      const mine = (data || []).filter(p => p.user_id === targetUserId).slice(0, 10);
+      setActivities(mine);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      setActivities([]);
+    } finally {
+      setActivitiesLoading(false);
     }
   };
 
@@ -244,11 +263,20 @@ export const Screen14 = () => {
             <div className="text-wrapper-129">活動記録</div>
           </div>
           <div className="frame-240">
-            <div className="rectangle-4" />
-            <div className="rectangle-4" />
-            <div className="rectangle-4" />
-            <div className="rectangle-4" />
-            <div className="rectangle-4" />
+            {activitiesLoading ? (
+              <div className="activity-loading">読み込み中...</div>
+            ) : activities.length > 0 ? (
+              activities.map((act) => (
+                <div key={act.id} className="activity-card">
+                  <div className="activity-header">
+                    <span className="activity-time">{new Date(act.created_at).toLocaleDateString('ja-JP')}</span>
+                  </div>
+                  <div className="activity-content">{act.content}</div>
+                </div>
+              ))
+            ) : (
+              <div className="activity-empty">まだ活動記録がありません</div>
+            )}
           </div>
         </div>
       </div>
