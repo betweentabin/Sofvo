@@ -7,10 +7,10 @@ const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app';
 const PROD_RAILWAY_API = 'https://sofvo-api-production.up.railway.app/api';
 
 const defaults = {
-  // Vercel本番では app-config.json が取得できない場合に備え、絶対URLを既定に
+  // Vercel本番ではビルド時の環境変数に依存せず、固定の本番APIを採用する
   nodeApiUrl: (
     (import.meta.env.PROD && inVercel)
-      ? (import.meta.env.VITE_NODE_API_URL || PROD_RAILWAY_API)
+      ? PROD_RAILWAY_API
       : (import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api')
   )?.toString().trim(),
   railwayData: true,
