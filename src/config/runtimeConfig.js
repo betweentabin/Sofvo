@@ -11,7 +11,7 @@ const defaults = {
   nodeApiUrl: (
     (import.meta.env.PROD && inVercel)
       ? PROD_RAILWAY_API
-      : (import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api')
+      : 'http://localhost:5000/api'
   )?.toString().trim(),
   railwayData: true,
   railwayChatTest: true,
