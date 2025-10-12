@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-export const PostComposer = ({ isOpen, onClose, onSubmit, maxLength = 280 }) => {
+export const PostComposer = ({ isOpen, onClose, onSubmit, maxLength = 280, allowImage = true }) => {
   const [content, setContent] = useState('');
+  const [file, setFile] = useState(null);
   const remaining = maxLength - content.length;
 
   useEffect(() => {
@@ -87,7 +88,7 @@ export const PostComposer = ({ isOpen, onClose, onSubmit, maxLength = 280 }) => 
 
   const handleSubmit = async () => {
     if (!content.trim() || remaining < 0) return;
-    await onSubmit(content.trim());
+    await onSubmit(content.trim(), file || null);
     onClose();
   };
 
@@ -108,6 +109,14 @@ export const PostComposer = ({ isOpen, onClose, onSubmit, maxLength = 280 }) => 
         <div style={styles.footer}>
           <div style={styles.counter}>{remaining}</div>
           <div style={styles.actions}>
+            {allowImage && (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                style={{ fontSize: 12 }}
+              />
+            )}
             <button style={styles.cancel} onClick={onClose}>キャンセル</button>
             <button style={styles.submit(!content.trim() || remaining < 0)} onClick={handleSubmit} disabled={!content.trim() || remaining < 0}>
               投稿
@@ -120,4 +129,3 @@ export const PostComposer = ({ isOpen, onClose, onSubmit, maxLength = 280 }) => 
 };
 
 export default PostComposer;
-

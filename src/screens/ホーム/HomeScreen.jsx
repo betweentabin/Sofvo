@@ -212,14 +212,23 @@ export const HomeScreen = () => {
   const openQuickComposer = () => setIsQuickComposerOpen(true);
   const closeQuickComposer = () => setIsQuickComposerOpen(false);
 
-  const handleQuickPostSubmit = async (text) => {
+  const handleQuickPostSubmit = async (text, file = null) => {
     if (!user?.id) {
       alert('ログインが必要です');
       return;
     }
     try {
       const asUserId = RAILWAY_TEST_USER || user.id;
-      const { data: newPost } = await api.railwayPosts.create(asUserId, text, 'public');
+      let fileUrl = null;
+      if (file) {
+        try {
+          const up = await api.media.upload(file, 'image');
+          fileUrl = up?.data?.url || null;
+        } catch (e) {
+          console.error('Image upload failed:', e);
+        }
+      }
+      const { data: newPost } = await api.railwayPosts.create(asUserId, text, 'public', fileUrl || null);
       setTimelinePosts((prev) => {
         const filtered = prev.filter((post) => post.id !== newPost.id);
         return [newPost, ...filtered].slice(0, TIMELINE_LIMIT);
@@ -298,6 +307,11 @@ export const HomeScreen = () => {
                               <div className="quick-post-time">{formatRelativeTime(post.created_at)}</div>
                             </div>
                             <div className="quick-post-content">{post.content}</div>
+                            {post.file_url && (
+                              <div className="quick-post-image-wrap">
+                                <img src={post.file_url} alt="投稿画像" className="quick-post-image" />
+                              </div>
+                            )}
                             {post.isLocal && (
                               <div className="quick-post-pending">Supabase未反映（DBセットアップが必要です）</div>
                             )}

@@ -188,7 +188,13 @@ export const api = {
   railwayPosts: {
     latest: (limit = 30) => nodeAPI.get('/railway-posts/latest', { params: { limit } }),
     following: (asUserId, limit = 30) => nodeAPI.get('/railway-posts/following', { params: { as_user: asUserId, limit } }),
-    create: (asUserId, content, visibility = 'public') => nodeAPI.post('/railway-posts/create', { as_user: asUserId, content, visibility }),
+    // Optionally accepts fileUrl (string) and imageUrls (array)
+    create: (asUserId, content, visibility = 'public', fileUrl = null, imageUrls = []) => {
+      const payload = { as_user: asUserId, content, visibility };
+      if (fileUrl) payload.file_url = fileUrl;
+      if (imageUrls && imageUrls.length) payload.image_urls = imageUrls;
+      return nodeAPI.post('/railway-posts/create', payload);
+    },
   },
   // ===== Railway (PostgreSQL) Users / Profile =====
   railwayUsers: {

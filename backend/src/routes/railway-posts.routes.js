@@ -13,6 +13,8 @@ const mapPost = (r) => ({
   visibility: r.visibility,
   tournament_id: r.tournament_id,
   is_pinned: r.is_pinned,
+  file_url: r.file_url || null,
+  image_urls: r.image_urls || null,
   created_at: r.created_at,
   updated_at: r.updated_at,
   profiles: {
@@ -67,15 +69,30 @@ router.get('/following', verifyAnyAuth, async (req, res) => {
 // POST /api/railway-posts/create { as_user, content, visibility }
 router.post('/create', verifyAnyAuth, async (req, res) => {
   try {
-    const { as_user: asUser, content, visibility = 'public' } = req.body || {};
+    const { as_user: asUser, content, visibility = 'public', file_url = null, image_urls = [] } = req.body || {};
     if (!asUser || !content) return res.status(400).json({ message: 'as_user and content are required' });
-    const { rows } = await query(
-      `INSERT INTO posts (user_id, content, visibility)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [asUser, content, visibility]
-    );
-    const post = rows[0];
+    let post;
+    // Try extended columns first (file_url, image_urls, type)
+    try {
+      const postType = file_url ? 'image' : 'post';
+      const imgJson = Array.isArray(image_urls) ? image_urls : [];
+      const { rows } = await query(
+        `INSERT INTO posts (user_id, content, visibility, type, file_url, image_urls)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [asUser, content, visibility, postType, file_url, JSON.stringify(imgJson)]
+      );
+      post = rows[0];
+    } catch (e) {
+      // Fallback for older schema without columns
+      const { rows } = await query(
+        `INSERT INTO posts (user_id, content, visibility)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [asUser, content, visibility]
+      );
+      post = rows[0];
+    }
     const { rows: p } = await query('SELECT id as p_id, username as p_username, display_name as p_display_name, avatar_url as p_avatar_url FROM profiles WHERE id=$1', [asUser]);
     const mapped = mapPost({ ...post, ...p[0] });
     res.status(201).json(mapped);
