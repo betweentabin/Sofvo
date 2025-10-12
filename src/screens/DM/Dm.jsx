@@ -24,12 +24,37 @@ export const Dm = () => {
   const [railwayUserId, setRailwayUserId] = useState(null);
   const [railwayConversations, setRailwayConversations] = useState([]);
   const [railwayLoading, setRailwayLoading] = useState(false);
+  // Safely derive TEST_RAILWAY flag from runtime/app config and env
+  const isBrowser = typeof window !== 'undefined';
+  const RUNTIME = isBrowser ? (window.__APP_CONFIG__ || {}) : {};
+  const TEST_RAILWAY = Boolean(
+    (RUNTIME.railwayChatTest ?? false) ||
+    (import.meta.env.VITE_RAILWAY_CHAT_TEST === 'true')
+  );
+  // Test accounts list (used only in TEST_RAILWAY UI)
+  const [testAccounts, setTestAccounts] = useState([]);
 
   
   // Fetch test accounts (Railway) when test mode enabled
   useEffect(() => {
-    if (user?.id) setRailwayUserId(user.id);
-  }, [user]);
+    if (TEST_RAILWAY) {
+      // Load available test accounts for selection; default to current user if present
+      (async () => {
+        try {
+          const { data } = await api.railwayChat.listTestAccounts();
+          setTestAccounts(data || []);
+          if (!railwayUserId) {
+            const first = (data || [])[0]?.id || user?.id || null;
+            if (first) setRailwayUserId(first);
+          }
+        } catch (e) {
+          console.error('Failed to load railway test accounts:', e);
+        }
+      })();
+    } else if (user?.id) {
+      setRailwayUserId(user.id);
+    }
+  }, [TEST_RAILWAY, user]);
 
   // Fetch railway conversations for selected test user
   useEffect(() => {
