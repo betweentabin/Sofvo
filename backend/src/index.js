@@ -22,6 +22,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Respect X-Forwarded-* headers when behind Railway/Proxies so req.protocol is accurate
+app.set('trust proxy', true);
+
 // CORS configuration (web + mobile webview friendly) — placed before Helmet
 const allowedOrigins = [
   process.env.FRONTEND_URL,

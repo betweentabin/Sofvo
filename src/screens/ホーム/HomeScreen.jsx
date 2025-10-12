@@ -274,8 +274,7 @@ export const HomeScreen = () => {
         {activeTab === "following" ? (
           // フォロー中の内容
           <div className="following-content">
-            {!USE_RAILWAY && (
-              <div className="quick-post-section">
+            <div className="quick-post-section">
                 <div className="quick-post-section-header">
                   <div className="quick-post-title">みんなの投稿</div>
                   <button type="button" className="quick-post-action" onClick={openQuickComposer}>
@@ -329,7 +328,6 @@ export const HomeScreen = () => {
                   </div>
                 )}
               </div>
-            )}
 
             {isComposerOpen && (
               <div className="frame-75 home-post-composer">
