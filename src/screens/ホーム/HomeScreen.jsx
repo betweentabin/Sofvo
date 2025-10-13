@@ -6,6 +6,7 @@ import { HeaderTabs } from "../../components/HeaderTabs";
 import { Footer } from "../../components/Footer";
 import { FloatingPostButton } from "../../components/FloatingPostButton";
 import { PostComposer } from "../../components/PostComposer";
+import { PostCard } from "../../components/PostCard";
 // Supabase removed: Railway-only
 import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
