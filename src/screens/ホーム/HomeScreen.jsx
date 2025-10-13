@@ -6,7 +6,7 @@ import { HeaderTabs } from "../../components/HeaderTabs";
 import { Footer } from "../../components/Footer";
 import { FloatingPostButton } from "../../components/FloatingPostButton";
 import { PostComposer } from "../../components/PostComposer";
-import { PostCard } from "../../components/PostCard";
+// import { PostCard } from "../../components/PostCard";
 // Supabase removed: Railway-only
 import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -344,7 +344,11 @@ export const HomeScreen = () => {
                 ) : timelinePosts.length > 0 ? (
                   <div className="quick-post-list">
                     {timelinePosts.map((post) => (
-                      <PostCard key={post.id} post={post} liked={!!likedPosts[post.id]} onLike={() => handleLike(post.id)} />
+                      {/* <PostCard key={post.id} post={post} liked={!!likedPosts[post.id]} onLike={() => handleLike(post.id)} /> */}
+                      <div key={post.id} className="post-item">
+                        <div className="post-content">{post.content}</div>
+                        {post.file_url && <img src={post.file_url} alt="post" className="post-image" />}
+                      </div>
                     ))}
                   </div>
                 ) : (
