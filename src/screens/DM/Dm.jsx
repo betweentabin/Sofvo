@@ -79,7 +79,7 @@ export const Dm = () => {
     if (!searchUser.trim()) return;
     try {
       const { data } = await api.railwayUsers.search(searchUser.trim(), 10, {
-        followingOnly: true,
+        mutualOnly: true,
         as_user: viewerUserId,
       });
       const list = (data || []).filter(u => u.id !== viewerUserId);
@@ -106,7 +106,7 @@ export const Dm = () => {
         }
       } catch (err) {
         if (err?.response?.status === 403) {
-          alert('メッセージを送るには相手をフォローしてください');
+          alert('メッセージを送るには相互フォローが必要です');
         } else {
           console.error('Failed to create conversation:', err);
           alert('会話の作成に失敗しました');

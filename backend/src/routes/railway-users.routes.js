@@ -153,11 +153,12 @@ router.get('/tournaments', verifyAnyAuth, async (req, res) => {
   }
 });
 
-// GET /api/railway-users/search?term=<text>&limit=10&followingOnly=false&as_user=<uuid>
+// GET /api/railway-users/search?term=<text>&limit=10&followingOnly=false&mutualOnly=false&as_user=<uuid>
 router.get('/search', verifyAnyAuth, async (req, res) => {
   const term = (req.query.term || '').toString().trim();
   const limit = Math.min(Number(req.query.limit) || 10, 50);
   const followingOnly = String(req.query.followingOnly || 'false') === 'true';
+  const mutualOnly = String(req.query.mutualOnly || 'false') === 'true';
   const asUser = req.query.as_user || null;
   if (!term) return res.json([]);
   try {
@@ -166,6 +167,11 @@ router.get('/search', verifyAnyAuth, async (req, res) => {
     const params = [like];
     if (followingOnly && asUser) {
       where += ` AND id IN (SELECT following_id FROM follows WHERE follower_id = $${params.push(asUser)})`;
+    }
+    if (mutualOnly && asUser) {
+      // 相互フォロー: as_user が相手をフォロー かつ 相手も as_user をフォロー
+      where += ` AND id IN (SELECT following_id FROM follows WHERE follower_id = $${params.push(asUser)})`;
+      where += ` AND id IN (SELECT follower_id FROM follows WHERE following_id = $${params.push(asUser)})`;
     }
     const { rows } = await query(
       `SELECT id, username, display_name, avatar_url
