@@ -22,34 +22,16 @@ export const Dm = () => {
 
   // Viewer (=ログインユーザー) のIDは常に user.id を使用
   const viewerUserId = user?.id || null;
-  // Railway chat test mode（受信相手の候補表示用）
-  const [railwayUserId, setRailwayUserId] = useState(null); // kept for backward compat but not used as as_user
+  // Railway chat test mode（UIは非表示）
+  const [railwayUserId] = useState(null);
   const [railwayConversations, setRailwayConversations] = useState([]);
   const [railwayLoading, setRailwayLoading] = useState(false);
   // Safely derive TEST_RAILWAY flag from runtime/app config and env
-  const isBrowser = typeof window !== 'undefined';
-  const RUNTIME = isBrowser ? (window.__APP_CONFIG__ || {}) : {};
-  const TEST_RAILWAY = Boolean(
-    (RUNTIME.railwayChatTest ?? false) ||
-    (import.meta.env.VITE_RAILWAY_CHAT_TEST === 'true')
-  );
-  // Test accounts list (used only in TEST_RAILWAY UI)
-  const [testAccounts, setTestAccounts] = useState([]);
+  const TEST_RAILWAY = false;
 
   
   // Fetch test accounts (Railway) when test mode enabled
-  useEffect(() => {
-    if (TEST_RAILWAY) {
-      (async () => {
-        try {
-          const { data } = await api.railwayChat.listTestAccounts();
-          setTestAccounts(data || []);
-        } catch (e) {
-          console.error('Failed to load railway test accounts:', e);
-        }
-      })();
-    }
-  }, [TEST_RAILWAY]);
+  // Test accounts UI removed
 
   // Fetch railway conversations for selected test user
   useEffect(() => {
@@ -173,18 +155,6 @@ export const Dm = () => {
         }}
       >
         <div className="dm-container">
-          {TEST_RAILWAY && (
-            <div className="test-railway-selector" style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>
-              <span style={{ marginRight: 8, fontSize: 12, color: '#555' }}>テストアカウント:</span>
-              <select value={''} onChange={() => {}} style={{ padding: '6px 8px', fontSize: 12 }}>
-                {testAccounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>
-                    {(acc.display_name || acc.username) + ' (' + acc.username + ')'}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
           <div className="conversations-sidebar">
             <div className="conversations-header">
               <h2>メッセージ</h2>
@@ -197,40 +167,7 @@ export const Dm = () => {
             </div>
             
             <div className="conversations-list">
-              {TEST_RAILWAY ? (
-                railwayLoading ? (
-                  <div className="loading">読み込み中...</div>
-                ) : railwayConversations.length === 0 ? (
-                  <div className="no-conversations">
-                    <p>メッセージはまだありません</p>
-                  </div>
-                ) : (
-                  railwayConversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      className={`conversation-item ${selectedConversation?.id === conversation.id ? 'active' : ''}`}
-                      onClick={() => {
-                        setSelectedConversation(conversation);
-                        navigate(`/dm/${conversation.id}`);
-                      }}
-                    >
-                      <div className="conversation-avatar">
-                        {getRailwayConversationName(conversation).charAt(0).toUpperCase()}
-                      </div>
-                      <div className="conversation-info">
-                        <div className="conversation-name">
-                          {getRailwayConversationName(conversation)}
-                        </div>
-                        {conversation.last_message && (
-                          <div className="conversation-last-message">
-                            {conversation.last_message.content}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )
-              ) : loading ? (
+              {loading ? (
                 <div className="loading">読み込み中...</div>
               ) : conversations.length === 0 ? (
                 <div className="no-conversations">
