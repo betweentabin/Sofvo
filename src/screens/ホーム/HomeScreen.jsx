@@ -65,6 +65,8 @@ export const HomeScreen = () => {
   const [userCreatedPosts, setUserCreatedPosts] = useState([]);
   const [isComposerOpen, setIsComposerOpen] = useState(false); // tournament composer (existing)
   const [isQuickComposerOpen, setIsQuickComposerOpen] = useState(false); // simple post composer
+  const [quickContent, setQuickContent] = useState('');
+  const [quickFile, setQuickFile] = useState(null);
   const USE_RAILWAY = true;
   const RUNTIME = typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {};
   const RAILWAY_TEST_USER = RUNTIME.testUserId || import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
@@ -275,12 +277,67 @@ export const HomeScreen = () => {
           // フォロー中の内容
           <div className="following-content">
             <div className="quick-post-section">
-                <div className="quick-post-section-header">
-                  <div className="quick-post-title">みんなの投稿</div>
-                  <button type="button" className="quick-post-action" onClick={openQuickComposer}>
-                    いま投稿する
-                  </button>
+              <div className="quick-post-section-header">
+                <div className="quick-post-title">みんなの投稿</div>
+                <button type="button" className="quick-post-action" onClick={openQuickComposer}>
+                  いま投稿する
+                </button>
+              </div>
+              {isQuickComposerOpen && (
+                <div className="frame-75 home-post-composer">
+                  <form className="frame-76 home-post-composer-form" onSubmit={(e) => { e.preventDefault(); /* handled below */ }}>
+                    <div className="home-post-composer-header">
+                      <div className="frame-77">
+                        <div className="frame-78" />
+                        <div className="text-wrapper-63">{user?.email?.split('@')[0] || 'あなた'}</div>
+                      </div>
+                      <button type="button" className="home-post-composer-close" onClick={() => { setQuickContent(''); setQuickFile(null); closeQuickComposer(); }}>
+                        閉じる
+                      </button>
+                    </div>
+                    <div className="frame-79 home-post-composer-body">
+                      <label className="composer-label">
+                        <textarea
+                          className="home-post-textarea"
+                          rows={3}
+                          value={quickContent}
+                          onChange={(e) => setQuickContent(e.target.value)}
+                          placeholder="いまどうしてる？（テキスト）"
+                        />
+                      </label>
+                      <div className="home-post-inline">
+                        <label className="composer-label">
+                          <span style={{ fontSize: 12, color: '#7a8ca5' }}>画像（任意）</span>
+                          <input type="file" accept="image/*" className="home-post-input" onChange={(e) => setQuickFile(e.target.files?.[0] || null)} />
+                        </label>
+                      </div>
+                      {quickFile && (
+                        <div className="quick-post-image-wrap">
+                          <img src={URL.createObjectURL(quickFile)} alt="プレビュー" className="quick-post-image" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="home-post-composer-actions">
+                      <button type="button" className="home-post-cancel" onClick={() => { setQuickContent(''); setQuickFile(null); closeQuickComposer(); }}>
+                        キャンセル
+                      </button>
+                      <div className="home-post-submit">
+                        <div
+                          className="frame-82"
+                          onClick={async () => {
+                            if (!quickContent.trim()) return;
+                            await handleQuickPostSubmit(quickContent.trim(), quickFile);
+                            setQuickContent(''); setQuickFile(null); closeQuickComposer();
+                          }}
+                          style={{ cursor: quickContent.trim() ? 'pointer' : 'not-allowed', opacity: quickContent.trim() ? 1 : 0.6 }}
+                        >
+                          <div className="text-wrapper-66">投稿する</div>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
                 </div>
+              )}
                 {timelineLoading ? (
                   <div className="quick-post-message">読み込み中...</div>
                 ) : timelinePosts.length > 0 ? (
@@ -657,11 +714,7 @@ export const HomeScreen = () => {
         <FloatingPostButton onClick={openQuickComposer} />
       )}
 
-      <PostComposer
-        isOpen={isQuickComposerOpen}
-        onClose={closeQuickComposer}
-        onSubmit={handleQuickPostSubmit}
-      />
+      {/* 旧ボトムシートコンポーザは非表示に切替（カードUIへ統一） */}
 
       <Footer currentPage="home" />
     </div>
