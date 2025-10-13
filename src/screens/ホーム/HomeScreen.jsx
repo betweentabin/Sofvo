@@ -342,39 +342,9 @@ export const HomeScreen = () => {
                   <div className="quick-post-message">読み込み中...</div>
                 ) : timelinePosts.length > 0 ? (
                   <div className="quick-post-list">
-                    {timelinePosts.map((post) => {
-                      const displayName = resolveDisplayName(post.profiles);
-                      return (
-                        <div className="quick-post-card" key={post.id}>
-                          <div className="quick-post-avatar">
-                            {post.profiles?.avatar_url ? (
-                              <img
-                                src={post.profiles.avatar_url}
-                                alt={`${displayName}のアイコン`}
-                                className="quick-post-avatar-image"
-                              />
-                            ) : (
-                              <span>{resolveAvatarInitial(post.profiles)}</span>
-                            )}
-                          </div>
-                          <div className="quick-post-body">
-                            <div className="quick-post-header">
-                              <div className="quick-post-author">{displayName}</div>
-                              <div className="quick-post-time">{formatRelativeTime(post.created_at)}</div>
-                            </div>
-                            <div className="quick-post-content">{post.content}</div>
-                            {post.file_url && (
-                              <div className="quick-post-image-wrap">
-                                <img src={post.file_url} alt="投稿画像" className="quick-post-image" />
-                              </div>
-                            )}
-                            {post.isLocal && (
-                              <div className="quick-post-pending">Supabase未反映（DBセットアップが必要です）</div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {timelinePosts.map((post) => (
+                      <PostCard key={post.id} post={post} liked={!!likedPosts[post.id]} onLike={() => handleLike(post.id)} />
+                    ))}
                   </div>
                 ) : (
                   <div className="quick-post-empty">
