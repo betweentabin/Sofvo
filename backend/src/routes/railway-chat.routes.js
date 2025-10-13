@@ -82,6 +82,14 @@ router.post('/conversations', verifyAnyAuth, async (req, res) => {
     // Check existing direct conversation
     if (type === 'direct' && participant_ids.length === 1) {
       const other = participant_ids[0];
+      // Require follow to start direct message
+      const { rows: follows } = await query(
+        `SELECT 1 FROM follows WHERE follower_id=$1 AND following_id=$2 LIMIT 1`,
+        [asUser, other]
+      );
+      if (!follows?.length) {
+        return res.status(403).json({ message: 'Follow required to start direct message' });
+      }
       const { rows: existing } = await query(
         `SELECT c.id
          FROM conversations c

@@ -153,20 +153,27 @@ router.get('/tournaments', verifyAnyAuth, async (req, res) => {
   }
 });
 
-// GET /api/railway-users/search?term=<text>&limit=10
+// GET /api/railway-users/search?term=<text>&limit=10&followingOnly=false&as_user=<uuid>
 router.get('/search', verifyAnyAuth, async (req, res) => {
   const term = (req.query.term || '').toString().trim();
   const limit = Math.min(Number(req.query.limit) || 10, 50);
+  const followingOnly = String(req.query.followingOnly || 'false') === 'true';
+  const asUser = req.query.as_user || null;
   if (!term) return res.json([]);
   try {
     const like = `%${term}%`;
+    let where = 'WHERE (username ILIKE $1 OR display_name ILIKE $1)';
+    const params = [like];
+    if (followingOnly && asUser) {
+      where += ` AND id IN (SELECT following_id FROM follows WHERE follower_id = $${params.push(asUser)})`;
+    }
     const { rows } = await query(
       `SELECT id, username, display_name, avatar_url
        FROM profiles
-       WHERE (username ILIKE $1 OR display_name ILIKE $1)
+       ${where}
        ORDER BY updated_at DESC
-       LIMIT $2`,
-      [like, limit]
+       LIMIT ${limit}`,
+      params
     );
     res.json(rows || []);
   } catch (e) {

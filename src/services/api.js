@@ -205,7 +205,7 @@ export const api = {
     unfollow: (asUser, targetId) => nodeAPI.delete('/railway-users/follow', { data: { as_user: asUser, target_id: targetId } }),
     getStats: (userId) => nodeAPI.get('/railway-users/stats', { params: { user_id: userId } }),
     getTournaments: (userId, limit = 5) => nodeAPI.get('/railway-users/tournaments', { params: { user_id: userId, limit } }),
-    search: (term, limit = 10) => nodeAPI.get('/railway-users/search', { params: { term, limit } }),
+    search: (term, limit = 10, opts = {}) => nodeAPI.get('/railway-users/search', { params: { term, limit, ...opts } }),
   },
   // ===== Railway (PostgreSQL) Teams =====
   railwayTeams: {

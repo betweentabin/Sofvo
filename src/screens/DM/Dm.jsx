@@ -20,8 +20,10 @@ export const Dm = () => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Railway chat test mode
-  const [railwayUserId, setRailwayUserId] = useState(null);
+  // Viewer (=ログインユーザー) のIDは常に user.id を使用
+  const viewerUserId = user?.id || null;
+  // Railway chat test mode（受信相手の候補表示用）
+  const [railwayUserId, setRailwayUserId] = useState(null); // kept for backward compat but not used as as_user
   const [railwayConversations, setRailwayConversations] = useState([]);
   const [railwayLoading, setRailwayLoading] = useState(false);
   // Safely derive TEST_RAILWAY flag from runtime/app config and env
@@ -38,31 +40,24 @@ export const Dm = () => {
   // Fetch test accounts (Railway) when test mode enabled
   useEffect(() => {
     if (TEST_RAILWAY) {
-      // Load available test accounts for selection; default to current user if present
       (async () => {
         try {
           const { data } = await api.railwayChat.listTestAccounts();
           setTestAccounts(data || []);
-          if (!railwayUserId) {
-            const first = (data || [])[0]?.id || user?.id || null;
-            if (first) setRailwayUserId(first);
-          }
         } catch (e) {
           console.error('Failed to load railway test accounts:', e);
         }
       })();
-    } else if (user?.id) {
-      setRailwayUserId(user.id);
     }
-  }, [TEST_RAILWAY, user]);
+  }, [TEST_RAILWAY]);
 
   // Fetch railway conversations for selected test user
   useEffect(() => {
     const loadConvs = async () => {
-      if (!railwayUserId) return;
+      if (!viewerUserId) return;
       setRailwayLoading(true);
       try {
-        const { data } = await api.railwayChat.getConversations(railwayUserId);
+        const { data } = await api.railwayChat.getConversations(viewerUserId);
         setRailwayConversations(data || []);
       } catch (e) {
         console.error('Failed to load railway conversations:', e);
@@ -71,7 +66,7 @@ export const Dm = () => {
       }
     };
     loadConvs();
-  }, [railwayUserId]);
+  }, [viewerUserId]);
 
   useEffect(() => {
     if (conversationId && conversations.length > 0) {
@@ -82,25 +77,39 @@ export const Dm = () => {
 
   const handleSearchUser = async () => {
     if (!searchUser.trim()) return;
-
-    const { data } = await api.railwayUsers.search(searchUser.trim(), 10);
-    const list = (data || []).filter(u => u.id !== railwayUserId);
-    setSearchResults(list);
+    try {
+      const { data } = await api.railwayUsers.search(searchUser.trim(), 10, {
+        followingOnly: true,
+        as_user: viewerUserId,
+      });
+      const list = (data || []).filter(u => u.id !== viewerUserId);
+      setSearchResults(list);
+    } catch (e) {
+      console.error('User search failed:', e);
+      setSearchResults([]);
+    }
   };
 
   const handleStartConversation = async (recipientId) => {
     try {
-      // Railway テストモード: Node/Railway API で会話作成
-      if (!railwayUserId) return;
+      // Node/Railway API で会話作成（as_user は常にログインユーザー）
+      if (!viewerUserId) return;
       setRailwayLoading(true);
       try {
-        const { data } = await api.railwayChat.createConversation(railwayUserId, [recipientId], 'direct', null);
+        const { data } = await api.railwayChat.createConversation(viewerUserId, [recipientId], 'direct', null);
         const newId = data?.conversation_id || data?.conversation?.id;
         if (newId) {
-          const { data: convs } = await api.railwayChat.getConversations(railwayUserId);
+          const { data: convs } = await api.railwayChat.getConversations(viewerUserId);
           setRailwayConversations(convs || []);
           navigate(`/dm/${newId}`);
           setSelectedConversation((convs || []).find(c => c.id === newId) || { id: newId, type: 'direct' });
+        }
+      } catch (err) {
+        if (err?.response?.status === 403) {
+          alert('メッセージを送るには相手をフォローしてください');
+        } else {
+          console.error('Failed to create conversation:', err);
+          alert('会話の作成に失敗しました');
         }
       } finally {
         setRailwayLoading(false);
@@ -128,7 +137,7 @@ export const Dm = () => {
   const getRailwayConversationName = (conv) => {
     if (conv.type === 'direct') {
       // Show name of the other participant
-      const other = (conv.participants || []).find(p => p.user_id !== railwayUserId);
+      const other = (conv.participants || []).find(p => p.user_id !== viewerUserId);
       return other?.display_name || other?.username || 'DM';
     }
     return conv.name || 'グループチャット';
@@ -167,11 +176,7 @@ export const Dm = () => {
           {TEST_RAILWAY && (
             <div className="test-railway-selector" style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>
               <span style={{ marginRight: 8, fontSize: 12, color: '#555' }}>テストアカウント:</span>
-              <select
-                value={railwayUserId || ''}
-                onChange={(e) => setRailwayUserId(e.target.value)}
-                style={{ padding: '6px 8px', fontSize: 12 }}
-              >
+              <select value={''} onChange={() => {}} style={{ padding: '6px 8px', fontSize: 12 }}>
                 {testAccounts.map(acc => (
                   <option key={acc.id} value={acc.id}>
                     {(acc.display_name || acc.username) + ' (' + acc.username + ')'}
@@ -265,7 +270,7 @@ export const Dm = () => {
 
           <div className="chat-area">
             {(selectedConversation || conversationId) ? (
-              <ChatRoom conversationId={selectedConversation?.id || conversationId} asUserId={railwayUserId} />
+              <ChatRoom conversationId={selectedConversation?.id || conversationId} asUserId={viewerUserId} />
             ) : (
               <div className="no-conversation-selected">
                 <p>会話を選択するか、新しい会話を始めてください</p>
