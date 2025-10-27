@@ -20,6 +20,10 @@
   - 期待: 「退会する」で `DELETE /users/me` 成功→ signOut → /login へ。
 - 本日/参加予定大会（/tournament-schedule）
   - 期待: `GET /railway-tournaments/search?status=upcoming` から今日/今後の大会が表示。
+- 通知（/notifications）
+  - 期待: 一覧表示・既読化・すべて既読が機能。
+  - ヘッダーバッジ: 未読件数が表示され、既読操作やpush受信で更新。
+  - 確認: `GET /railway-notifications/unread-count`, `PUT /railway-notifications/read-all`, `PUT /railway-notifications/{id}/read` が成功。
 - チーム（管理者/メンバー）
   - 期待: チーム名/地域/自己紹介/所属人数、今日/今後の大会カードが表示。
   - 確認: `GET /railway-teams/owner?as_user=<id>` と `GET /railway-teams/members?team_id=<id>` が成功。
@@ -32,6 +36,7 @@
   - JWTが無効/期限切れ。/login で再ログイン。`localStorage.JWT` の有無を確認。
 - 404（エンドポイント未実装）
   - Railway API の新規ルートが未デプロイの場合（例: `/railway-teams/update`）。モックまたは回避策を利用。
+  - 通知関連: `/railway-notifications/*` の未実装がある場合、バッジは0表示にフォールバック。
 - CORS/ネットワーク不達
   - Vercel: 相対`/api`を使用しているか確認（絶対URLだとCORSの恐れ）。
   - Capacitor: `nodeApiUrl` がアプリ内設定で正しいか。
