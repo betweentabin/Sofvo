@@ -263,6 +263,7 @@ export const api = {
     unlike: (id) => nodeAPI.delete(`/railway-tournaments/${id}/like`),
     results: (id) => nodeAPI.get(`/railway-tournaments/${id}/results`),
     matches: (id) => nodeAPI.get(`/railway-tournaments/${id}/matches`),
+    updateMatch: (tournamentId, matchId, payload) => nodeAPI.put(`/railway-tournaments/${tournamentId}/matches/${matchId}`, payload),
     isParticipating: (id, mode = 'individual', teamId = null) => nodeAPI.get(`/railway-tournaments/${id}/is-participating`, { params: { mode, team_id: teamId } }),
     apply: (id, mode = 'individual', teamId = null) => nodeAPI.post(`/railway-tournaments/${id}/apply`, { mode, team_id: teamId }),
     withdraw: (id, mode = 'individual', teamId = null) => nodeAPI.delete(`/railway-tournaments/${id}/apply`, { data: { mode, team_id: teamId } }),
