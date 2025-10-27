@@ -219,3 +219,6 @@
    - 変更: `backend/src/routes/railway-meta.routes.js`, `backend/src/index.js`
    - フロント利用: `src/services/api.js` の `railwayMeta.get()` を追加し、`SearchScreen`/`大会を主催` でAPI→ランタイム→既定値の順に採用。
    - 環境変数上書き: `META_SEARCH_AREAS`, `META_SEARCH_TYPES`, `META_COMPETITION_METHODS`, `META_RANKING_METHODS`（JSON配列 or カンマ区切り）
+10. 検索条件の永続化/URL同期
+   - 変更: `src/screens/Sagasu/SearchScreen.jsx`
+   - 方針: URLクエリ（ym, area, type, following）と localStorage（searchFilters）へ保存。初期化時はURL優先、次にlocalStorage。
