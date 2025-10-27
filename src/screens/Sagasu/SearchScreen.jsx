@@ -26,12 +26,8 @@ export const SearchScreen = () => {
   });
 
   // ランタイム設定から選択肢を供給（なければ既存固定のまま）
-  const areaOptions = Array.isArray(RUNTIME.searchAreas) && RUNTIME.searchAreas.length
-    ? RUNTIME.searchAreas
-    : ['静岡県', '東京都', '大阪府'];
-  const typeOptions = Array.isArray(RUNTIME.searchTypes) && RUNTIME.searchTypes.length
-    ? RUNTIME.searchTypes
-    : ['レディース', 'メンズ', '混合', 'スポレク'];
+  const [areaOptions, setAreaOptions] = useState([]);
+  const [typeOptions, setTypeOptions] = useState([]);
   const yearMonthOptions = (() => {
     const now = new Date();
     const list = ['']; // '' = 全て
@@ -41,6 +37,25 @@ export const SearchScreen = () => {
     }
     return list;
   })();
+
+  // Load meta via API (fall back to runtime/defaults)
+  useEffect(() => {
+    let active = true;
+    const loadMeta = async () => {
+      try {
+        const { data } = await api.railwayMeta.get();
+        if (!active) return;
+        setAreaOptions((data?.areas && data.areas.length) ? data.areas : (RUNTIME.searchAreas || ['静岡県','東京都','大阪府']));
+        setTypeOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ['レディース','メンズ','混合','スポレク']));
+      } catch {
+        if (!active) return;
+        setAreaOptions(RUNTIME.searchAreas || ['静岡県','東京都','大阪府']);
+        setTypeOptions(RUNTIME.searchTypes || ['レディース','メンズ','混合','スポレク']);
+      }
+    };
+    loadMeta();
+    return () => { active = false; };
+  }, []);
 
   // Search tournaments
   const searchTournaments = async () => {
