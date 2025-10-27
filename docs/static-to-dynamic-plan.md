@@ -189,6 +189,7 @@
 - [x] 検索画面の選択肢をランタイム設定に対応（年月：動的生成、地域/種別：`window.__APP_CONFIG__` があれば使用）
 - [x] 主催画面の選択肢をランタイム設定に対応（地域/種別/競技方法/順位方法：`window.__APP_CONFIG__` があれば使用）
 - [x] チーム統計（ポイント/フォロー/フォロワー）を動的化（`/railway-teams/stats` が有効な場合に表示。`Screen17.jsx`/`Screen16.jsx`）
+- [x] ヘッダーに未読通知バッジを追加（`HeaderContent.jsx`：`unreadCount` APIとフォアグラウンドpushイベントで更新）
 - [ ] チームプロフィール編集の読込/保存実装（`Screen24.jsx`）
   - [x] 読込（初期値の表示）
   - [x] 保存UI + API呼出（`PUT /railway-teams/update` が有効な場合に動作）
