@@ -30,19 +30,31 @@ export const Screen37 = () => {
   const USE_RAILWAY = true;
   const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
   const RUNTIME = typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {};
-
-  const areaOptions = Array.isArray(RUNTIME.searchAreas) && RUNTIME.searchAreas.length
-    ? RUNTIME.searchAreas
-    : ["静岡県", "東京都", "神奈川県", "愛知県"];
-  const categoryOptions = Array.isArray(RUNTIME.searchTypes) && RUNTIME.searchTypes.length
-    ? RUNTIME.searchTypes
-    : ["男子", "女子", "混合", "ミックス"];
-  const methodOptions = Array.isArray(RUNTIME.competitionMethods) && RUNTIME.competitionMethods.length
-    ? RUNTIME.competitionMethods
-    : ["リーグ戦", "トーナメント", "スイスドロー"];
-  const rankingOptions = Array.isArray(RUNTIME.rankingMethods) && RUNTIME.rankingMethods.length
-    ? RUNTIME.rankingMethods
-    : ["勝数", "得失点差", "ポイント制"];
+  const [areaOptions, setAreaOptions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [methodOptions, setMethodOptions] = useState([]);
+  const [rankingOptions, setRankingOptions] = useState([]);
+  useEffect(() => {
+    let active = true;
+    const loadMeta = async () => {
+      try {
+        const { data } = await api.railwayMeta.get();
+        if (!active) return;
+        setAreaOptions((data?.areas && data.areas.length) ? data.areas : (RUNTIME.searchAreas || ["静岡県","東京都","神奈川県","愛知県"]));
+        setCategoryOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ["男子","女子","混合","ミックス"]));
+        setMethodOptions((data?.competition_methods && data.competition_methods.length) ? data.competition_methods : (RUNTIME.competitionMethods || ["リーグ戦","トーナメント","スイスドロー"]));
+        setRankingOptions((data?.ranking_methods && data.ranking_methods.length) ? data.ranking_methods : (RUNTIME.rankingMethods || ["勝数","得失点差","ポイント制"]));
+      } catch {
+        if (!active) return;
+        setAreaOptions(RUNTIME.searchAreas || ["静岡県","東京都","神奈川県","愛知県"]);
+        setCategoryOptions(RUNTIME.searchTypes || ["男子","女子","混合","ミックス"]);
+        setMethodOptions(RUNTIME.competitionMethods || ["リーグ戦","トーナメント","スイスドロー"]);
+        setRankingOptions(RUNTIME.rankingMethods || ["勝数","得失点差","ポイント制"]);
+      }
+    };
+    loadMeta();
+    return () => { active = false; };
+  }, []);
 
   
   // 入力変更ハンドラー
