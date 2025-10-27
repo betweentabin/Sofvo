@@ -37,10 +37,48 @@ export const Screen21 = () => {
   }, [tournamentId]);
 
   const nameOf = (r) => r.team_name || r.user_display_name || r.user_username || '不明';
-  const finals = results.slice(0, Math.ceil((results || []).length / 2));
-  const prelims = results.slice(Math.ceil((results || []).length / 2));
-  const fmtScore = (r) => (r.score || '-');
-  const fmtOutcome = (r) => (typeof r.points === 'number' ? `${r.points}P` : '-');
+  const parseNotes = (notes) => {
+    if (!notes) return {};
+    try {
+      const j = JSON.parse(notes);
+      return j && typeof j === 'object' ? j : {};
+    } catch {}
+    const out = {};
+    const mStage = notes.match(/(本選|決勝|予選|リーグ)/);
+    if (mStage) out.stage = mStage[1];
+    const mRound = notes.match(/ラウンド[:：]\s*(\d+)/);
+    if (mRound) out.round = Number(mRound[1]);
+    const mOpp = notes.match(/相手[:：]\s*([^;、\n]+)/);
+    if (mOpp) out.opponent = mOpp[1].trim();
+    const mScore = notes.match(/スコア[:：]\s*([0-9]+\s*[-–]\s*[0-9]+)/);
+    if (mScore) out.score = mScore[1].replace(/–/, '-');
+    const mRes = notes.match(/結果[:：]\s*([勝敗引分WinLoseDraw〇×△]+)/i);
+    if (mRes) out.result = mRes[1];
+    return out;
+  };
+  const fmtScore = (r) => {
+    const n = parseNotes(r.notes);
+    return n.score || r.score || '-';
+  };
+  const fmtOpponent = (r) => {
+    const n = parseNotes(r.notes);
+    return n.opponent || nameOf(r);
+  };
+  const fmtOutcome = (r) => {
+    const n = parseNotes(r.notes);
+    if (n.result) return n.result;
+    if (typeof r.points === 'number') return `${r.points}P`;
+    return '-';
+  };
+  const stageOf = (r) => {
+    const n = parseNotes(r.notes);
+    if (n.stage) return n.stage;
+    return null;
+  };
+  const finals = (results || []).filter(r => /本選|決勝/.test(stageOf(r) || ''));
+  const prelims = (results || []).filter(r => /予選|リーグ/.test(stageOf(r) || ''));
+  const fallbackFinals = results.slice(0, Math.ceil((results || []).length / 2));
+  const fallbackPrelims = results.slice(Math.ceil((results || []).length / 2));
 
   
   return (
@@ -123,11 +161,11 @@ export const Screen21 = () => {
               <div className="cell-span-2">対戦相手</div>
               <div className="cell-2">スコア</div>
             </div>
-            {(finals.length > 0 ? finals : results).map((r, idx) => (
+            {(finals.length > 0 ? finals : fallbackFinals).map((r, idx) => (
               <div className="row row-3" key={`fin-${idx}`}>
                 <div className="sub-row">
-                  <div className="sub-cell-3-1">第{r.position ?? (idx+1)}試合</div>
-                  <div className="sub-cell-3-2">{nameOf(r)}</div>
+                  <div className="sub-cell-3-1">第{parseNotes(r.notes).round ?? r.position ?? (idx+1)}試合</div>
+                  <div className="sub-cell-3-2">{fmtOpponent(r)}</div>
                   <div className="sub-cell-3-3">{fmtScore(r)}</div>
                 </div>
                 <div className="cell-3">{fmtOutcome(r)}</div>
@@ -143,11 +181,11 @@ export const Screen21 = () => {
               <div className="cell-span-8">対戦相手</div>
               <div className="cell-8">スコア</div>
             </div>
-            {(prelims.length > 0 ? prelims : results).map((r, idx) => (
+            {(prelims.length > 0 ? prelims : fallbackPrelims).map((r, idx) => (
               <div className="row row-9" key={`pre-${idx}`}>
                 <div className="sub-row">
-                  <div className="sub-cell-9-1">第{r.position ?? (idx+1)}試合</div>
-                  <div className="sub-cell-9-2">{nameOf(r)}</div>
+                  <div className="sub-cell-9-1">第{parseNotes(r.notes).round ?? r.position ?? (idx+1)}試合</div>
+                  <div className="sub-cell-9-2">{fmtOpponent(r)}</div>
                   <div className="sub-cell-9-3">{fmtScore(r)}</div>
                 </div>
                 <div className="cell-9">{fmtOutcome(r)}</div>
