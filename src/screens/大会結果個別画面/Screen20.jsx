@@ -19,14 +19,17 @@ export const Screen20 = () => {
       if (!tournamentId) return;
       setLoading(true);
       try {
-        const [{ data: t }, { data: r }, { data: likes }] = await Promise.all([
+        const [{ data: t }, { data: r }, { data: likes }, matchesRes] = await Promise.all([
           api.railwayTournaments.getOne(tournamentId),
           api.railwayTournaments.results(tournamentId),
-          api.railwayTournaments.getLikes(tournamentId)
+          api.railwayTournaments.getLikes(tournamentId),
+          api.railwayTournaments.matches(tournamentId).catch(() => ({ data: [] }))
         ]);
         setTournament(t);
         setResults(r || []);
         setLikeCount(likes?.count || 0);
+        // Optionally use matches for future precise rendering (stored but not yet wired into layout)
+        // const matches = Array.isArray(matchesRes?.data) ? matchesRes.data : [];
       } catch (e) {
         console.error('Failed to load results', e);
       } finally {
