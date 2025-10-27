@@ -1,49 +1,137 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
+import api from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 export const Screen18 = () => {
   const navigate = useNavigate();
+  const { tournamentId } = useParams();
   const mainContentTop = useHeaderOffset();
+  const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(10);
+  const [likeCount, setLikeCount] = useState(0);
   const [entryStatus, setEntryStatus] = useState("not_entered"); // not_entered, entering, entered
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [tournament, setTournament] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [teamId, setTeamId] = useState(null);
+  const [teamEntryStatus, setTeamEntryStatus] = useState('unknown');
+
+  useEffect(() => {
+    const load = async () => {
+      if (!tournamentId) return;
+      setLoading(true);
+      try {
+        const { data } = await api.railwayTournaments.getOne(tournamentId);
+        setTournament(data);
+        // Load likes with auth
+        const { data: likes } = await api.railwayTournaments.getLikes(tournamentId);
+        setLikeCount(likes?.count || 0);
+        setIsLiked(!!likes?.liked);
+        // Load participation status (individual)
+        try {
+          const { data: part } = await api.railwayTournaments.isParticipating(tournamentId, 'individual');
+          setEntryStatus(part?.participating ? 'entered' : 'not_entered');
+        } catch {}
+        // Load owner team and team participation status
+        try {
+          if (user?.id) {
+            const { data: teams } = await api.railwayTeams.getOwnerTeam(user.id);
+            const t = Array.isArray(teams) ? teams[0] : null;
+            if (t?.id) {
+              setTeamId(t.id);
+              const { data: tpart } = await api.railwayTournaments.isParticipating(tournamentId, 'team', t.id);
+              setTeamEntryStatus(tpart?.participating ? 'entered' : 'not_entered');
+            } else {
+              setTeamEntryStatus('no_team');
+            }
+          }
+        } catch (e) {
+          console.warn('team load failed', e);
+          setTeamEntryStatus('error');
+        }
+      } catch (e) {
+        console.error('Failed to load tournament', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [tournamentId]);
 
   
-  // いいねボタンの処理
-  const handleLike = () => {
-    if (isLiked) {
-      setLikeCount(prev => prev - 1);
-      setIsLiked(false);
-    } else {
-      setLikeCount(prev => prev + 1);
-      setIsLiked(true);
+  // いいねボタンの処理（API）
+  const handleLike = async () => {
+    if (!tournamentId) return;
+    try {
+      if (isLiked) {
+        const { data } = await api.railwayTournaments.unlike(tournamentId);
+        setIsLiked(false);
+        setLikeCount(data?.count ?? Math.max(0, likeCount - 1));
+      } else {
+        const { data } = await api.railwayTournaments.like(tournamentId);
+        setIsLiked(true);
+        setLikeCount(data?.count ?? (likeCount + 1));
+      }
+    } catch (e) {
+      console.error('Failed to toggle like', e);
     }
   };
 
   // エントリー処理
-  const handleEntry = () => {
-    if (entryStatus === "entered") {
-      alert("既にエントリー済みです");
+  const handleEntry = async () => {
+    if (!tournamentId) return;
+    if (entryStatus === 'entered') {
+      // Withdraw
+      try {
+        setEntryStatus('entering');
+        await api.railwayTournaments.withdraw(tournamentId, 'individual');
+        setEntryStatus('not_entered');
+      } catch (e) {
+        console.error('withdraw failed', e);
+        setEntryStatus('entered');
+      }
       return;
     }
     setShowConfirmModal(true);
   };
 
   // エントリー確認処理
-  const confirmEntry = () => {
-    setEntryStatus("entering");
+  const confirmEntry = async () => {
+    if (!tournamentId) return;
+    setEntryStatus('entering');
     setShowConfirmModal(false);
-    
-    // デモ用：2秒後にエントリー完了
-    setTimeout(() => {
-      setEntryStatus("entered");
-      alert("エントリーが完了しました！");
-    }, 2000);
+    try {
+      await api.railwayTournaments.apply(tournamentId, 'individual');
+      setEntryStatus('entered');
+    } catch (e) {
+      console.error('apply failed', e);
+      alert('エントリーに失敗しました');
+      setEntryStatus('not_entered');
+    }
+  };
+
+  const toggleTeamEntry = async () => {
+    if (!tournamentId || !teamId) return;
+    try {
+      if (teamEntryStatus === 'entered') {
+        setTeamEntryStatus('entering');
+        await api.railwayTournaments.withdraw(tournamentId, 'team', teamId);
+        setTeamEntryStatus('not_entered');
+      } else if (teamEntryStatus === 'not_entered') {
+        setTeamEntryStatus('entering');
+        await api.railwayTournaments.apply(tournamentId, 'team', teamId);
+        setTeamEntryStatus('entered');
+      }
+    } catch (e) {
+      console.error('team toggle failed', e);
+      alert('チームのエントリーに失敗しました');
+      setTeamEntryStatus('not_entered');
+    }
   };
 
   // お問い合わせ処理
@@ -66,12 +154,12 @@ export const Screen18 = () => {
             <div className="gray-box"></div>
 
             <div className="frame-161">
-              <div className="text-wrapper-93-1">大会名：第15回 〇〇カップ</div>
-              <div className="text-wrapper-93-2">開催日時：2025年5月18日（日）</div>
-              <div className="text-wrapper-93-3">開催地域：静岡県</div>
-              <div className="text-wrapper-93-4">開催場所：〇〇体育館</div>
-              <div className="text-wrapper-93-5">住所：静岡県〇〇市〇〇町1-2-3</div>
-              <div className="text-wrapper-93-6">主催者：〇〇〇〇〇〇</div>
+              <div className="text-wrapper-93-1">大会名：{tournament?.name || '-'}</div>
+              <div className="text-wrapper-93-2">開催日時：{tournament?.start_date ? new Date(tournament.start_date).toLocaleDateString('ja-JP') : '-'}</div>
+              <div className="text-wrapper-93-3">開催地域：{tournament?.location || '-'}</div>
+              <div className="text-wrapper-93-4">開催場所：{tournament?.location?.split(' ')?.[1] || '-'}</div>
+              <div className="text-wrapper-93-5">住所：-</div>
+              <div className="text-wrapper-93-6">主催者：{tournament?.organizer_display_name || tournament?.organizer_username || '-'}</div>
             </div>
 
             <div className="gray-box2"></div>
@@ -103,9 +191,11 @@ export const Screen18 = () => {
         <div className="frame-159">
           <div className="frame-160">
             <div className="frame-161">
-              <div className="text-wrapper-94-1">8:00　開場</div>
-              <div className="text-wrapper-94-2">8:00　代表者会議</div>
-              <div className="text-wrapper-94-3">8:00　試合開始</div>
+              {tournament?.description ? (
+                <div className="text-wrapper-94-1">{tournament.description}</div>
+              ) : (
+                <div className="text-wrapper-94-1">スケジュールは未設定です</div>
+              )}
             </div>
           </div>
         </div>
@@ -118,23 +208,24 @@ export const Screen18 = () => {
         <div className="frame-159">
           <div className="frame-160">
             <div className="frame-161">
-              <div className="text-wrapper-95-1">試合球：ミカサ</div>
-              <div className="text-wrapper-95-2">種別：混合フリー</div>
-              <div className="text-wrapper-95-3">順位方法：〇〇〇〇〇〇</div>
+              <div className="text-wrapper-95-1">試合球：-</div>
+              <div className="text-wrapper-95-2">種別：{tournament?.sport_type || '-'}</div>
+              <div className="text-wrapper-95-3">順位方法：-</div>
               <div className="frame-170">
                 <div className="text-wrapper-93-3">順位方法：</div>
-                <div className="text-wrapper-95-5">
-                  〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇
-                </div>
+                <div className="text-wrapper-95-5">（未設定）</div>
               </div>
               <div className="frame-170">
                 <div className="text-wrapper-96-1">獲得ポイント：</div>
-                <div
-                  className="text-wrapper-95-6"
-                  dangerouslySetInnerHTML={{
-                    __html: "1位→100P<br/>2位→80P<br/>3位→70P",
-                  }}
-                />
+                <div className="text-wrapper-95-6">（未設定）</div>
+              </div>
+              <div className="frame-170">
+                <div className="text-wrapper-96-1">残り枠（チーム）：</div>
+                <div className="text-wrapper-95-6">{typeof tournament?.remaining_team === 'number' ? `${tournament.remaining_team}チーム` : '未設定'}</div>
+              </div>
+              <div className="frame-170">
+                <div className="text-wrapper-96-1">残り枠（個人）：</div>
+                <div className="text-wrapper-95-6">{typeof tournament?.remaining_individual === 'number' ? `${tournament.remaining_individual}名` : '未設定'}</div>
               </div>
             </div>
           </div>
@@ -271,7 +362,7 @@ export const Screen18 = () => {
             <div className="text-wrapper-206">
               {entryStatus === "not_entered" && "エントリー"}
               {entryStatus === "entering" && "処理中..."}
-              {entryStatus === "entered" && "エントリー済み"}
+              {entryStatus === "entered" && "エントリー解除"}
             </div>
           </button>
 
@@ -282,6 +373,24 @@ export const Screen18 = () => {
           >
             <div className="text-wrapper-207">お問い合わせ</div>
           </button>
+          {teamEntryStatus !== 'no_team' && (
+            <button
+              onClick={toggleTeamEntry}
+              className="frame-310"
+              style={{ 
+                border: "none", 
+                cursor: teamEntryStatus === "entering" ? "wait" : "pointer",
+                opacity: teamEntryStatus === "entered" ? 0.7 : 1,
+                backgroundColor: teamEntryStatus === "entered" ? "#28a745" : "",
+                marginLeft: 8
+              }}
+              disabled={teamEntryStatus === "entering" || !teamId}
+            >
+              <div className="text-wrapper-206">
+                {!teamId ? 'チームなし' : teamEntryStatus === 'entered' ? 'チームエントリー解除' : 'チームでエントリー'}
+              </div>
+            </button>
+          )}
         </div>
 
         {/* エントリー確認モーダル */}
@@ -307,7 +416,7 @@ export const Screen18 = () => {
             }}>
               <h3 style={{ marginBottom: "20px" }}>エントリー確認</h3>
               <p style={{ marginBottom: "30px" }}>
-                「第15回 〇〇カップ」にエントリーしますか？
+                「{tournament?.name || 'この大会'}」にエントリーしますか？
               </p>
               <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                 <button 
