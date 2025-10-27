@@ -235,6 +235,11 @@ export const api = {
     withdraw: (id, mode = 'individual', teamId = null) => nodeAPI.delete(`/railway-tournaments/${id}/apply`, { data: { mode, team_id: teamId } }),
     search: (params = {}) => nodeAPI.get('/railway-tournaments/search', { params }),
   }
+  ,
+  // ===== Railway meta (search options) =====
+  railwayMeta: {
+    get: () => nodeAPI.get('/railway-meta')
+  }
 };
 
 export default api;
