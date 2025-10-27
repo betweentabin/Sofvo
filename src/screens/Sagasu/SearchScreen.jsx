@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { HeaderTabsSearch } from "../../components/HeaderTabsSearch";
@@ -18,6 +18,8 @@ export const SearchScreen = () => {
   const mainContentTop = useHeaderOffset();
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     yearMonth: '',
     area: '',
@@ -56,6 +58,51 @@ export const SearchScreen = () => {
     loadMeta();
     return () => { active = false; };
   }, []);
+
+  // Load filters from URL or localStorage on mount
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const fromUrl = {
+      yearMonth: params.get('ym') || '',
+      area: params.get('area') || '',
+      type: params.get('type') || '',
+      followingOnly: params.get('following') === '1'
+    };
+    if (fromUrl.yearMonth || fromUrl.area || fromUrl.type || params.has('following')) {
+      setFilters(fromUrl);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem('searchFilters');
+      if (raw) {
+        const saved = JSON.parse(raw);
+        setFilters({
+          yearMonth: saved.yearMonth || '',
+          area: saved.area || '',
+          type: saved.type || '',
+          followingOnly: !!saved.followingOnly
+        });
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist filters to URL + localStorage when changed
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.yearMonth) params.set('ym', filters.yearMonth);
+    if (filters.area) params.set('area', filters.area);
+    if (filters.type) params.set('type', filters.type);
+    if (filters.followingOnly) params.set('following', '1');
+    const search = params.toString();
+    const newSearch = search ? `?${search}` : '';
+    if (location.search !== newSearch) {
+      navigate({ search: newSearch }, { replace: true });
+    }
+    try {
+      localStorage.setItem('searchFilters', JSON.stringify(filters));
+    } catch {}
+  }, [filters, location.search, navigate]);
 
   // Search tournaments
   const searchTournaments = async () => {
