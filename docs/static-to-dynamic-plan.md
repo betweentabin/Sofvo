@@ -188,6 +188,7 @@
   - [x] 本日の大会/参加予定大会のカードを検索APIで表示（`Screen17.jsx`/`Screen16.jsx`）
 - [x] 検索画面の選択肢をランタイム設定に対応（年月：動的生成、地域/種別：`window.__APP_CONFIG__` があれば使用）
 - [x] 主催画面の選択肢をランタイム設定に対応（地域/種別/競技方法/順位方法：`window.__APP_CONFIG__` があれば使用）
+- [x] 検索メタのAPI化（バックエンド `/api/railway-meta`、フロントから参照）
 - [x] チーム統計（ポイント/フォロー/フォロワー）を動的化（`/railway-teams/stats` が有効な場合に表示。`Screen17.jsx`/`Screen16.jsx`）
 - [x] ヘッダーに未読通知バッジを追加（`HeaderContent.jsx`：`unreadCount` APIとフォアグラウンドpushイベントで更新）
 - [ ] チームプロフィール編集の読込/保存実装（`Screen24.jsx`）
@@ -214,3 +215,7 @@
 - 実装: Appレベル ErrorBoundary を導入（重大なUI例外の安全な捕捉/再読み込み誘導）
 - ドキュメント: エラー確認ガイド（`docs/error-checking.md`）を追加
 - 次の候補: 大会結果（個別/総合）の固定表を API 結果で生成、チーム画面（メンバー）の固定文言除去/動的化、チームプロフィール編集の読込/保存
+9. 検索メタのAPI化
+   - 変更: `backend/src/routes/railway-meta.routes.js`, `backend/src/index.js`
+   - フロント利用: `src/services/api.js` の `railwayMeta.get()` を追加し、`SearchScreen`/`大会を主催` でAPI→ランタイム→既定値の順に採用。
+   - 環境変数上書き: `META_SEARCH_AREAS`, `META_SEARCH_TYPES`, `META_COMPETITION_METHODS`, `META_RANKING_METHODS`（JSON配列 or カンマ区切り）
