@@ -95,6 +95,8 @@
    - 変更: `Screen20.jsx`, `Screen21.jsx`
    - 方針: `results` 全件をリスト表示（順位・名称・ポイント）。既存の概要枠内で見た目を維持しつつ、固定3件→全件に拡張。
    - 第二段階: 試合詳細スキーマが揃い次第、`.row/.cell` 構造の対戦表生成へ移行。
+   - 実装補助: 追加テーブル（`tournament_categories`, `tournament_matches`）を`database/additional-tables.sql`で作成。
+     シードは `database/seed-matches.mjs`（カテゴリ/試合/結果notes(JSON)）を用意。
 
 6. 「本日の大会/参加予定大会」の動的化
    - 変更: `src/screens/参加予定大会（本日参加）/Screen11.jsx`
@@ -178,6 +180,7 @@
 - [x] 退会ボタンに `api.users.deleteAccount()` を接続（`src/screens/退会/Screen31.jsx`）
 - [x] 大会結果（個別/総合）のリスト表示を `results` 全件に拡張（`Screen20.jsx`/`Screen21.jsx`）
 - [x] 大会結果の表領域を `results` に応じて動的生成（既存クラス構造を維持）
+- [x] 追加テーブルのシード（カテゴリ/試合/結果notes）スクリプトを追加（`database/seed-matches.mjs`）
 - [x] 本日/参加予定大会のカードをAPIから生成（`src/screens/参加予定大会（本日参加）/Screen11.jsx`）
 - [ ] チーム画面（管理者/メンバー）で固定文言を実値に置換（`Screen17.jsx`/`Screen16.jsx`）
   - [x] 管理者画面の所属メンバー数/地域を動的化（`Screen17.jsx`）
