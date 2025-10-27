@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen38 = () => {
   const location = useLocation();
   const formData = location.state || {};
+  const navigate = useNavigate();
 
   const mainContentTop = useHeaderOffset();
 
@@ -18,6 +20,28 @@ export const Screen38 = () => {
       return <>{value}</>;
     }
     return <span className="placeholder-text">{placeholder}</span>;
+  };
+
+  const [sending, setSending] = useState(false);
+  const handleSend = async () => {
+    if (sending) return;
+    setSending(true);
+    try {
+      await api.contact.send({
+        subject: formData.subject || "",
+        name: formData.name || "",
+        furigana: formData.furigana || "",
+        email: formData.email || "",
+        phone: formData.phone || "",
+        content: formData.content || "",
+      });
+      navigate('/contact-complete');
+    } catch (e) {
+      console.error('Failed to send contact form:', e);
+      alert('送信に失敗しました。時間をおいて再度お試しください。');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -118,9 +142,15 @@ export const Screen38 = () => {
               <div className="text-wrapper-263">戻る</div>
             </Link>
 
-            <Link to="/contact-complete" className="frame-542">
-              <div className="text-wrapper-264">送信する</div>
-            </Link>
+            <button
+              onClick={handleSend}
+              className="frame-542"
+              style={{ border: 'none', cursor: sending ? 'wait' : 'pointer', opacity: sending ? 0.7 : 1 }}
+              disabled={sending}
+              type="button"
+            >
+              <div className="text-wrapper-264">{sending ? '送信中...' : '送信する'}</div>
+            </button>
           </div>
         </div>
       </div>
