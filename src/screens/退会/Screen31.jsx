@@ -1,12 +1,35 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
+import { useAuth } from "../../contexts/AuthContext";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen31 = () => {
   const mainContentTop = useHeaderOffset();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleDelete = async () => {
+    if (submitting) return;
+    const ok = window.confirm('Sofvoアカウントを削除します。よろしいですか？');
+    if (!ok) return;
+    setSubmitting(true);
+    try {
+      await api.users.deleteAccount();
+      await signOut();
+      navigate('/login', { replace: true });
+    } catch (e) {
+      console.error('Failed to delete account:', e);
+      alert('退会に失敗しました。時間をおいて再度お試しください。');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   
   return (
@@ -65,9 +88,15 @@ export const Screen31 = () => {
             <div className="text-wrapper-206">戻る</div>
           </Link>
 
-          <Link to="/settings" className="frame-311">
-            <div className="text-wrapper-207">退会する</div>
-          </Link>
+          <button
+            onClick={handleDelete}
+            className="frame-311"
+            style={{ border: 'none', cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.6 : 1 }}
+            disabled={submitting}
+            type="button"
+          >
+            <div className="text-wrapper-207">{submitting ? '処理中…' : '退会する'}</div>
+          </button>
         </div>
       </div>
     </div>
