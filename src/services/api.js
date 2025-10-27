@@ -10,7 +10,7 @@ function getRuntimeCfg() {
   }
 }
 
-function resolveBaseUrl() {
+export function resolveBaseUrl() {
   const isBrowser = typeof window !== 'undefined';
   const host = isBrowser ? window.location.hostname : '';
   const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app';
@@ -57,11 +57,43 @@ nodeAPI.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${token}`;
     config.headers.authorization = `Bearer ${token}`;
   }
+  // Debug logging (masked)
+  try {
+    if (localStorage.getItem('DEBUG_API') === '1') {
+      const masked = token ? (token.slice(0, 6) + '...' + token.slice(-4)) : 'none';
+      // Avoid logging large bodies
+      const summary = {
+        method: (config.method || 'get').toUpperCase(),
+        url: (config.baseURL || '') + (config.url || ''),
+        params: config.params || undefined,
+        hasData: !!config.data,
+        token: masked
+      };
+      // eslint-disable-next-line no-console
+      console.log('[API] request', summary);
+    }
+  } catch {}
   return config;
 }, (error) => Promise.reject(error));
 
 // レスポンスインターセプター（エラーハンドリング）
-nodeAPI.interceptors.response.use((r) => r, async (error) => Promise.reject(error));
+nodeAPI.interceptors.response.use((r) => {
+  try {
+    if (localStorage.getItem('DEBUG_API') === '1') {
+      // eslint-disable-next-line no-console
+      console.log('[API] response', { status: r.status, url: r.config?.url });
+    }
+  } catch {}
+  return r;
+}, async (error) => {
+  try {
+    if (localStorage.getItem('DEBUG_API') === '1') {
+      // eslint-disable-next-line no-console
+      console.warn('[API] error', { status: error?.response?.status, url: error?.config?.url, msg: error?.message });
+    }
+  } catch {}
+  return Promise.reject(error);
+});
 
 export const api = {
   // Supabase chat removed
