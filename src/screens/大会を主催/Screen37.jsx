@@ -29,6 +29,32 @@ export const Screen37 = () => {
   const [isLoading, setIsLoading] = useState(false);
   const USE_RAILWAY = true;
   const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
+  const RUNTIME = typeof window !== 'undefined' ? (window.__APP_CONFIG__ || {}) : {};
+  const [areaOptions, setAreaOptions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [methodOptions, setMethodOptions] = useState([]);
+  const [rankingOptions, setRankingOptions] = useState([]);
+  useEffect(() => {
+    let active = true;
+    const loadMeta = async () => {
+      try {
+        const { data } = await api.railwayMeta.get();
+        if (!active) return;
+        setAreaOptions((data?.areas && data.areas.length) ? data.areas : (RUNTIME.searchAreas || ["静岡県","東京都","神奈川県","愛知県"]));
+        setCategoryOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ["男子","女子","混合","ミックス"]));
+        setMethodOptions((data?.competition_methods && data.competition_methods.length) ? data.competition_methods : (RUNTIME.competitionMethods || ["リーグ戦","トーナメント","スイスドロー"]));
+        setRankingOptions((data?.ranking_methods && data.ranking_methods.length) ? data.ranking_methods : (RUNTIME.rankingMethods || ["勝数","得失点差","ポイント制"]));
+      } catch {
+        if (!active) return;
+        setAreaOptions(RUNTIME.searchAreas || ["静岡県","東京都","神奈川県","愛知県"]);
+        setCategoryOptions(RUNTIME.searchTypes || ["男子","女子","混合","ミックス"]);
+        setMethodOptions(RUNTIME.competitionMethods || ["リーグ戦","トーナメント","スイスドロー"]);
+        setRankingOptions(RUNTIME.rankingMethods || ["勝数","得失点差","ポイント制"]);
+      }
+    };
+    loadMeta();
+    return () => { active = false; };
+  }, []);
 
   
   // 入力変更ハンドラー
@@ -114,7 +140,7 @@ export const Screen37 = () => {
             <div className="frame-533">
 
               <div className="frame-466">
-                <div className="text-wrapper-226">プロフィールを編集</div>
+                <div className="text-wrapper-226">大会を主催</div>
               </div>
 
 
@@ -161,10 +187,9 @@ export const Screen37 = () => {
                   onChange={(e) => handleInputChange("location", e.target.value)}
                 >
                   <option value="">選択してください</option>
-                  <option value="静岡県">静岡県</option>
-                  <option value="東京都">東京都</option>
-                  <option value="神奈川県">神奈川県</option>
-                  <option value="愛知県">愛知県</option>
+                  {areaOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
                 </select>
                 {errors.location && <div className="error-text">{errors.location}</div>}
               </div>
@@ -227,10 +252,9 @@ export const Screen37 = () => {
                   onChange={(e) => handleInputChange("category", e.target.value)}
                 >
                   <option value="">選択してください</option>
-                  <option value="男子">男子</option>
-                  <option value="女子">女子</option>
-                  <option value="混合">混合</option>
-                  <option value="ミックス">ミックス</option>
+                  {categoryOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
                 </select>
                 {errors.category && <div className="error-text">{errors.category}</div>}
               </div>
@@ -247,9 +271,9 @@ export const Screen37 = () => {
                   onChange={(e) => handleInputChange("competitionMethod", e.target.value)}
                 >
                   <option value="">選択してください</option>
-                  <option value="リーグ戦">リーグ戦</option>
-                  <option value="トーナメント">トーナメント</option>
-                  <option value="スイスドロー">スイスドロー</option>
+                  {methodOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
                 </select>
                 {errors.competitionMethod && <div className="error-text">{errors.competitionMethod}</div>}
               </div>
@@ -266,9 +290,9 @@ export const Screen37 = () => {
                   onChange={(e) => handleInputChange("rankingMethod", e.target.value)}
                 >
                   <option value="">選択してください</option>
-                  <option value="勝数">勝数</option>
-                  <option value="得失点差">得失点差</option>
-                  <option value="ポイント制">ポイント制</option>
+                  {rankingOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
                 </select>
                 {errors.rankingMethod && <div className="error-text">{errors.rankingMethod}</div>}
               </div>

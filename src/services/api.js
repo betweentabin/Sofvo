@@ -10,7 +10,7 @@ function getRuntimeCfg() {
   }
 }
 
-function resolveBaseUrl() {
+export function resolveBaseUrl() {
   const isBrowser = typeof window !== 'undefined';
   const host = isBrowser ? window.location.hostname : '';
   const inVercel = /\.vercel\.app$/.test(host) || host === 'sofvo.vercel.app';
@@ -57,11 +57,43 @@ nodeAPI.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${token}`;
     config.headers.authorization = `Bearer ${token}`;
   }
+  // Debug logging (masked)
+  try {
+    if (localStorage.getItem('DEBUG_API') === '1') {
+      const masked = token ? (token.slice(0, 6) + '...' + token.slice(-4)) : 'none';
+      // Avoid logging large bodies
+      const summary = {
+        method: (config.method || 'get').toUpperCase(),
+        url: (config.baseURL || '') + (config.url || ''),
+        params: config.params || undefined,
+        hasData: !!config.data,
+        token: masked
+      };
+      // eslint-disable-next-line no-console
+      console.log('[API] request', summary);
+    }
+  } catch {}
   return config;
 }, (error) => Promise.reject(error));
 
 // レスポンスインターセプター（エラーハンドリング）
-nodeAPI.interceptors.response.use((r) => r, async (error) => Promise.reject(error));
+nodeAPI.interceptors.response.use((r) => {
+  try {
+    if (localStorage.getItem('DEBUG_API') === '1') {
+      // eslint-disable-next-line no-console
+      console.log('[API] response', { status: r.status, url: r.config?.url });
+    }
+  } catch {}
+  return r;
+}, async (error) => {
+  try {
+    if (localStorage.getItem('DEBUG_API') === '1') {
+      // eslint-disable-next-line no-console
+      console.warn('[API] error', { status: error?.response?.status, url: error?.config?.url, msg: error?.message });
+    }
+  } catch {}
+  return Promise.reject(error);
+});
 
 export const api = {
   // Supabase chat removed
@@ -181,7 +213,7 @@ export const api = {
   // ===== Railway (PostgreSQL) Home feed =====
   railwayHome: {
     getFollowing: (asUserId, limit = 10) => nodeAPI.get('/railway-home/following', { params: { as_user: asUserId, limit } }),
-    getRecommended: (limit = 10) => nodeAPI.get('/railway-home/recommended', { params: { limit } }),
+    getRecommended: (limit = 10, opts = {}) => nodeAPI.get('/railway-home/recommended', { params: { limit, ...opts } }),
     getRecommendedDiaries: (limit = 3) => nodeAPI.get('/railway-home/recommended-diaries', { params: { limit } }),
   },
   // ===== Railway (PostgreSQL) Posts =====
@@ -195,6 +227,11 @@ export const api = {
       if (imageUrls && imageUrls.length) payload.image_urls = imageUrls;
       return nodeAPI.post('/railway-posts/create', payload);
     },
+    getLikes: (postId) => nodeAPI.get(`/railway-posts/${postId}/likes`),
+    like: (postId) => nodeAPI.post(`/railway-posts/${postId}/like`),
+    unlike: (postId) => nodeAPI.delete(`/railway-posts/${postId}/like`),
+    getComments: (postId, limit = 30) => nodeAPI.get(`/railway-posts/${postId}/comments`, { params: { limit } }),
+    addComment: (postId, content) => nodeAPI.post(`/railway-posts/${postId}/comments`, { content }),
   },
   // ===== Railway (PostgreSQL) Users / Profile =====
   railwayUsers: {
@@ -213,12 +250,32 @@ export const api = {
     createTeam: (asUserId, { name, description, sport_type }) => nodeAPI.post('/railway-teams/create', { as_user: asUserId, name, description, sport_type }),
     getMembers: (teamId) => nodeAPI.get('/railway-teams/members', { params: { team_id: teamId } }),
     removeMember: (asUserId, teamId, userId) => nodeAPI.delete('/railway-teams/members', { data: { as_user: asUserId, team_id: teamId, user_id: userId } }),
+    updateTeam: (asUserId, teamId, payload) => nodeAPI.put('/railway-teams/update', { as_user: asUserId, team_id: teamId, ...payload }),
+    getStats: (teamId) => nodeAPI.get('/railway-teams/stats', { params: { team_id: teamId } }),
   },
   // ===== Railway (PostgreSQL) Tournaments =====
   railwayTournaments: {
     create: (asUserId, payload) => nodeAPI.post('/railway-tournaments/create', { as_user: asUserId, ...payload }),
     listMyHosted: (asUserId) => nodeAPI.get('/railway-tournaments/my-hosted', { params: { as_user: asUserId } }),
+    getOne: (id) => nodeAPI.get(`/railway-tournaments/${id}`),
+    getLikes: (id) => nodeAPI.get(`/railway-tournaments/${id}/likes`),
+    like: (id) => nodeAPI.post(`/railway-tournaments/${id}/like`),
+    unlike: (id) => nodeAPI.delete(`/railway-tournaments/${id}/like`),
+    results: (id) => nodeAPI.get(`/railway-tournaments/${id}/results`),
+    matches: (id) => nodeAPI.get(`/railway-tournaments/${id}/matches`),
+    listParticipants: (id) => nodeAPI.get(`/railway-tournaments/${id}/participants`),
+    createMatch: (id, payload) => nodeAPI.post(`/railway-tournaments/${id}/matches`, payload),
+    updateMatch: (tournamentId, matchId, payload) => nodeAPI.put(`/railway-tournaments/${tournamentId}/matches/${matchId}`, payload),
+    deleteMatch: (tournamentId, matchId) => nodeAPI.delete(`/railway-tournaments/${tournamentId}/matches/${matchId}`),
+    isParticipating: (id, mode = 'individual', teamId = null) => nodeAPI.get(`/railway-tournaments/${id}/is-participating`, { params: { mode, team_id: teamId } }),
+    apply: (id, mode = 'individual', teamId = null) => nodeAPI.post(`/railway-tournaments/${id}/apply`, { mode, team_id: teamId }),
+    withdraw: (id, mode = 'individual', teamId = null) => nodeAPI.delete(`/railway-tournaments/${id}/apply`, { data: { mode, team_id: teamId } }),
     search: (params = {}) => nodeAPI.get('/railway-tournaments/search', { params }),
+  }
+  ,
+  // ===== Railway meta (search options) =====
+  railwayMeta: {
+    get: () => nodeAPI.get('/railway-meta')
   }
 };
 

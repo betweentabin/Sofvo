@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { HeaderTabsSearch } from "../../components/HeaderTabsSearch";
@@ -18,12 +18,91 @@ export const SearchScreen = () => {
   const mainContentTop = useHeaderOffset();
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
-    yearMonth: '2025年5月',
+    yearMonth: '',
     area: '',
     type: '',
     followingOnly: false
   });
+
+  // ランタイム設定から選択肢を供給（なければ既存固定のまま）
+  const [areaOptions, setAreaOptions] = useState([]);
+  const [typeOptions, setTypeOptions] = useState([]);
+  const yearMonthOptions = (() => {
+    const now = new Date();
+    const list = ['']; // '' = 全て
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      list.push(`${d.getFullYear()}年${d.getMonth()+1}月`);
+    }
+    return list;
+  })();
+
+  // Load meta via API (fall back to runtime/defaults)
+  useEffect(() => {
+    let active = true;
+    const loadMeta = async () => {
+      try {
+        const { data } = await api.railwayMeta.get();
+        if (!active) return;
+        setAreaOptions((data?.areas && data.areas.length) ? data.areas : (RUNTIME.searchAreas || ['静岡県','東京都','大阪府']));
+        setTypeOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ['レディース','メンズ','混合','スポレク']));
+      } catch {
+        if (!active) return;
+        setAreaOptions(RUNTIME.searchAreas || ['静岡県','東京都','大阪府']);
+        setTypeOptions(RUNTIME.searchTypes || ['レディース','メンズ','混合','スポレク']);
+      }
+    };
+    loadMeta();
+    return () => { active = false; };
+  }, []);
+
+  // Load filters from URL or localStorage on mount
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const fromUrl = {
+      yearMonth: params.get('ym') || '',
+      area: params.get('area') || '',
+      type: params.get('type') || '',
+      followingOnly: params.get('following') === '1'
+    };
+    if (fromUrl.yearMonth || fromUrl.area || fromUrl.type || params.has('following')) {
+      setFilters(fromUrl);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem('searchFilters');
+      if (raw) {
+        const saved = JSON.parse(raw);
+        setFilters({
+          yearMonth: saved.yearMonth || '',
+          area: saved.area || '',
+          type: saved.type || '',
+          followingOnly: !!saved.followingOnly
+        });
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist filters to URL + localStorage when changed
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.yearMonth) params.set('ym', filters.yearMonth);
+    if (filters.area) params.set('area', filters.area);
+    if (filters.type) params.set('type', filters.type);
+    if (filters.followingOnly) params.set('following', '1');
+    const search = params.toString();
+    const newSearch = search ? `?${search}` : '';
+    if (location.search !== newSearch) {
+      navigate({ search: newSearch }, { replace: true });
+    }
+    try {
+      localStorage.setItem('searchFilters', JSON.stringify(filters));
+    } catch {}
+  }, [filters, location.search, navigate]);
 
   // Search tournaments
   const searchTournaments = async () => {
@@ -48,10 +127,10 @@ export const SearchScreen = () => {
   };
 
   
-  // Load tournaments on mount
+  // Load tournaments on mount and when filters/tab change
   useEffect(() => {
     searchTournaments();
-  }, []);
+  }, [activeTab, filters.area, filters.type, filters.followingOnly, filters.yearMonth]);
 
   console.log('SearchScreen - current mainContentTop:', mainContentTop);
 
@@ -87,10 +166,9 @@ export const SearchScreen = () => {
                       value={filters.yearMonth}
                       onChange={(e) => setFilters({...filters, yearMonth: e.target.value})}
                     >
-                      <option value="">全て</option>
-                      <option value="2025年5月">2025年5月</option>
-                      <option value="2025年6月">2025年6月</option>
-                      <option value="2025年7月">2025年7月</option>
+                      {yearMonthOptions.map((ym, idx) => (
+                        <option key={idx} value={ym}>{ym || '全て'}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -103,9 +181,9 @@ export const SearchScreen = () => {
                       onChange={(e) => setFilters({...filters, area: e.target.value})}
                     >
                       <option value="">全て</option>
-                      <option value="静岡県">静岡県</option>
-                      <option value="東京都">東京都</option>
-                      <option value="大阪府">大阪府</option>
+                      {areaOptions.map((a) => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -118,10 +196,9 @@ export const SearchScreen = () => {
                       onChange={(e) => setFilters({...filters, type: e.target.value})}
                     >
                       <option value="">全て</option>
-                      <option value="レディース">レディース</option>
-                      <option value="メンズ">メンズ</option>
-                      <option value="混合">混合</option>
-                      <option value="スポレク">スポレク</option>
+                      {typeOptions.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -299,59 +376,56 @@ export const SearchScreen = () => {
               </div>
             </div>
 
-            {/* 個人参加の大会一覧 */}
-            <div className="frame-31">
-              <div className="frame-32">
-                <div className="frame-33">
-                  <div className="frame-77">
-                    <div className="frame-78" />
-                    <div className="text-wrapper-39">アカウント名</div>
-                  </div>
-                  <div className="frame-34">
-                    <div className="frame-35">
-                      <div className="text-wrapper-44">混合</div>
+            {/* 個人参加の大会一覧（動的） */}
+            {loading ? (
+              <div style={{ padding: '20px', textAlign: 'center' }}>検索中...</div>
+            ) : tournaments.length > 0 ? (
+              tournaments.map((tournament) => {
+                const individualCount = tournament.individual_count || 0;
+                const max = tournament.capacity_individual || tournament.max_participants || 0;
+                const remaining = Math.max(0, max - individualCount);
+                const isDeadlinePassed = tournament.registration_deadline && new Date(tournament.registration_deadline) < new Date();
+                return (
+                  <div className="frame-31" key={tournament.id}>
+                    <div className="frame-32">
+                      <div className="frame-33">
+                        <div className="text-wrapper-39">{tournament.name}</div>
+                        <div className="frame-34">
+                          {tournament.sport_type && (
+                            <div className="frame-35">
+                              <div className="text-wrapper-44">{tournament.sport_type}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="frame-36">
+                        <div className="text-wrapper-45">開催日時：{tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('ja-JP') : '未定'}</div>
+                        <div className="text-wrapper-45">開催地：{tournament.location || '未定'}</div>
+                        <div className="text-wrapper-45">募集人数：{max || '未設定'}</div>
+                        <div className="text-wrapper-45">募集期限：{tournament.registration_deadline ? new Date(tournament.registration_deadline).toLocaleDateString('ja-JP') : '未定'}</div>
+                        <div className="text-wrapper-45">主催者：{tournament.organizer_display_name || tournament.organizer_username || 'アカウント名'}</div>
+                      </div>
+                      <div className="text-wrapper-46">
+                        {isDeadlinePassed ? '募集終了' : remaining > 0 ? `残り人数：${remaining}名` : '満員'}
+                      </div>
+                      <div className="frame-33">
+                        <Link to={`/tournament-detail/${tournament.id}`} className="frame-38">
+                          <div className="text-wrapper-43">大会概要</div>
+                        </Link>
+                        <div className="frame-39">
+                          <div className="heart">
+                            <img className="vector-6" alt="Vector" src="/img/vector-7.svg" />
+                          </div>
+                          <div className="text-wrapper-47">{tournament.like_count || 0} いいね</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="frame-35">
-                      <div className="text-wrapper-44">メンズ</div>
-                    </div>
                   </div>
-                </div>
-
-                <div className="frame-36">
-                  <div className="text-wrapper-45">大会名：第15回 〇〇カップ</div>
-                  <div className="text-wrapper-45">開催日時：2025年5月18日（日）</div>
-                  <div className="text-wrapper-45">開催地：静岡県掛川市</div>
-
-                  <div className="frame-37">
-                    <select className="select-genre">
-                      <option>混合 スポレク</option>
-                      <option>男子</option>
-                      <option>女子</option>
-                      <option>ミックス</option>
-                    </select>
-                    <img className="vector-5" src="/img/vector-1.svg" alt="▼" />
-                  </div>
-
-                  <div className="text-wrapper-45">募集枠：10チーム</div>
-                  <div className="text-wrapper-45">募集期限：2025年5月4日 (日)</div>
-                  <div className="text-wrapper-45">主催者：アカウント名</div>
-                </div>
-
-                <div className="text-wrapper-46">残り人数：1名 → 募集終了</div>
-
-                <div className="frame-33">
-                  <div className="frame-38">
-                    <div className="text-wrapper-43">大会概要</div>
-                  </div>
-                  <div className="frame-39">
-                    <div className="heart">
-                      <img className="vector-6" alt="Vector" src="/img/vector-7.svg" />
-                    </div>
-                    <div className="text-wrapper-47">10 いいね</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                );
+              })
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center' }}>該当する大会が見つかりませんでした</div>
+            )}
           </div>
         )}
       </div>

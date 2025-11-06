@@ -38,6 +38,7 @@ export const Dm = () => {
     const loadConvs = async () => {
       if (!viewerUserId) return;
       setRailwayLoading(true);
+      setLoading(true);
       try {
         const { data } = await api.railwayChat.getConversations(viewerUserId);
         setRailwayConversations(data || []);
@@ -45,10 +46,16 @@ export const Dm = () => {
         console.error('Failed to load railway conversations:', e);
       } finally {
         setRailwayLoading(false);
+        setLoading(false);
       }
     };
     loadConvs();
   }, [viewerUserId]);
+
+  // 取得済みの Railway 会話一覧を既存の描画用 state に同期
+  useEffect(() => {
+    setConversations(railwayConversations || []);
+  }, [railwayConversations]);
 
   useEffect(() => {
     if (conversationId && conversations.length > 0) {
