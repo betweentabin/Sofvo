@@ -29,6 +29,7 @@ app.set('trust proxy', true);
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://sofvo.vercel.app',
+  'https://sofvo.pages.dev',
   'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
@@ -51,7 +52,9 @@ const corsOptions = {
     const isAllowed =
       allowedOrigins.includes(origin) ||
       // Allow any Vercel preview domain as well
-      (hostname && hostname.endsWith('.vercel.app'));
+      (hostname && hostname.endsWith('.vercel.app')) ||
+      // Allow any Cloudflare Pages preview domain as well
+      (hostname && hostname.endsWith('.pages.dev'));
 
     if (isAllowed) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));

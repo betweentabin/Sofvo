@@ -5,8 +5,8 @@ import path from "node:path";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  publicDir: "./static",
-  base: "./",
+  publicDir: "./public",
+  base: "/",
   resolve: {
     alias: {
       axios: path.resolve(__dirname, 'src/vendor/axios-lite.js'),

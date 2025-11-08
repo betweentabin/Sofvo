@@ -1,12 +1,50 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { HeaderContent } from "../../components/HeaderContent";
 import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
+import { useAuth } from "../../contexts/AuthContext";
+import api from "../../services/api";
 import "./style.css";
 
 export const Screen24 = () => {
   const mainContentTop = useHeaderOffset();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [team, setTeam] = useState({ name: "", location: "", description: "" });
+  const [area, setArea] = useState("");
+  const [teamId, setTeamId] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (!user?.id) return;
+      setLoading(true);
+      try {
+        const { data } = await api.railwayTeams.getOwnerTeam(user.id);
+        const t = Array.isArray(data) ? data[0] : null;
+        if (active && t) {
+          setTeam({
+            name: t.name || "",
+            location: t.location || "",
+            description: t.description || "",
+          });
+          setTeamId(t.id || null);
+          // 選択肢に該当すれば初期選択、なければ空
+          const knownAreas = ["静岡市", "浜松市", "富士市", "沼津市"];
+          const match = knownAreas.find(a => (t.location || "").includes(a));
+          setArea(match || "");
+        }
+      } catch (e) {
+        console.error('failed to load owner team', e);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [user]);
 
   
   const roles = ["代表", "副代表", "メンバー"];
@@ -88,6 +126,9 @@ export const Screen24 = () => {
                 <input
                   type="text"
                   className="frame-445"
+                  value={team.name}
+                  onChange={(e) => setTeam(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="チーム名を入力"
                 />
               </div>
 
@@ -104,12 +145,20 @@ export const Screen24 = () => {
                   </select>
                 </div>
 
-                <select className="custom-select">
+                <select 
+                  className="custom-select"
+                  value={area}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setArea(v);
+                    setTeam(prev => ({ ...prev, location: v }));
+                  }}
+                >
                   <option value="">選択してください</option>
-                  <option value="shizuoka">静岡市</option>
-                  <option value="hamamatsu">浜松市</option>
-                  <option value="fuji">富士市</option>
-                  <option value="numazu">沼津市</option>
+                  <option value="静岡市">静岡市</option>
+                  <option value="浜松市">浜松市</option>
+                  <option value="富士市">富士市</option>
+                  <option value="沼津市">沼津市</option>
                 </select>
               </div>
 
@@ -189,6 +238,9 @@ export const Screen24 = () => {
                 <textarea
                   className="frame-462"
                   rows={4}
+                  value={team.description}
+                  onChange={(e) => setTeam(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="チームの自己紹介を入力"
                 />
               </div>
             </div>
@@ -199,9 +251,31 @@ export const Screen24 = () => {
               <div className="text-wrapper-224">戻る</div>
             </Link>
 
-            <Link to="/team-management" className="frame-465">
-              <div className="text-wrapper-225">完了</div>
-            </Link>
+            <button
+              className="frame-465"
+              type="button"
+              disabled={saving || !teamId}
+              onClick={async () => {
+                if (!user?.id || !teamId) return;
+                setSaving(true);
+                try {
+                  await api.railwayTeams.updateTeam(user.id, teamId, {
+                    name: team.name,
+                    location: team.location,
+                    description: team.description,
+                  });
+                  alert('チームプロフィールを保存しました');
+                } catch (e) {
+                  console.error('failed to update team', e);
+                  alert('保存に失敗しました。時間をおいて再度お試しください。');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              style={{ border: 'none', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.6 : 1 }}
+            >
+              <div className="text-wrapper-225">{saving ? '保存中...' : '完了'}</div>
+            </button>
           </div>
         </div>
       </div>

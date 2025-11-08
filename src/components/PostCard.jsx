@@ -1,1 +1,58 @@
-aW1wb3J0IFJlYWN0IGZyb20gJ3JlYWN0JzsKaW1wb3J0IHsgTGluayB9IGZyb20gJ3JlYWN0LXJvdXRlci1kb20nOwoKY29uc3QgUG9zdENhcmQgPSAoeyBwb3N0LCBvbkxpa2UsIGxpa2VkID0gZmFsc2UgfSkgPT4gewogIGNvbnN0IGRpc3BsYXlOYW1lID0gcG9zdD8ucHJvZmlsZXM/LmRpc3BsYXlfbmFtZSB8fCBwb3N0Py5wcm9maWxlcz8udXNlcm5hbWUgfHwgJ+ODpuODvOOCtuODvCc7CiAgY29uc3QgaW1hZ2VzID0gQXJyYXkuaXNBcnJheShwb3N0Py5pbWFnZV91cmxzKSAmJiBwb3N0LmltYWdlX3VybHMubGVuZ3RoCiAgICA/IHBvc3QuaW1hZ2VfdXJscwogICAgOiAocG9zdD8uZmlsZV91cmwgPyBbcG9zdC5maWxlX3VybF0gOiBbXSk7CgogIGNvbnN0IHByb2ZpbGVJZCA9IHBvc3Q/LnByb2ZpbGVzPy5pZDsKICByZXR1cm4gKAogICAgPGRpdiBjbGFzc05hbWU9InBvc3QtY2FyZCI+CiAgICAgIDxMaW5rIHRvPXtwcm9maWxlSWQgPyBgL3Byb2ZpbGUvJHtwcm9maWxlSWR9YCA6ICcvbXktcHJvZmlsZSd9IGNsYXNzTmFtZT0icG9zdC1oZWFkZXIiIHN0eWxlPXt7IHRleHREZWNvcmF0aW9uOiAnbm9uZScgfX0+CiAgICAgICAgPGRpdiBjbGFzc05hbWU9InBvc3QtYXZhdGFyIiAvPgogICAgICAgIDxkaXYgY2xhc3NOYW1lPSJwb3N0LWF1dGhvciIgc3R5bGU9e3sgY3Vyc29yOiAncG9pbnRlcicgfX0+e2Rpc3BsYXlOYW1lfTwvZGl2PgogICAgICA8L0xpbms+CgogICAgICA8ZGl2IGNsYXNzTmFtZT0icG9zdC1kZXRhaWxzIj4KICAgICAgICB7cG9zdD8udG91cm5hbWVudHMgPyAoCiAgICAgICAgICA8PgogICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0icG9zdC1saW5lIj7lpKfkvJrlkI3vvJp7cG9zdC50b3VybmFtZW50cz8ubmFtZSB8fCAn5aSn5Lya5ZCN5pyq6Kit5a6aJ308L2Rpdj4KICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9InBvc3QtbGluZSI+6ZaL5YKs5pel5pmC77yae3Bvc3QudG91cm5hbWVudHM/LnN0YXJ0X2RhdGUgPyBuZXcgRGF0ZShwb3N0LnRvdXJuYW1lbnRzLnN0YXJ0X2RhdGUpLnRvTG9jYWxlRGF0ZVN0cmluZygnamEtSlAnKSA6ICfmnKrlrponfTwvZGl2PgogICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0icG9zdC1saW5lIj7oqablkIjntZDmnpzvvJp7cG9zdC5wb3NpdGlvbiA/IGDnrKwke3Bvc3QucG9zaXRpb2595L2NYCA6ICfmnKrnorrlrponfTwvZGl2PgogICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0icG9zdC1saW5lIj7njbLlvpfjg53jgqTjg7Pjg4jvvJp7cG9zdC5wb2ludHMgfHwgMH1QPC9kaXY+CiAgICAgICAgICAgIHtwb3N0Lm1lbW8gJiYgPGRpdiBjbGFzc05hbWU9InBvc3QtbGluZSI+44Oh44Oi77yae3Bvc3QubWVtb308L2Rpdj59CiAgICAgICAgICA8Lz4KICAgICAgICApIDogKAogICAgICAgICAgPD4KICAgICAgICAgICAge3Bvc3Q/LmNvbnRlbnQgJiYgPGRpdiBjbGFzc05hbWU9InBvc3QtbGluZSI+e3Bvc3QuY29udGVudH08L2Rpdj59CiAgICAgICAgICA8Lz4KICAgICAgICApfQogICAgICA8L2Rpdj4KCiAgICAgIDxkaXYgY2xhc3NOYW1lPSJwb3N0LWltYWdlcyI+CiAgICAgICAge1swLDEsMiwzLDRdLm1hcCgoaSkgPT4gewogICAgICAgICAgY29uc3Qgc3JjID0gaW1hZ2VzW2ldOwogICAgICAgICAgcmV0dXJuIHNyYyA/ICgKICAgICAgICAgICAgPGltZyBrZXk9e2l9IGNsYXNzTmFtZT0icG9zdC1pbWFnZSIgc3JjPXtzcmN9IGFsdD17YHBvc3QtJHtpfWB9IC8+CiAgICAgICAgICApIDogKAogICAgICAgICAgICA8ZGl2IGtleT17aX0gY2xhc3NOYW1lPSJwb3N0LWltYWdlIHBoIiAvPgogICAgICAgICAgKTsKICAgICAgICB9KX0KICAgICAgPC9kaXY+CgogICAgICA8ZGl2IGNsYXNzTmFtZT0icG9zdC1mb290ZXIiPgogICAgICAgIHtwb3N0Py50b3VybmFtZW50X2lkID8gKAogICAgICAgICAgPExpbmsgdG89e2AvdG91cm5hbWVudC1kZXRhaWwvJHtwb3N0LnRvdXJuYW1lbnRfaWR9YH0gY2xhc3NOYW1lPSJwb3N0LWN0YSI+5aSn5Lya5qaC6KaBPC9MaW5rPgogICAgICAgICkgOiA8c3BhbiAvPn0KICAgICAgICA8YnV0dG9uIGNsYXNzTmFtZT0icG9zdC1saWtlIiBvbkNsaWNrPXtvbkxpa2V9IHR5cGU9ImJ1dHRvbiI+CiAgICAgICAgICA8aW1nIGNsYXNzTmFtZT0iaGVhcnQtaWNvbiIgc3JjPSIvaW1nL3ZlY3Rvci0yNS5zdmciIGFsdD0ibGlrZSIgLz4KICAgICAgICAgIDxzcGFuPnsodHlwZW9mIHBvc3QubGlrZV9jb3VudCA9PT0gJ251bWJlcicgPyBwb3N0Lmxpa2VfY291bnQgOiAwKSArIChsaWtlZCA/IChwb3N0Lmxpa2VkID8gMCA6IDEpIDogKHBvc3QubGlrZWQgPyAwIDogMCkpfSDjgYTjgYTjga08L3NwYW4+CiAgICAgICAgPC9idXR0b24+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgKTsKfTsKCmV4cG9ydCBkZWZhdWx0IFBvc3RDYXJkOwo=
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const PostCard = ({ post, onLike, liked = false }) => {
+  const displayName = post?.profiles?.display_name || post?.profiles?.username || 'ユーザー';
+  const images = Array.isArray(post?.image_urls) && post.image_urls.length
+    ? post.image_urls
+    : (post?.file_url ? [post.file_url] : []);
+
+  const profileId = post?.profiles?.id;
+  return (
+    <div className="post-card">
+      <Link to={profileId ? `/profile/${profileId}` : '/my-profile'} className="post-header" style={{ textDecoration: 'none' }}>
+        <div className="post-avatar" />
+        <div className="post-author" style={{ cursor: 'pointer' }}>{displayName}</div>
+      </Link>
+
+      <div className="post-details">
+        {post?.tournaments ? (
+          <>
+            <div className="post-line">大会名：{post.tournaments?.name || '大会名未設定'}</div>
+            <div className="post-line">開催日時：{post.tournaments?.start_date ? new Date(post.tournaments.start_date).toLocaleDateString('ja-JP') : '未定'}</div>
+            <div className="post-line">試合結果：{post.position ? `第${post.position}位` : '未確定'}</div>
+            <div className="post-line">獲得ポイント：{post.points || 0}P</div>
+            {post.memo && <div className="post-line">メモ：{post.memo}</div>}
+          </>
+        ) : (
+          <>
+            {post?.content && <div className="post-line">{post.content}</div>}
+          </>
+        )}
+      </div>
+
+      <div className="post-images">
+        {[0,1,2,3,4].map((i) => {
+          const src = images[i];
+          return src ? (
+            <img key={i} className="post-image" src={src} alt={`post-${i}`} />
+          ) : (
+            <div key={i} className="post-image ph" />
+          );
+        })}
+      </div>
+
+      <div className="post-footer">
+        {post?.tournament_id ? (
+          <Link to={`/tournament-detail/${post.tournament_id}`} className="post-cta">大会概要</Link>
+        ) : <span />}
+        <button className="post-like" onClick={onLike} type="button">
+          <img className="heart-icon" src="/img/vector-25.svg" alt="like" />
+          <span>{(typeof post.like_count === 'number' ? post.like_count : 0) + (liked ? (post.liked ? 0 : 1) : (post.liked ? 0 : 0))} いいね</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default PostCard;
