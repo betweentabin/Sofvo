@@ -57,6 +57,11 @@ const corsOptions = {
       // Allow any Cloudflare Pages preview domain as well
       (hostname && hostname.endsWith('.pages.dev'));
 
+    // Debug logging for CORS
+    if (!isAllowed && process.env.NODE_ENV !== 'production') {
+      console.log('CORS rejected:', origin, 'hostname:', hostname);
+    }
+
     if (isAllowed) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
   },
