@@ -1,5 +1,5 @@
 {
-  "nodeApiUrl": "https://sofvo-api-production.up.railway.app/api",
+  "nodeApiUrl": "/api",
   "railwayData": true,
   "railwayChatTest": true,
   "testUserId": ""
