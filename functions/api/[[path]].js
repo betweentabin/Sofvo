@@ -7,10 +7,11 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const targetUrl = `${RAILWAY_API_BASE}/${path}${url.search}`;
 
+  // Clone the request to avoid consuming the body stream
   const proxyRequest = new Request(targetUrl, {
     method: request.method,
     headers: request.headers,
-    body: request.body,
+    body: request.method !== 'GET' && request.method !== 'HEAD' ? await request.clone().arrayBuffer() : null,
     redirect: 'follow'
   });
 
