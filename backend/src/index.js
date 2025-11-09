@@ -26,6 +26,7 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', true);
 
 // CORS configuration (web + mobile webview friendly) — placed before Helmet
+// Updated to include Cloudflare Pages support
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://sofvo.vercel.app',
