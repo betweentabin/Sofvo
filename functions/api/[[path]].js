@@ -543,7 +543,20 @@ export async function onRequest(context) {
       return new Response(JSON.stringify(meta), { headers: corsHeaders });
     }
 
-    if (path === 'railway-chat/conversations') {
+    // Get test accounts
+    if (path === 'railway-chat/test-accounts' && request.method === 'GET') {
+      const testAccounts = await env.DB.prepare(`
+        SELECT id, username, display_name, avatar_url
+        FROM profiles
+        WHERE username IN ('testuser', 'cfuser', 'sofvo_official', 'soccerstar', 'tennisace', 'baseballpro')
+        ORDER BY username
+      `).all();
+
+      return new Response(JSON.stringify(testAccounts.results || []), { headers: corsHeaders });
+    }
+
+    // Get conversations (GET)
+    if (path === 'railway-chat/conversations' && request.method === 'GET') {
       let asUserId = new URL(request.url).searchParams.get('as_user');
 
       if (!asUserId) {
@@ -588,6 +601,182 @@ export async function onRequest(context) {
       `).bind(asUserId).all();
 
       return new Response(JSON.stringify(conversations.results || []), { headers: corsHeaders });
+    }
+
+    // Create conversation (POST)
+    if (path === 'railway-chat/conversations' && request.method === 'POST') {
+      try {
+        const { as_user, participant_ids = [], type = 'direct', name = null } = await request.json();
+
+        if (!as_user) {
+          return new Response(JSON.stringify({ error: 'as_user is required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const conversationId = generateUUID();
+        const now = new Date().toISOString();
+
+        // Create conversation
+        await env.DB.prepare(`
+          INSERT INTO conversations (id, type, name, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).bind(conversationId, type, name, now, now).run();
+
+        // Add creator as participant
+        const creatorParticipantId = generateUUID();
+        await env.DB.prepare(`
+          INSERT INTO conversation_participants (id, conversation_id, user_id, joined_at, last_read_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).bind(creatorParticipantId, conversationId, as_user, now, now).run();
+
+        // Add other participants
+        for (const participantId of participant_ids) {
+          const participantUUID = generateUUID();
+          await env.DB.prepare(`
+            INSERT INTO conversation_participants (id, conversation_id, user_id, joined_at, last_read_at)
+            VALUES (?, ?, ?, ?, ?)
+          `).bind(participantUUID, conversationId, participantId, now, now).run();
+        }
+
+        // Get the created conversation with participant info
+        const conversation = await env.DB.prepare(`
+          SELECT * FROM conversations WHERE id = ?
+        `).bind(conversationId).first();
+
+        return new Response(JSON.stringify(conversation), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to create conversation',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Get messages for a conversation
+    if (path.match(/^railway-chat\/conversations\/[^/]+\/messages$/) && request.method === 'GET') {
+      const conversationId = path.split('/')[2];
+      const url = new URL(request.url);
+      const asUserId = url.searchParams.get('as_user');
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+
+      if (!asUserId) {
+        return new Response(JSON.stringify({ error: 'as_user is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Verify user is a participant
+      const participant = await env.DB.prepare(`
+        SELECT id FROM conversation_participants
+        WHERE conversation_id = ? AND user_id = ?
+      `).bind(conversationId, asUserId).first();
+
+      if (!participant) {
+        return new Response(JSON.stringify({ error: 'User is not a participant of this conversation' }), {
+          status: 403,
+          headers: corsHeaders
+        });
+      }
+
+      // Get messages with sender info
+      const messages = await env.DB.prepare(`
+        SELECT
+          m.id,
+          m.conversation_id,
+          m.sender_id,
+          m.content,
+          m.type,
+          m.file_url,
+          m.created_at,
+          p.username,
+          p.display_name,
+          p.avatar_url
+        FROM messages m
+        LEFT JOIN profiles p ON m.sender_id = p.id
+        WHERE m.conversation_id = ?
+        ORDER BY m.created_at DESC
+        LIMIT ? OFFSET ?
+      `).bind(conversationId, limit, offset).all();
+
+      return new Response(JSON.stringify(messages.results || []), { headers: corsHeaders });
+    }
+
+    // Send message
+    if (path === 'railway-chat/send' && request.method === 'POST') {
+      try {
+        const { as_user, conversation_id, content, type = 'text', file_url = null } = await request.json();
+
+        if (!as_user || !conversation_id || !content) {
+          return new Response(JSON.stringify({ error: 'as_user, conversation_id, and content are required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        // Verify user is a participant
+        const participant = await env.DB.prepare(`
+          SELECT id FROM conversation_participants
+          WHERE conversation_id = ? AND user_id = ?
+        `).bind(conversation_id, as_user).first();
+
+        if (!participant) {
+          return new Response(JSON.stringify({ error: 'User is not a participant of this conversation' }), {
+            status: 403,
+            headers: corsHeaders
+          });
+        }
+
+        const messageId = generateUUID();
+        const now = new Date().toISOString();
+
+        // Insert message
+        await env.DB.prepare(`
+          INSERT INTO messages (id, conversation_id, sender_id, content, type, file_url, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).bind(messageId, conversation_id, as_user, content, type, file_url, now).run();
+
+        // Update conversation updated_at
+        await env.DB.prepare(`
+          UPDATE conversations SET updated_at = ? WHERE id = ?
+        `).bind(now, conversation_id).run();
+
+        // Get the created message with sender info
+        const message = await env.DB.prepare(`
+          SELECT
+            m.id,
+            m.conversation_id,
+            m.sender_id,
+            m.content,
+            m.type,
+            m.file_url,
+            m.created_at,
+            p.username,
+            p.display_name,
+            p.avatar_url
+          FROM messages m
+          LEFT JOIN profiles p ON m.sender_id = p.id
+          WHERE m.id = ?
+        `).bind(messageId).first();
+
+        return new Response(JSON.stringify(message), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Error sending message:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to send message',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
     }
 
     if (path === 'railway-tournaments/create' && request.method === 'POST') {
