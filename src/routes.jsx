@@ -35,6 +35,7 @@ import { Screen35 } from "./screens/メンバー管理";
 import { Screen36 } from "./screens/主催大会管理";
 import { Screen37 } from "./screens/大会を主催";
 import { Screen38 } from "./screens/大会を編集";
+import { Screen39 } from "./screens/OSS ライセンス/Screen39";
 import { ScreenScreen } from "./screens/ログイン";
 
 export const router = createHashRouter([
@@ -83,7 +84,11 @@ export const router = createHashRouter([
     element: <AuthGuard><SearchScreen /></AuthGuard>,
   },
   {
-    path: "/tournament-detail",
+    path: "/tournament-search-individual",
+    element: <AuthGuard><SearchScreen /></AuthGuard>,
+  },
+  {
+    path: "/tournament-detail/:tournamentId",
     element: <AuthGuard><Screen18 /></AuthGuard>,
   },
   {
@@ -111,11 +116,19 @@ export const router = createHashRouter([
     element: <AuthGuard><Screen16 /></AuthGuard>,
   },
   {
+    path: "/team-member",
+    element: <AuthGuard><Screen16 /></AuthGuard>,
+  },
+  {
     path: "/team-manage",
     element: <AuthGuard><Screen17 /></AuthGuard>,
   },
   {
     path: "/team-create",
+    element: <AuthGuard><Screen24 /></AuthGuard>,
+  },
+  {
+    path: "/team-profile-edit",
     element: <AuthGuard><Screen24 /></AuthGuard>,
   },
   {
@@ -159,6 +172,10 @@ export const router = createHashRouter([
     element: <AuthGuard><Screen22 /></AuthGuard>,
   },
   {
+    path: "/account-info",
+    element: <AuthGuard><Screen22 /></AuthGuard>,
+  },
+  {
     path: "/terms",
     element: <Screen23 />,
   },
@@ -187,12 +204,20 @@ export const router = createHashRouter([
     element: <AuthGuard><Screen31 /></AuthGuard>,
   },
   {
+    path: "/account-delete",
+    element: <AuthGuard><Screen31 /></AuthGuard>,
+  },
+  {
     path: "/dm",
     element: <AuthGuard><Dm /></AuthGuard>,
   },
   {
     path: "/dm/:conversationId",
     element: <AuthGuard><Dm /></AuthGuard>,
+  },
+  {
+    path: "/oss-licenses",
+    element: <Screen39 />,
   },
   {
     path: "/empty",
