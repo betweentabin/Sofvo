@@ -228,6 +228,145 @@ export async function onRequest(context) {
       return new Response(JSON.stringify(results.results), { headers: corsHeaders });
     }
 
+    // Get follow status
+    if (path === 'railway-users/follow-status' && request.method === 'GET') {
+      const url = new URL(request.url);
+      let asUser = url.searchParams.get('as_user');
+      let targetId = url.searchParams.get('target_id');
+
+      if (!asUser || !targetId) {
+        return new Response(JSON.stringify({ error: 'as_user and target_id are required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Clean up whitespace
+      asUser = asUser.trim().replace(/[\r\n\t]/g, '');
+      targetId = targetId.trim().replace(/[\r\n\t]/g, '');
+
+      // Check if following
+      const follow = await env.DB.prepare(`
+        SELECT id FROM follows
+        WHERE follower_id = ? AND following_id = ?
+      `).bind(asUser, targetId).first();
+
+      return new Response(JSON.stringify({
+        isFollowing: !!follow
+      }), { headers: corsHeaders });
+    }
+
+    // Follow user
+    if (path === 'railway-users/follow' && request.method === 'POST') {
+      try {
+        const { as_user, target_id } = await request.json();
+
+        if (!as_user || !target_id) {
+          return new Response(JSON.stringify({ error: 'as_user and target_id are required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        // Prevent self-follow
+        if (as_user === target_id) {
+          return new Response(JSON.stringify({ error: 'Cannot follow yourself' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const followId = generateUUID();
+        const now = new Date().toISOString();
+
+        // Check if already following
+        const existing = await env.DB.prepare(`
+          SELECT id FROM follows WHERE follower_id = ? AND following_id = ?
+        `).bind(as_user, target_id).first();
+
+        if (existing) {
+          return new Response(JSON.stringify({ error: 'Already following this user' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        // Create follow relationship
+        await env.DB.prepare(`
+          INSERT INTO follows (id, follower_id, following_id, created_at)
+          VALUES (?, ?, ?, ?)
+        `).bind(followId, as_user, target_id, now).run();
+
+        // Update follower counts
+        await env.DB.batch([
+          env.DB.prepare(`
+            UPDATE profiles SET following_count = following_count + 1 WHERE id = ?
+          `).bind(as_user),
+          env.DB.prepare(`
+            UPDATE profiles SET followers_count = followers_count + 1 WHERE id = ?
+          `).bind(target_id)
+        ]);
+
+        return new Response(JSON.stringify({ success: true, isFollowing: true }), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Error following user:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to follow user',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Unfollow user
+    if (path === 'railway-users/follow' && request.method === 'DELETE') {
+      try {
+        const { as_user, target_id } = await request.json();
+
+        if (!as_user || !target_id) {
+          return new Response(JSON.stringify({ error: 'as_user and target_id are required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        // Delete follow relationship
+        const result = await env.DB.prepare(`
+          DELETE FROM follows WHERE follower_id = ? AND following_id = ?
+        `).bind(as_user, target_id).run();
+
+        if (result.meta.changes === 0) {
+          return new Response(JSON.stringify({ error: 'Not following this user' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        // Update follower counts
+        await env.DB.batch([
+          env.DB.prepare(`
+            UPDATE profiles SET following_count = GREATEST(0, following_count - 1) WHERE id = ?
+          `).bind(as_user),
+          env.DB.prepare(`
+            UPDATE profiles SET followers_count = GREATEST(0, followers_count - 1) WHERE id = ?
+          `).bind(target_id)
+        ]);
+
+        return new Response(JSON.stringify({ success: true, isFollowing: false }), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Error unfollowing user:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to unfollow user',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
     if (path === 'railway-users/profile') {
       let userId = new URL(request.url).searchParams.get('user_id');
 
@@ -1091,6 +1230,88 @@ export async function onRequest(context) {
         console.error('Media upload error:', error);
         return new Response(JSON.stringify({
           error: 'Failed to upload file',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    if (path === 'users/me' && request.method === 'DELETE') {
+      // Get token from Authorization header
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      // Check token expiration
+      if (tokenData.exp && tokenData.exp < Date.now()) {
+        return new Response(JSON.stringify({ error: 'Token expired' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        // Delete related data in order (due to foreign key constraints)
+        // 1. Delete tournament results
+        await env.DB.prepare('DELETE FROM tournament_results WHERE user_id = ?').bind(userId).run();
+
+        // 2. Delete posts/diaries
+        await env.DB.prepare('DELETE FROM posts WHERE user_id = ?').bind(userId).run();
+
+        // 3. Delete chat messages
+        await env.DB.prepare('DELETE FROM messages WHERE sender_id = ? OR recipient_id = ?').bind(userId, userId).run();
+
+        // 4. Delete conversations
+        await env.DB.prepare('DELETE FROM conversations WHERE user1_id = ? OR user2_id = ?').bind(userId, userId).run();
+
+        // 5. Delete team memberships
+        await env.DB.prepare('DELETE FROM team_members WHERE user_id = ?').bind(userId).run();
+
+        // 6. Delete teams owned by user
+        await env.DB.prepare('DELETE FROM teams WHERE owner_id = ?').bind(userId).run();
+
+        // 7. Delete profile
+        await env.DB.prepare('DELETE FROM profiles WHERE id = ?').bind(userId).run();
+
+        // 8. Finally, delete user account
+        await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Account deleted successfully'
+        }), {
+          status: 200,
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Account deletion error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to delete account',
           details: error.message
         }), {
           status: 500,
