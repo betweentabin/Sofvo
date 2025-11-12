@@ -1618,6 +1618,598 @@ export async function onRequest(context) {
       }
     }
 
+    // ===== Notifications API =====
+
+    // Get notifications list
+    if (path === 'railway-notifications' && request.method === 'GET') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+
+      try {
+        const notifications = await env.DB.prepare(`
+          SELECT
+            n.*,
+            p.username as actor_username,
+            p.display_name as actor_display_name,
+            p.avatar_url as actor_avatar_url
+          FROM notifications n
+          LEFT JOIN profiles p ON n.actor_id = p.id
+          WHERE n.user_id = ?
+          ORDER BY n.created_at DESC
+          LIMIT ? OFFSET ?
+        `).bind(userId, limit, offset).all();
+
+        return new Response(JSON.stringify(notifications.results || []), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Get notifications error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to get notifications',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Get unread count
+    if (path === 'railway-notifications/unread-count' && request.method === 'GET') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const result = await env.DB.prepare(
+          'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0'
+        ).bind(userId).first();
+
+        return new Response(JSON.stringify({ count: result?.count || 0 }), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Get unread count error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to get unread count',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Mark notification as read
+    if (path.match(/^railway-notifications\/([^/]+)\/read$/) && request.method === 'PUT') {
+      const notificationId = path.match(/^railway-notifications\/([^/]+)\/read$/)[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        await env.DB.prepare(
+          'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?'
+        ).bind(notificationId, userId).run();
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Mark read error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to mark notification as read',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Mark all notifications as read
+    if (path === 'railway-notifications/read-all' && request.method === 'PUT') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        await env.DB.prepare(
+          'UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0'
+        ).bind(userId).run();
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Mark all read error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to mark all notifications as read',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Delete notification
+    if (path.match(/^railway-notifications\/([^/]+)$/) && request.method === 'DELETE') {
+      const notificationId = path.match(/^railway-notifications\/([^/]+)$/)[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        await env.DB.prepare(
+          'DELETE FROM notifications WHERE id = ? AND user_id = ?'
+        ).bind(notificationId, userId).run();
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Delete notification error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to delete notification',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Clear all notifications
+    if (path === 'railway-notifications/clear-all' && request.method === 'DELETE') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        await env.DB.prepare(
+          'DELETE FROM notifications WHERE user_id = ?'
+        ).bind(userId).run();
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Clear all notifications error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to clear all notifications',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Device token management
+    if (path === 'railway-notifications/device-tokens' && request.method === 'POST') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const { token: deviceToken, platform, device_info } = await request.json();
+
+        if (!deviceToken) {
+          return new Response(JSON.stringify({ error: 'Device token is required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const tokenId = generateUUID();
+        const now = new Date().toISOString();
+
+        // Upsert device token
+        await env.DB.prepare(`
+          INSERT INTO device_tokens (id, user_id, token, platform, device_info, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(token) DO UPDATE SET user_id = ?, platform = ?, device_info = ?
+        `).bind(tokenId, userId, deviceToken, platform || null, device_info ? JSON.stringify(device_info) : null, now, userId, platform || null, device_info ? JSON.stringify(device_info) : null).run();
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Save device token error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to save device token',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Delete device token
+    if (path === 'railway-notifications/device-tokens' && request.method === 'DELETE') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const { token: deviceToken } = await request.json();
+
+        if (!deviceToken) {
+          return new Response(JSON.stringify({ error: 'Device token is required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        await env.DB.prepare(
+          'DELETE FROM device_tokens WHERE token = ? AND user_id = ?'
+        ).bind(deviceToken, userId).run();
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Delete device token error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to delete device token',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Get notification settings
+    if (path === 'railway-notifications/settings' && request.method === 'GET') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        let settings = await env.DB.prepare(
+          'SELECT * FROM notification_settings WHERE user_id = ?'
+        ).bind(userId).first();
+
+        // Create default settings if none exist
+        if (!settings) {
+          const settingsId = generateUUID();
+          const now = new Date().toISOString();
+
+          await env.DB.prepare(`
+            INSERT INTO notification_settings (id, user_id, push_enabled, email_enabled, tournament_updates, team_updates, message_updates, created_at, updated_at)
+            VALUES (?, ?, 1, 1, 1, 1, 1, ?, ?)
+          `).bind(settingsId, userId, now, now).run();
+
+          settings = await env.DB.prepare(
+            'SELECT * FROM notification_settings WHERE user_id = ?'
+          ).bind(userId).first();
+        }
+
+        return new Response(JSON.stringify(settings), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Get notification settings error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to get notification settings',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Update notification settings
+    if (path === 'railway-notifications/settings' && request.method === 'PUT') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const { push_enabled, email_enabled, tournament_updates, team_updates, message_updates } = await request.json();
+        const now = new Date().toISOString();
+
+        const updates = [];
+        const values = [];
+
+        if (push_enabled !== undefined) {
+          updates.push('push_enabled = ?');
+          values.push(push_enabled ? 1 : 0);
+        }
+        if (email_enabled !== undefined) {
+          updates.push('email_enabled = ?');
+          values.push(email_enabled ? 1 : 0);
+        }
+        if (tournament_updates !== undefined) {
+          updates.push('tournament_updates = ?');
+          values.push(tournament_updates ? 1 : 0);
+        }
+        if (team_updates !== undefined) {
+          updates.push('team_updates = ?');
+          values.push(team_updates ? 1 : 0);
+        }
+        if (message_updates !== undefined) {
+          updates.push('message_updates = ?');
+          values.push(message_updates ? 1 : 0);
+        }
+
+        if (updates.length === 0) {
+          return new Response(JSON.stringify({ error: 'No fields to update' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        updates.push('updated_at = ?');
+        values.push(now);
+        values.push(userId);
+
+        await env.DB.prepare(`
+          UPDATE notification_settings
+          SET ${updates.join(', ')}
+          WHERE user_id = ?
+        `).bind(...values).run();
+
+        const settings = await env.DB.prepare(
+          'SELECT * FROM notification_settings WHERE user_id = ?'
+        ).bind(userId).first();
+
+        return new Response(JSON.stringify(settings), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Update notification settings error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to update notification settings',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
     // Default: return not found
     return new Response(JSON.stringify({ error: 'Endpoint not found', path }), {
       status: 404,

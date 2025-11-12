@@ -88,7 +88,7 @@ export const router = createHashRouter([
     element: <AuthGuard><SearchScreen /></AuthGuard>,
   },
   {
-    path: "/tournament-detail/:tournamentId",
+    path: "/tournament-detail",
     element: <AuthGuard><Screen18 /></AuthGuard>,
   },
   {

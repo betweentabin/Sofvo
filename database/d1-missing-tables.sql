@@ -89,6 +89,22 @@ CREATE TABLE IF NOT EXISTS blocks (
   FOREIGN KEY (blocked_id) REFERENCES profiles(id) ON DELETE CASCADE
 );
 
+-- Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('follow', 'like', 'comment', 'message', 'tournament', 'team', 'system')),
+  title TEXT NOT NULL,
+  content TEXT,
+  related_type TEXT,
+  related_id TEXT,
+  actor_id TEXT,
+  is_read INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  FOREIGN KEY (actor_id) REFERENCES profiles(id) ON DELETE SET NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_tournament_matches_tournament ON tournament_matches(tournament_id);
 CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_activities_user ON activities(user_id);
@@ -97,3 +113,6 @@ CREATE INDEX IF NOT EXISTS idx_reports_reported ON reports(reported_id, reported
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_blocks_blocker ON blocks(blocker_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_blocked ON blocks(blocked_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at);
