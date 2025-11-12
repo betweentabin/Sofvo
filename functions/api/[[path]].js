@@ -229,7 +229,7 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-users/profile') {
-      const userId = new URL(request.url).searchParams.get('user_id');
+      let userId = new URL(request.url).searchParams.get('user_id');
 
       if (!userId) {
         return new Response(JSON.stringify({ error: 'user_id is required' }), {
@@ -237,6 +237,9 @@ export async function onRequest(context) {
           headers: corsHeaders
         });
       }
+
+      // Remove any whitespace characters (including newlines) from user_id
+      userId = userId.trim().replace(/[\r\n\t]/g, '');
 
       const profile = await env.DB.prepare(`
         SELECT
@@ -259,7 +262,7 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-users/stats') {
-      const userId = new URL(request.url).searchParams.get('user_id');
+      let userId = new URL(request.url).searchParams.get('user_id');
 
       if (!userId) {
         return new Response(JSON.stringify({ error: 'user_id is required' }), {
@@ -267,6 +270,9 @@ export async function onRequest(context) {
           headers: corsHeaders
         });
       }
+
+      // Remove any whitespace characters (including newlines) from user_id
+      userId = userId.trim().replace(/[\r\n\t]/g, '');
 
       // Get profile for follower counts
       const profile = await env.DB.prepare(
@@ -303,7 +309,7 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-users/tournaments') {
-      const userId = new URL(request.url).searchParams.get('user_id');
+      let userId = new URL(request.url).searchParams.get('user_id');
       const limit = new URL(request.url).searchParams.get('limit') || 5;
 
       if (!userId) {
@@ -312,6 +318,9 @@ export async function onRequest(context) {
           headers: corsHeaders
         });
       }
+
+      // Remove any whitespace characters (including newlines) from user_id
+      userId = userId.trim().replace(/[\r\n\t]/g, '');
 
       const tournaments = await env.DB.prepare(`
         SELECT
@@ -393,7 +402,7 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-home/following') {
-      const asUserId = new URL(request.url).searchParams.get('as_user');
+      let asUserId = new URL(request.url).searchParams.get('as_user');
       const limit = new URL(request.url).searchParams.get('limit') || 10;
 
       if (!asUserId) {
@@ -402,6 +411,9 @@ export async function onRequest(context) {
           headers: corsHeaders
         });
       }
+
+      // Remove any whitespace characters (including newlines) from as_user
+      asUserId = asUserId.trim().replace(/[\r\n\t]/g, '');
 
       // Get posts from users that asUserId follows
       const posts = await env.DB.prepare(`
@@ -532,7 +544,7 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-chat/conversations') {
-      const asUserId = new URL(request.url).searchParams.get('as_user');
+      let asUserId = new URL(request.url).searchParams.get('as_user');
 
       if (!asUserId) {
         return new Response(JSON.stringify({ error: 'as_user is required' }), {
@@ -540,6 +552,9 @@ export async function onRequest(context) {
           headers: corsHeaders
         });
       }
+
+      // Remove any whitespace characters (including newlines) from as_user
+      asUserId = asUserId.trim().replace(/[\r\n\t]/g, '');
 
       // Get conversations where user is a participant
       const conversations = await env.DB.prepare(`
@@ -645,7 +660,7 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-teams/owner') {
-      const asUserId = new URL(request.url).searchParams.get('as_user');
+      let asUserId = new URL(request.url).searchParams.get('as_user');
 
       if (!asUserId) {
         return new Response(JSON.stringify({ error: 'as_user is required' }), {
@@ -653,6 +668,9 @@ export async function onRequest(context) {
           headers: corsHeaders
         });
       }
+
+      // Remove any whitespace characters (including newlines) from as_user
+      asUserId = asUserId.trim().replace(/[\r\n\t]/g, '');
 
       const team = await env.DB.prepare(`
         SELECT t.* FROM teams t
@@ -741,34 +759,155 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-users/profile' && request.method === 'PUT') {
-      const { user_id, username, display_name, bio, sport_type, phone, furigana, avatar_url } = await request.json();
+      // Get user_id from token or request body
+      let userId = null;
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        try {
+          const tokenData = JSON.parse(atob(token));
+          userId = tokenData.id;
+        } catch (e) {
+          // Token parsing failed, will try request body
+        }
+      }
 
-      if (!user_id) {
+      const body = await request.json();
+      const { user_id: bodyUserId, username, display_name, bio, sport_type, phone, furigana, avatar_url, age, gender, experience_years, team_name, location, privacy_settings } = body;
+
+      // Use user_id from body if provided, otherwise use token
+      userId = bodyUserId || userId;
+
+      if (!userId) {
         return new Response(JSON.stringify({ error: 'user_id is required' }), {
           status: 400,
           headers: corsHeaders
         });
       }
 
+      // Remove any whitespace characters (including newlines) from user_id
+      userId = userId.trim().replace(/[\r\n\t]/g, '');
+
       const now = new Date().toISOString();
+
+      // Build dynamic UPDATE query based on provided fields
+      const updates = [];
+      const values = [];
+
+      if (username !== undefined) {
+        updates.push('username = ?');
+        values.push(username);
+      }
+      if (display_name !== undefined) {
+        updates.push('display_name = ?');
+        values.push(display_name);
+      }
+      if (bio !== undefined) {
+        updates.push('bio = ?');
+        values.push(bio);
+      }
+      if (sport_type !== undefined) {
+        updates.push('sport_type = ?');
+        values.push(sport_type);
+      }
+      if (phone !== undefined) {
+        updates.push('phone = ?');
+        values.push(phone);
+      }
+      if (furigana !== undefined) {
+        updates.push('furigana = ?');
+        values.push(furigana);
+      }
+      if (avatar_url !== undefined) {
+        updates.push('avatar_url = ?');
+        values.push(avatar_url);
+      }
+      if (age !== undefined) {
+        updates.push('age = ?');
+        values.push(age);
+      }
+      if (gender !== undefined) {
+        updates.push('gender = ?');
+        values.push(gender);
+      }
+      if (experience_years !== undefined) {
+        updates.push('experience_years = ?');
+        values.push(experience_years);
+      }
+      if (team_name !== undefined) {
+        updates.push('team_name = ?');
+        values.push(team_name);
+      }
+      if (location !== undefined) {
+        updates.push('location = ?');
+        values.push(location);
+      }
+      if (privacy_settings !== undefined) {
+        updates.push('privacy_settings = ?');
+        values.push(typeof privacy_settings === 'string' ? privacy_settings : JSON.stringify(privacy_settings));
+      }
+
+      if (updates.length === 0) {
+        return new Response(JSON.stringify({ error: 'No fields to update' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      updates.push('updated_at = ?');
+      values.push(now);
+      values.push(userId);
 
       await env.DB.prepare(`
         UPDATE profiles
-        SET username = COALESCE(?, username),
-            display_name = COALESCE(?, display_name),
-            bio = COALESCE(?, bio),
-            sport_type = COALESCE(?, sport_type),
-            phone = COALESCE(?, phone),
-            furigana = COALESCE(?, furigana),
-            avatar_url = COALESCE(?, avatar_url),
-            updated_at = ?
+        SET ${updates.join(', ')}
         WHERE id = ?
-      `).bind(username, display_name, bio, sport_type, phone, furigana, avatar_url, now, user_id).run();
+      `).bind(...values).run();
 
       const profile = await env.DB.prepare('SELECT * FROM profiles WHERE id = ?')
-        .bind(user_id).first();
+        .bind(userId).first();
 
       return new Response(JSON.stringify(profile), { headers: corsHeaders });
+    }
+
+    if (path === 'media/upload' && request.method === 'POST') {
+      try {
+        const formData = await request.formData();
+        const file = formData.get('file');
+
+        if (!file) {
+          return new Response(JSON.stringify({ error: 'No file provided' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        // Read file as array buffer
+        const buffer = await file.arrayBuffer();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+        const mimeType = file.type || 'application/octet-stream';
+
+        // Create data URL
+        const dataUrl = `data:${mimeType};base64,${base64}`;
+
+        // For now, return the data URL
+        // In production, you should upload to R2 or another storage service
+        return new Response(JSON.stringify({
+          url: dataUrl,
+          filename: file.name,
+          size: buffer.byteLength,
+          type: mimeType
+        }), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Media upload error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to upload file',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
     }
 
     // Default: return not found
