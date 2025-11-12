@@ -153,6 +153,67 @@ export async function onRequest(context) {
       }), { headers: corsHeaders });
     }
 
+    if (path === 'railway-auth/me' && request.method === 'GET') {
+      // Get token from Authorization header
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      // Check token expiration
+      if (tokenData.exp && tokenData.exp < Date.now()) {
+        return new Response(JSON.stringify({ error: 'Token expired' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const userId = tokenData.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      // Get user profile
+      const user = await env.DB.prepare(
+        'SELECT u.*, p.username, p.display_name, p.avatar_url, p.bio FROM users u LEFT JOIN profiles p ON u.id = p.id WHERE u.id = ?'
+      ).bind(userId).first();
+
+      if (!user) {
+        return new Response(JSON.stringify({ error: 'User not found' }), {
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+
+      return new Response(JSON.stringify({
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+          bio: user.bio
+        }
+      }), { headers: corsHeaders });
+    }
+
     if (path === 'railway-users/search') {
       const term = new URL(request.url).searchParams.get('term') || '';
       const limit = new URL(request.url).searchParams.get('limit') || 10;
@@ -291,33 +352,44 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-posts/create' && request.method === 'POST') {
-      const { as_user, content, visibility = 'public', file_url = null, image_urls = [] } = await request.json();
+      try {
+        const { as_user, content, visibility = 'public', file_url = null, image_urls = [] } = await request.json();
 
-      if (!as_user || !content) {
-        return new Response(JSON.stringify({ error: 'as_user and content are required' }), {
-          status: 400,
+        if (!as_user || !content) {
+          return new Response(JSON.stringify({ error: 'as_user and content are required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const postId = generateUUID();
+        const now = new Date().toISOString();
+
+        await env.DB.prepare(`
+          INSERT INTO posts (id, user_id, content, visibility, file_url, like_count, comment_count, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)
+        `).bind(postId, as_user, content, visibility, file_url, now, now).run();
+
+        // TODO: Handle image_urls if needed (requires post_images table)
+
+        const post = await env.DB.prepare(`
+          SELECT p.*, pr.username, pr.display_name, pr.avatar_url
+          FROM posts p
+          LEFT JOIN profiles pr ON p.user_id = pr.id
+          WHERE p.id = ?
+        `).bind(postId).first();
+
+        return new Response(JSON.stringify(post), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Error creating post:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to create post',
+          details: error.message
+        }), {
+          status: 500,
           headers: corsHeaders
         });
       }
-
-      const postId = generateUUID();
-      const now = new Date().toISOString();
-
-      await env.DB.prepare(`
-        INSERT INTO posts (id, user_id, content, visibility, file_url, like_count, comment_count, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)
-      `).bind(postId, as_user, content, visibility, file_url, now, now).run();
-
-      // TODO: Handle image_urls if needed (requires post_images table)
-
-      const post = await env.DB.prepare(`
-        SELECT p.*, pr.username, pr.display_name, pr.avatar_url
-        FROM posts p
-        LEFT JOIN profiles pr ON p.user_id = pr.id
-        WHERE p.id = ?
-      `).bind(postId).first();
-
-      return new Response(JSON.stringify(post), { headers: corsHeaders });
     }
 
     if (path === 'railway-home/following') {
@@ -415,6 +487,31 @@ export async function onRequest(context) {
       return new Response(JSON.stringify(tournaments.results || []), { headers: corsHeaders });
     }
 
+    if (path.startsWith('railway-tournaments/') && path !== 'railway-tournaments/search' && path !== 'railway-tournaments/create' && request.method === 'GET') {
+      // Extract tournament ID from path (e.g., railway-tournaments/{id})
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+      
+      if (!tournamentId) {
+        return new Response(JSON.stringify({ error: 'Tournament ID is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const tournament = await env.DB.prepare('SELECT * FROM tournaments WHERE id = ?')
+        .bind(tournamentId).first();
+
+      if (!tournament) {
+        return new Response(JSON.stringify({ error: 'Tournament not found' }), {
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+
+      return new Response(JSON.stringify(tournament), { headers: corsHeaders });
+    }
+
     if (path === 'railway-meta') {
       // Return metadata for search filters
       const sportTypes = await env.DB.prepare(`
@@ -476,6 +573,202 @@ export async function onRequest(context) {
       `).bind(asUserId).all();
 
       return new Response(JSON.stringify(conversations.results || []), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-tournaments/create' && request.method === 'POST') {
+      const { as_user, name, description, sport_type, location, start_date, end_date, max_participants, registration_deadline } = await request.json();
+
+      if (!as_user || !name || !sport_type) {
+        return new Response(JSON.stringify({ error: 'as_user, name, and sport_type are required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const tournamentId = generateUUID();
+      const now = new Date().toISOString();
+
+      await env.DB.prepare(`
+        INSERT INTO tournaments (
+          id, name, description, sport_type, location, start_date, end_date,
+          max_participants, registration_deadline, status, created_by, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?, ?)
+      `).bind(
+        tournamentId, name, description, sport_type, location, start_date, end_date,
+        max_participants, registration_deadline, as_user, now, now
+      ).run();
+
+      const tournament = await env.DB.prepare('SELECT * FROM tournaments WHERE id = ?')
+        .bind(tournamentId).first();
+
+      return new Response(JSON.stringify(tournament), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-teams/create' && request.method === 'POST') {
+      const { as_user, name, description, sport_type } = await request.json();
+
+      if (!as_user || !name) {
+        return new Response(JSON.stringify({ error: 'as_user and name are required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const teamId = generateUUID();
+      const memberId = generateUUID();
+      const now = new Date().toISOString();
+
+      try {
+        // Create team and add creator as owner
+        await env.DB.batch([
+          env.DB.prepare(`
+            INSERT INTO teams (id, name, description, sport_type, created_by, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).bind(teamId, name, description || null, sport_type || null, as_user, now, now),
+          env.DB.prepare(`
+            INSERT INTO team_members (id, team_id, user_id, role, joined_at)
+            VALUES (?, ?, ?, 'owner', ?)
+          `).bind(memberId, teamId, as_user, now)
+        ]);
+
+        const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?')
+          .bind(teamId).first();
+
+        return new Response(JSON.stringify(team), { headers: corsHeaders });
+      } catch (error) {
+        console.error('railway-teams/create error:', error);
+        return new Response(JSON.stringify({ error: error.message || 'Failed to create team' }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    if (path === 'railway-teams/owner') {
+      const asUserId = new URL(request.url).searchParams.get('as_user');
+
+      if (!asUserId) {
+        return new Response(JSON.stringify({ error: 'as_user is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const team = await env.DB.prepare(`
+        SELECT t.* FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = ? AND tm.role = 'owner'
+        LIMIT 1
+      `).bind(asUserId).first();
+
+      return new Response(JSON.stringify(team || null), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-teams/members') {
+      const teamId = new URL(request.url).searchParams.get('team_id');
+
+      if (!teamId) {
+        return new Response(JSON.stringify({ error: 'team_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const members = await env.DB.prepare(`
+        SELECT tm.*, p.username, p.display_name, p.avatar_url
+        FROM team_members tm
+        LEFT JOIN profiles p ON tm.user_id = p.id
+        WHERE tm.team_id = ?
+      `).bind(teamId).all();
+
+      return new Response(JSON.stringify(members.results || []), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-teams/update' && request.method === 'PUT') {
+      const { as_user, team_id, name, description, sport_type, logo_url } = await request.json();
+
+      if (!as_user || !team_id) {
+        return new Response(JSON.stringify({ error: 'as_user and team_id are required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const now = new Date().toISOString();
+
+      await env.DB.prepare(`
+        UPDATE teams
+        SET name = COALESCE(?, name),
+            description = COALESCE(?, description),
+            sport_type = COALESCE(?, sport_type),
+            logo_url = COALESCE(?, logo_url),
+            updated_at = ?
+        WHERE id = ? AND created_by = ?
+      `).bind(name, description, sport_type, logo_url, now, team_id, as_user).run();
+
+      const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?')
+        .bind(team_id).first();
+
+      return new Response(JSON.stringify(team), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-teams/stats') {
+      const teamId = new URL(request.url).searchParams.get('team_id');
+
+      if (!teamId) {
+        return new Response(JSON.stringify({ error: 'team_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Get member count
+      const memberCount = await env.DB.prepare(
+        'SELECT COUNT(*) as count FROM team_members WHERE team_id = ?'
+      ).bind(teamId).first();
+
+      // Get tournament count
+      const tournamentCount = await env.DB.prepare(
+        'SELECT COUNT(*) as count FROM tournament_participants WHERE team_id = ?'
+      ).bind(teamId).first();
+
+      const stats = {
+        memberCount: memberCount?.count || 0,
+        tournamentCount: tournamentCount?.count || 0
+      };
+
+      return new Response(JSON.stringify(stats), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-users/profile' && request.method === 'PUT') {
+      const { user_id, username, display_name, bio, sport_type, phone, furigana, avatar_url } = await request.json();
+
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const now = new Date().toISOString();
+
+      await env.DB.prepare(`
+        UPDATE profiles
+        SET username = COALESCE(?, username),
+            display_name = COALESCE(?, display_name),
+            bio = COALESCE(?, bio),
+            sport_type = COALESCE(?, sport_type),
+            phone = COALESCE(?, phone),
+            furigana = COALESCE(?, furigana),
+            avatar_url = COALESCE(?, avatar_url),
+            updated_at = ?
+        WHERE id = ?
+      `).bind(username, display_name, bio, sport_type, phone, furigana, avatar_url, now, user_id).run();
+
+      const profile = await env.DB.prepare('SELECT * FROM profiles WHERE id = ?')
+        .bind(user_id).first();
+
+      return new Response(JSON.stringify(profile), { headers: corsHeaders });
     }
 
     // Default: return not found
