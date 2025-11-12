@@ -167,6 +167,129 @@ export async function onRequest(context) {
       return new Response(JSON.stringify(results.results), { headers: corsHeaders });
     }
 
+    if (path === 'railway-users/profile') {
+      const userId = new URL(request.url).searchParams.get('user_id');
+
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const profile = await env.DB.prepare(`
+        SELECT
+          p.*,
+          u.email,
+          u.created_at as user_created_at
+        FROM profiles p
+        LEFT JOIN users u ON p.id = u.id
+        WHERE p.id = ?
+      `).bind(userId).first();
+
+      if (!profile) {
+        return new Response(JSON.stringify({ error: 'Profile not found' }), {
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+
+      return new Response(JSON.stringify(profile), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-users/stats') {
+      const userId = new URL(request.url).searchParams.get('user_id');
+
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Get profile for follower counts
+      const profile = await env.DB.prepare(
+        'SELECT followers_count, following_count FROM profiles WHERE id = ?'
+      ).bind(userId).first();
+
+      // Get tournament count
+      const tournamentCount = await env.DB.prepare(
+        'SELECT COUNT(*) as count FROM tournament_results WHERE user_id = ?'
+      ).bind(userId).first();
+
+      // Get team count
+      const teamCount = await env.DB.prepare(
+        'SELECT COUNT(DISTINCT team_id) as count FROM team_members WHERE user_id = ?'
+      ).bind(userId).first();
+
+      // Get total points from tournament results
+      const points = await env.DB.prepare(
+        'SELECT COALESCE(SUM(points), 0) as total FROM tournament_results WHERE user_id = ?'
+      ).bind(userId).first();
+
+      const stats = {
+        yearlyPoints: 0, // TODO: Calculate based on current year
+        totalPoints: points?.total || 0,
+        followingCount: profile?.following_count || 0,
+        followersCount: profile?.followers_count || 0,
+        tournamentCount: tournamentCount?.count || 0,
+        teamCount: teamCount?.count || 0,
+        awardsCount: 0, // TODO: Implement awards system
+        badgesCount: 0  // TODO: Implement badges system
+      };
+
+      return new Response(JSON.stringify(stats), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-users/tournaments') {
+      const userId = new URL(request.url).searchParams.get('user_id');
+      const limit = new URL(request.url).searchParams.get('limit') || 5;
+
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const tournaments = await env.DB.prepare(`
+        SELECT
+          t.id,
+          t.name,
+          t.start_date,
+          t.end_date,
+          t.location,
+          t.sport_type,
+          tr.rank,
+          tr.points
+        FROM tournament_results tr
+        JOIN tournaments t ON tr.tournament_id = t.id
+        WHERE tr.user_id = ?
+        ORDER BY t.start_date DESC
+        LIMIT ?
+      `).bind(userId, limit).all();
+
+      return new Response(JSON.stringify(tournaments.results || []), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-posts/latest') {
+      const limit = new URL(request.url).searchParams.get('limit') || 30;
+
+      const posts = await env.DB.prepare(`
+        SELECT
+          p.*,
+          pr.username,
+          pr.display_name,
+          pr.avatar_url
+        FROM posts p
+        LEFT JOIN profiles pr ON p.user_id = pr.id
+        ORDER BY p.created_at DESC
+        LIMIT ?
+      `).bind(limit).all();
+
+      return new Response(JSON.stringify(posts.results || []), { headers: corsHeaders });
+    }
+
     // Default: return not found
     return new Response(JSON.stringify({ error: 'Endpoint not found', path }), {
       status: 404,
