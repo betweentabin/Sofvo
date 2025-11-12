@@ -290,6 +290,194 @@ export async function onRequest(context) {
       return new Response(JSON.stringify(posts.results || []), { headers: corsHeaders });
     }
 
+    if (path === 'railway-posts/create' && request.method === 'POST') {
+      const { as_user, content, visibility = 'public', file_url = null, image_urls = [] } = await request.json();
+
+      if (!as_user || !content) {
+        return new Response(JSON.stringify({ error: 'as_user and content are required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const postId = generateUUID();
+      const now = new Date().toISOString();
+
+      await env.DB.prepare(`
+        INSERT INTO posts (id, user_id, content, visibility, file_url, like_count, comment_count, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)
+      `).bind(postId, as_user, content, visibility, file_url, now, now).run();
+
+      // TODO: Handle image_urls if needed (requires post_images table)
+
+      const post = await env.DB.prepare(`
+        SELECT p.*, pr.username, pr.display_name, pr.avatar_url
+        FROM posts p
+        LEFT JOIN profiles pr ON p.user_id = pr.id
+        WHERE p.id = ?
+      `).bind(postId).first();
+
+      return new Response(JSON.stringify(post), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-home/following') {
+      const asUserId = new URL(request.url).searchParams.get('as_user');
+      const limit = new URL(request.url).searchParams.get('limit') || 10;
+
+      if (!asUserId) {
+        return new Response(JSON.stringify({ error: 'as_user is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Get posts from users that asUserId follows
+      const posts = await env.DB.prepare(`
+        SELECT
+          p.*,
+          pr.username,
+          pr.display_name,
+          pr.avatar_url
+        FROM posts p
+        LEFT JOIN profiles pr ON p.user_id = pr.id
+        WHERE p.user_id IN (
+          SELECT following_id FROM follows WHERE follower_id = ?
+        )
+        ORDER BY p.created_at DESC
+        LIMIT ?
+      `).bind(asUserId, limit).all();
+
+      return new Response(JSON.stringify(posts.results || []), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-home/recommended-diaries') {
+      const limit = new URL(request.url).searchParams.get('limit') || 3;
+
+      // Get recommended profiles (users with most followers)
+      const profiles = await env.DB.prepare(`
+        SELECT
+          id,
+          username,
+          display_name,
+          avatar_url,
+          bio,
+          sport_type,
+          followers_count
+        FROM profiles
+        WHERE bio IS NOT NULL
+        ORDER BY followers_count DESC
+        LIMIT ?
+      `).bind(limit).all();
+
+      return new Response(JSON.stringify(profiles.results || []), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-tournaments/search') {
+      const url = new URL(request.url);
+      const sport_type = url.searchParams.get('sport_type');
+      const location = url.searchParams.get('location');
+      const status = url.searchParams.get('status');
+      const limit = url.searchParams.get('limit') || 20;
+
+      let query = 'SELECT * FROM tournaments WHERE 1=1';
+      const bindings = [];
+
+      if (sport_type) {
+        query += ' AND sport_type = ?';
+        bindings.push(sport_type);
+      }
+
+      if (location) {
+        query += ' AND location LIKE ?';
+        bindings.push(`%${location}%`);
+      }
+
+      if (status) {
+        const now = new Date().toISOString();
+        if (status === 'upcoming') {
+          query += ' AND start_date > ?';
+          bindings.push(now);
+        } else if (status === 'ongoing') {
+          query += ' AND start_date <= ? AND end_date >= ?';
+          bindings.push(now, now);
+        } else if (status === 'finished') {
+          query += ' AND end_date < ?';
+          bindings.push(now);
+        }
+      }
+
+      query += ' ORDER BY start_date DESC LIMIT ?';
+      bindings.push(limit);
+
+      const stmt = env.DB.prepare(query);
+      const tournaments = await stmt.bind(...bindings).all();
+
+      return new Response(JSON.stringify(tournaments.results || []), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-meta') {
+      // Return metadata for search filters
+      const sportTypes = await env.DB.prepare(`
+        SELECT DISTINCT sport_type FROM tournaments WHERE sport_type IS NOT NULL
+      `).all();
+
+      const locations = await env.DB.prepare(`
+        SELECT DISTINCT location FROM tournaments WHERE location IS NOT NULL LIMIT 50
+      `).all();
+
+      const meta = {
+        sport_types: sportTypes.results.map(r => r.sport_type),
+        locations: locations.results.map(r => r.location),
+        statuses: ['upcoming', 'ongoing', 'finished']
+      };
+
+      return new Response(JSON.stringify(meta), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-chat/conversations') {
+      const asUserId = new URL(request.url).searchParams.get('as_user');
+
+      if (!asUserId) {
+        return new Response(JSON.stringify({ error: 'as_user is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Get conversations where user is a participant
+      const conversations = await env.DB.prepare(`
+        SELECT
+          c.id,
+          c.type,
+          c.name,
+          c.created_at,
+          c.updated_at,
+          (
+            SELECT content
+            FROM messages
+            WHERE conversation_id = c.id
+            ORDER BY created_at DESC
+            LIMIT 1
+          ) as last_message,
+          (
+            SELECT created_at
+            FROM messages
+            WHERE conversation_id = c.id
+            ORDER BY created_at DESC
+            LIMIT 1
+          ) as last_message_at
+        FROM conversations c
+        WHERE c.id IN (
+          SELECT conversation_id
+          FROM conversation_participants
+          WHERE user_id = ?
+        )
+        ORDER BY last_message_at DESC
+      `).bind(asUserId).all();
+
+      return new Response(JSON.stringify(conversations.results || []), { headers: corsHeaders });
+    }
+
     // Default: return not found
     return new Response(JSON.stringify({ error: 'Endpoint not found', path }), {
       status: 404,
