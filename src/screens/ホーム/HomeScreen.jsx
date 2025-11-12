@@ -654,7 +654,12 @@ export const HomeScreen = () => {
               <div className="recommend-items">
                 {recommendedDiaries.length > 0 ? (
                   recommendedDiaries.map((diary) => (
-                    <div className="recommend-item" key={diary.id}>
+                    <div
+                      className="recommend-item"
+                      key={diary.id}
+                      onClick={() => navigate(`/profile/${diary.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className="rectangle-6" />
                       <div className="recommend-item-content">
                         <div className="recommend-item-header">
