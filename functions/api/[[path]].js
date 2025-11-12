@@ -784,7 +784,12 @@ export async function onRequest(context) {
           SELECT * FROM conversations WHERE id = ?
         `).bind(conversationId).first();
 
-        return new Response(JSON.stringify(conversation), { headers: corsHeaders });
+        // Return both conversation object and conversation_id for compatibility
+        return new Response(JSON.stringify({
+          ...conversation,
+          conversation_id: conversationId,
+          id: conversationId
+        }), { headers: corsHeaders });
       } catch (error) {
         console.error('Error creating conversation:', error);
         return new Response(JSON.stringify({
