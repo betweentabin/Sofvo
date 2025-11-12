@@ -38,16 +38,19 @@ export const Screen14 = () => {
   
   useEffect(() => {
     fetchProfile();
-  }, [userId, user]);
+  }, [userId, user?.id]);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const targetUserId = USE_RAILWAY ? (userId || RAILWAY_TEST_USER || user?.id) : (userId || user?.id);
+      let targetUserId = USE_RAILWAY ? (userId || RAILWAY_TEST_USER || user?.id) : (userId || user?.id);
       if (!targetUserId) {
         navigate('/login');
         return;
       }
+
+      // Remove any whitespace characters (including newlines) from user_id
+      targetUserId = targetUserId.trim().replace(/[\r\n\t]/g, '');
 
       const { data } = await api.railwayUsers.getProfile(targetUserId);
       setProfile(data);

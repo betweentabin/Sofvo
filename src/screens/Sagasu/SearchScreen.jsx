@@ -20,6 +20,25 @@ export const SearchScreen = () => {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Set active tab based on URL path
+  useEffect(() => {
+    if (location.pathname === '/tournament-search-individual') {
+      setActiveTab('individual');
+    } else if (location.pathname === '/tournament-search-team' || location.pathname === '/tournament-search') {
+      setActiveTab('team');
+    }
+  }, [location.pathname]);
+
+  // Handle tab change and update URL
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'individual') {
+      navigate('/tournament-search-individual', { replace: true });
+    } else {
+      navigate('/tournament-search-team', { replace: true });
+    }
+  };
   const [filters, setFilters] = useState({
     yearMonth: '',
     area: '',
@@ -137,7 +156,7 @@ export const SearchScreen = () => {
   return (
     <div className="search-screen">
       <HeaderContent />
-      <HeaderTabsSearch onTabChange={setActiveTab} activeTab={activeTab} />
+      <HeaderTabsSearch onTabChange={handleTabChange} activeTab={activeTab} />
       
       {/* 本文セクション - ヘッダーとフッターの間 */}
       <div className="main-content" style={{ top: `${mainContentTop}px` }}>

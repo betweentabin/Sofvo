@@ -94,6 +94,7 @@ export const Screen13 = () => {
     try {
       // 更新するデータを準備
       const updateData = {
+        user_id: user.id, // Add user_id to ensure it's sent
         display_name: profile.display_name,
         username: profile.username,
         age: profile.age ? parseInt(profile.age) : null,
@@ -102,8 +103,7 @@ export const Screen13 = () => {
         team_name: profile.team_name,
         location: profile.location,
         bio: profile.bio,
-        privacy_settings: profile.privacy_settings,
-        updated_at: new Date().toISOString()
+        privacy_settings: profile.privacy_settings
       };
 
       console.log('Updating profile with data:', updateData);
@@ -114,7 +114,7 @@ export const Screen13 = () => {
       navigate('/my-profile');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('プロフィールの更新に失敗しました: ' + error.message);
+      alert('プロフィールの更新に失敗しました: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }

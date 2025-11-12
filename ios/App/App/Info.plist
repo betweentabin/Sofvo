@@ -45,5 +45,15 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>プロフィール写真を撮影するためにカメラへのアクセスが必要です</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>プロフィール写真を選択するためにフォトライブラリへのアクセスが必要です</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>写真を保存するためにフォトライブラリへのアクセスが必要です</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>近くのユーザーとマッチングするために位置情報が必要です</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>新しいマッチやメッセージの通知を受け取るために必要です</string>
 </dict>
 </plist>

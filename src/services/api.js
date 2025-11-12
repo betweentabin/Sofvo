@@ -129,7 +129,17 @@ export const api = {
     getSettings: () => nodeAPI.get('/users/me/settings'),
     updateSettings: (data) => nodeAPI.put('/users/me/settings', data),
     getRecommended: () => nodeAPI.get('/users/recommended'),
-    deleteAccount: () => nodeAPI.delete('/users/me')
+    deleteAccount: () => nodeAPI.delete('/users/me'),
+
+    // Block/Unblock
+    blockUser: (userId, reason) => nodeAPI.post(`/users/${userId}/block`, { reason }),
+    unblockUser: (userId) => nodeAPI.delete(`/users/${userId}/block`),
+    checkBlockStatus: (userId) => nodeAPI.get(`/users/${userId}/block/status`)
+  },
+
+  // Reports
+  reports: {
+    submit: (data) => nodeAPI.post('/reports', data)
   },
   
   // チーム管理

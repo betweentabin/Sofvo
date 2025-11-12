@@ -469,7 +469,7 @@ export async function onRequest(context) {
           t.end_date,
           t.location,
           t.sport_type,
-          tr.rank,
+          tr.position,
           tr.points
         FROM tournament_results tr
         JOIN tournaments t ON tr.tournament_id = t.id
@@ -1312,6 +1312,304 @@ export async function onRequest(context) {
         console.error('Account deletion error:', error);
         return new Response(JSON.stringify({
           error: 'Failed to delete account',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Block user
+    if (path.match(/^users\/([^/]+)\/block$/) && request.method === 'POST') {
+      const blockedId = path.match(/^users\/([^/]+)\/block$/)[1];
+
+      // Get token from Authorization header
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const blockerId = tokenData.id;
+      if (!blockerId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      // Cannot block yourself
+      if (blockerId === blockedId) {
+        return new Response(JSON.stringify({ error: 'Cannot block yourself' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const { reason } = await request.json().catch(() => ({}));
+
+        // Check if already blocked
+        const existing = await env.DB.prepare(
+          'SELECT id FROM blocks WHERE blocker_id = ? AND blocked_id = ?'
+        ).bind(blockerId, blockedId).first();
+
+        if (existing) {
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'User already blocked',
+            isBlocked: true
+          }), {
+            headers: corsHeaders
+          });
+        }
+
+        const blockId = generateUUID();
+        const now = new Date().toISOString();
+
+        await env.DB.prepare(`
+          INSERT INTO blocks (id, blocker_id, blocked_id, reason, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).bind(blockId, blockerId, blockedId, reason || null, now).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'User blocked successfully',
+          isBlocked: true
+        }), {
+          status: 200,
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Block user error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to block user',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Unblock user
+    if (path.match(/^users\/([^/]+)\/block$/) && request.method === 'DELETE') {
+      const blockedId = path.match(/^users\/([^/]+)\/block$/)[1];
+
+      // Get token from Authorization header
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const blockerId = tokenData.id;
+      if (!blockerId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const result = await env.DB.prepare(
+          'DELETE FROM blocks WHERE blocker_id = ? AND blocked_id = ?'
+        ).bind(blockerId, blockedId).run();
+
+        if (result.meta.changes === 0) {
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'User was not blocked',
+            isBlocked: false
+          }), {
+            headers: corsHeaders
+          });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'User unblocked successfully',
+          isBlocked: false
+        }), {
+          status: 200,
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Unblock user error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to unblock user',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Check if user is blocked
+    if (path.match(/^users\/([^/]+)\/block\/status$/) && request.method === 'GET') {
+      const targetUserId = path.match(/^users\/([^/]+)\/block\/status$/)[1];
+
+      // Get token from Authorization header
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const currentUserId = tokenData.id;
+      if (!currentUserId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const block = await env.DB.prepare(
+          'SELECT id FROM blocks WHERE blocker_id = ? AND blocked_id = ?'
+        ).bind(currentUserId, targetUserId).first();
+
+        return new Response(JSON.stringify({
+          isBlocked: !!block
+        }), {
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Check block status error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to check block status',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Report user or content
+    if (path === 'reports' && request.method === 'POST') {
+      // Get token from Authorization header
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.slice(7);
+      let tokenData;
+      try {
+        tokenData = JSON.parse(atob(token));
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const reporterId = tokenData.id;
+      if (!reporterId) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const { reported_type, reported_id, reason, description } = await request.json();
+
+        if (!reported_type || !reported_id || !reason) {
+          return new Response(JSON.stringify({
+            error: 'Missing required fields: reported_type, reported_id, reason'
+          }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const validTypes = ['user', 'post', 'comment', 'team', 'tournament'];
+        const validReasons = ['spam', 'harassment', 'inappropriate', 'fake', 'violence', 'hate_speech', 'other'];
+
+        if (!validTypes.includes(reported_type)) {
+          return new Response(JSON.stringify({
+            error: `Invalid reported_type. Must be one of: ${validTypes.join(', ')}`
+          }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        if (!validReasons.includes(reason)) {
+          return new Response(JSON.stringify({
+            error: `Invalid reason. Must be one of: ${validReasons.join(', ')}`
+          }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const reportId = generateUUID();
+        const now = new Date().toISOString();
+
+        await env.DB.prepare(`
+          INSERT INTO reports (id, reporter_id, reported_type, reported_id, reason, description, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+        `).bind(reportId, reporterId, reported_type, reported_id, reason, description || null, now).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Report submitted successfully',
+          reportId
+        }), {
+          status: 201,
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Submit report error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to submit report',
           details: error.message
         }), {
           status: 500,

@@ -57,7 +57,17 @@ export const AuthProvider = ({ children }) => {
               // local-auth/me returns user fields directly
               setUser({ id: data.id, email: data.email })
             } catch {
-              setUser(null)
+              // Final fallback: parse token directly if it's base64 encoded JSON
+              try {
+                const tokenData = JSON.parse(atob(token))
+                if (tokenData.id && tokenData.email) {
+                  setUser({ id: tokenData.id, email: tokenData.email })
+                } else {
+                  setUser(null)
+                }
+              } catch {
+                setUser(null)
+              }
             }
           } else {
             setUser(null)

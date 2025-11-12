@@ -76,6 +76,7 @@ export const Screen19 = () => {
               <Link to="/contact" className="text-wrapper-178">・お問い合わせ</Link>
               <Link to="/terms" className="text-wrapper-178">・利用規約</Link>
               <Link to="/privacy" className="text-wrapper-178">・プライバシーポリシー</Link>
+              <Link to="/oss-licenses" className="text-wrapper-178">・オープンソースライセンス</Link>
             </div>
           </section>
         </div>
