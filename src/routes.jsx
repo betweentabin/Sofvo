@@ -37,6 +37,7 @@ import { Screen37 } from "./screens/大会を主催";
 import { Screen38 } from "./screens/大会を編集";
 import { Screen39 } from "./screens/OSS ライセンス/Screen39";
 import { ScreenScreen } from "./screens/ログイン";
+import { FollowList } from "./screens/フォローリスト/FollowList";
 
 export const router = createHashRouter([
   {
@@ -92,6 +93,10 @@ export const router = createHashRouter([
     element: <AuthGuard><Screen18 /></AuthGuard>,
   },
   {
+    path: "/tournament-detail/:tournamentId",
+    element: <AuthGuard><Screen18 /></AuthGuard>,
+  },
+  {
     path: "/tournament-result-team",
     element: <AuthGuard><Screen20 /></AuthGuard>,
   },
@@ -112,6 +117,14 @@ export const router = createHashRouter([
     element: <AuthGuard><Screen14 /></AuthGuard>,
   },
   {
+    path: "/follow-list",
+    element: <AuthGuard><FollowList /></AuthGuard>,
+  },
+  {
+    path: "/follow-list/:userId",
+    element: <AuthGuard><FollowList /></AuthGuard>,
+  },
+  {
     path: "/team-profile",
     element: <AuthGuard><Screen16 /></AuthGuard>,
   },
@@ -125,7 +138,7 @@ export const router = createHashRouter([
   },
   {
     path: "/team-create",
-    element: <AuthGuard><Screen24 /></AuthGuard>,
+    element: <AuthGuard><Screen33 /></AuthGuard>,
   },
   {
     path: "/team-profile-edit",
@@ -136,10 +149,6 @@ export const router = createHashRouter([
     element: <AuthGuard><Screen32 /></AuthGuard>,
   },
   {
-    path: "/team-create2",
-    element: <AuthGuard><Screen33 /></AuthGuard>,
-  },
-  {
     path: "/team-disband",
     element: <AuthGuard><Screen34 /></AuthGuard>,
   },
@@ -148,11 +157,19 @@ export const router = createHashRouter([
     element: <AuthGuard><Screen35 /></AuthGuard>,
   },
   {
+    path: "/team-members",
+    element: <AuthGuard><Screen35 /></AuthGuard>,
+  },
+  {
     path: "/notifications",
     element: <AuthGuard><Screen15 /></AuthGuard>,
   },
   {
     path: "/tournament-host-manage",
+    element: <AuthGuard><Screen36 /></AuthGuard>,
+  },
+  {
+    path: "/tournament-manage",
     element: <AuthGuard><Screen36 /></AuthGuard>,
   },
   {
