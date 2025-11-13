@@ -1038,6 +1038,11 @@ export async function onRequest(context) {
         });
       }
 
+      // Get mode and team_id from request body
+      const body = await request.json();
+      const mode = body.mode || 'individual';
+      const teamId = body.team_id || null;
+
       // Check if tournament exists
       const tournament = await env.DB.prepare('SELECT * FROM tournaments WHERE id = ?')
         .bind(tournamentId).first();
@@ -1049,13 +1054,20 @@ export async function onRequest(context) {
         });
       }
 
-      // Check if already applied
-      const existing = await env.DB.prepare(
-        'SELECT * FROM tournament_participants WHERE tournament_id = ? AND user_id = ?'
-      ).bind(tournamentId, userId).first();
+      // Check if already applied with the same mode
+      let existing;
+      if (mode === 'team' && teamId) {
+        existing = await env.DB.prepare(
+          'SELECT * FROM tournament_participants WHERE tournament_id = ? AND team_id = ? AND mode = ?'
+        ).bind(tournamentId, teamId, mode).first();
+      } else {
+        existing = await env.DB.prepare(
+          'SELECT * FROM tournament_participants WHERE tournament_id = ? AND user_id = ? AND mode = ?'
+        ).bind(tournamentId, userId, mode).first();
+      }
 
       if (existing) {
-        return new Response(JSON.stringify({ error: 'Already applied to this tournament' }), {
+        return new Response(JSON.stringify({ error: `Already applied to this tournament as ${mode}` }), {
           status: 400,
           headers: corsHeaders
         });
@@ -1064,9 +1076,9 @@ export async function onRequest(context) {
       // Create participant entry
       const participantId = generateUUID();
       await env.DB.prepare(`
-        INSERT INTO tournament_participants (id, tournament_id, user_id, status, registered_at)
-        VALUES (?, ?, ?, 'registered', datetime('now'))
-      `).bind(participantId, tournamentId, userId).run();
+        INSERT INTO tournament_participants (id, tournament_id, user_id, team_id, mode, status, registered_at)
+        VALUES (?, ?, ?, ?, ?, 'registered', datetime('now'))
+      `).bind(participantId, tournamentId, userId, teamId, mode).run();
 
       return new Response(JSON.stringify({
         success: true,
@@ -1075,6 +1087,8 @@ export async function onRequest(context) {
           id: participantId,
           tournament_id: tournamentId,
           user_id: userId,
+          team_id: teamId,
+          mode: mode,
           status: 'registered'
         }
       }), { headers: corsHeaders });
@@ -1111,20 +1125,44 @@ export async function onRequest(context) {
         });
       }
 
-      const participant = await env.DB.prepare(
-        'SELECT * FROM tournament_participants WHERE tournament_id = ? AND user_id = ?'
-      ).bind(tournamentId, userId).first();
+      // Get mode and team_id from request body
+      const body = await request.json().catch(() => ({}));
+      const mode = body.mode || 'individual';
+      const teamId = body.team_id || null;
 
-      if (!participant) {
-        return new Response(JSON.stringify({ error: 'Not participating in this tournament' }), {
-          status: 404,
-          headers: corsHeaders
-        });
+      // Find and delete participant entry
+      let participant;
+      if (mode === 'team' && teamId) {
+        participant = await env.DB.prepare(
+          'SELECT * FROM tournament_participants WHERE tournament_id = ? AND team_id = ? AND mode = ?'
+        ).bind(tournamentId, teamId, mode).first();
+
+        if (!participant) {
+          return new Response(JSON.stringify({ error: 'Team not participating in this tournament' }), {
+            status: 404,
+            headers: corsHeaders
+          });
+        }
+
+        await env.DB.prepare(
+          'DELETE FROM tournament_participants WHERE tournament_id = ? AND team_id = ? AND mode = ?'
+        ).bind(tournamentId, teamId, mode).run();
+      } else {
+        participant = await env.DB.prepare(
+          'SELECT * FROM tournament_participants WHERE tournament_id = ? AND user_id = ? AND mode = ?'
+        ).bind(tournamentId, userId, mode).first();
+
+        if (!participant) {
+          return new Response(JSON.stringify({ error: 'Not participating in this tournament' }), {
+            status: 404,
+            headers: corsHeaders
+          });
+        }
+
+        await env.DB.prepare(
+          'DELETE FROM tournament_participants WHERE tournament_id = ? AND user_id = ? AND mode = ?'
+        ).bind(tournamentId, userId, mode).run();
       }
-
-      await env.DB.prepare(
-        'DELETE FROM tournament_participants WHERE tournament_id = ? AND user_id = ?'
-      ).bind(tournamentId, userId).run();
 
       return new Response(JSON.stringify({
         success: true,
@@ -1137,9 +1175,13 @@ export async function onRequest(context) {
       const parts = path.split('/');
       const tournamentId = parts[1];
 
+      const url = new URL(request.url);
+      const mode = url.searchParams.get('mode') || 'individual';
+      const teamId = url.searchParams.get('team_id');
+
       const authHeader = request.headers.get('Authorization');
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return new Response(JSON.stringify({ is_participating: false }), {
+        return new Response(JSON.stringify({ participating: false }), {
           headers: corsHeaders
         });
       }
@@ -1150,22 +1192,29 @@ export async function onRequest(context) {
         const tokenData = JSON.parse(atob(token));
         userId = tokenData.id;
         if (!userId) {
-          return new Response(JSON.stringify({ is_participating: false }), {
+          return new Response(JSON.stringify({ participating: false }), {
             headers: corsHeaders
           });
         }
       } catch (e) {
-        return new Response(JSON.stringify({ is_participating: false }), {
+        return new Response(JSON.stringify({ participating: false }), {
           headers: corsHeaders
         });
       }
 
-      const participant = await env.DB.prepare(
-        'SELECT status FROM tournament_participants WHERE tournament_id = ? AND user_id = ?'
-      ).bind(tournamentId, userId).first();
+      let participant;
+      if (mode === 'team' && teamId) {
+        participant = await env.DB.prepare(
+          'SELECT status FROM tournament_participants WHERE tournament_id = ? AND team_id = ? AND mode = ?'
+        ).bind(tournamentId, teamId, mode).first();
+      } else {
+        participant = await env.DB.prepare(
+          'SELECT status FROM tournament_participants WHERE tournament_id = ? AND user_id = ? AND mode = ?'
+        ).bind(tournamentId, userId, mode).first();
+      }
 
       return new Response(JSON.stringify({
-        is_participating: !!participant,
+        participating: !!participant,
         status: participant?.status || null
       }), { headers: corsHeaders });
     }
