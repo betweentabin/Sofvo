@@ -1064,8 +1064,8 @@ export async function onRequest(context) {
       // Create participant entry
       const participantId = generateUUID();
       await env.DB.prepare(`
-        INSERT INTO tournament_participants (id, tournament_id, user_id, status, created_at)
-        VALUES (?, ?, ?, 'pending', datetime('now'))
+        INSERT INTO tournament_participants (id, tournament_id, user_id, status, registered_at)
+        VALUES (?, ?, ?, 'registered', datetime('now'))
       `).bind(participantId, tournamentId, userId).run();
 
       return new Response(JSON.stringify({
@@ -1075,7 +1075,7 @@ export async function onRequest(context) {
           id: participantId,
           tournament_id: tournamentId,
           user_id: userId,
-          status: 'pending'
+          status: 'registered'
         }
       }), { headers: corsHeaders });
     }
@@ -1185,7 +1185,7 @@ export async function onRequest(context) {
         FROM tournament_participants tp
         LEFT JOIN profiles p ON tp.user_id = p.id
         WHERE tp.tournament_id = ?
-        ORDER BY tp.created_at DESC
+        ORDER BY tp.registered_at DESC
       `).bind(tournamentId).all();
 
       return new Response(JSON.stringify(participants.results || []), { headers: corsHeaders });
@@ -1667,7 +1667,7 @@ export async function onRequest(context) {
           SELECT
             t.*,
             tp.status as participation_status,
-            tp.created_at as joined_at
+            tp.registered_at as joined_at
           FROM tournaments t
           INNER JOIN tournament_participants tp ON t.id = tp.tournament_id
           WHERE tp.user_id = ?
