@@ -13,8 +13,10 @@ export const Screen36 = () => {
   const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
   const [tournaments, setTournaments] = useState([]);
+  const [allTournaments, setAllTournaments] = useState([]); // 全大会データ
   const [selectedYearMonth, setSelectedYearMonth] = useState('');
   const [selectedDay, setSelectedDay] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   // 前後1年分（24ヶ月）の年月を生成
   const generateYearMonthOptions = () => {
@@ -88,14 +90,21 @@ export const Screen36 = () => {
       const asUserId = RAILWAY_TEST_USER || user?.id;
       if (!asUserId) return;
       try {
+        console.log('大会データを読み込み中...');
         const { data } = await api.railwayTournaments.listMyHosted(asUserId);
+        console.log('読み込んだ大会データ:', data);
+
         const mapped = (data || []).map((t) => {
           const { region, place, address } = parseLocation(t.location);
           const { method, ranking } = parseDescription(t.description);
           const date = t.start_date ? new Date(t.start_date).toLocaleDateString('ja-JP') : "";
+          const startDate = t.start_date ? new Date(t.start_date) : null;
+
           return {
+            id: t.id,
             name: t.name,
             date,
+            startDate, // 検索用
             region,
             place,
             address,
@@ -106,13 +115,85 @@ export const Screen36 = () => {
             showButton: true,
           };
         });
+
+        setAllTournaments(mapped);
         setTournaments(mapped);
+        console.log('大会データ読み込み完了:', mapped.length + '件');
       } catch (e) {
-        console.error('Failed to load hosted tournaments:', e);
+        console.error('大会データの読み込みに失敗:', e);
+        alert('大会データの読み込みに失敗しました: ' + e.message);
       }
     };
     load();
   }, [USE_RAILWAY, RAILWAY_TEST_USER, user]);
+
+  // 検索機能
+  const handleSearch = () => {
+    console.log('=== 大会検索開始 ===');
+    console.log('選択された年月:', selectedYearMonth);
+    console.log('選択された日:', selectedDay);
+
+    setIsSearching(true);
+
+    try {
+      let filtered = [...allTournaments];
+
+      // 日付でフィルター
+      if (selectedYearMonth && selectedDay) {
+        const [year, month] = selectedYearMonth.split('-').map(Number);
+        const day = parseInt(selectedDay);
+
+        filtered = filtered.filter(tournament => {
+          if (!tournament.startDate) return false;
+
+          const tDate = tournament.startDate;
+          return (
+            tDate.getFullYear() === year &&
+            tDate.getMonth() + 1 === month &&
+            tDate.getDate() === day
+          );
+        });
+
+        console.log(`検索結果: ${filtered.length}件`);
+      } else if (selectedYearMonth) {
+        // 年月のみ選択されている場合
+        const [year, month] = selectedYearMonth.split('-').map(Number);
+
+        filtered = filtered.filter(tournament => {
+          if (!tournament.startDate) return false;
+
+          const tDate = tournament.startDate;
+          return (
+            tDate.getFullYear() === year &&
+            tDate.getMonth() + 1 === month
+          );
+        });
+
+        console.log(`検索結果（年月のみ）: ${filtered.length}件`);
+      }
+
+      setTournaments(filtered);
+
+      if (filtered.length === 0) {
+        alert('該当する大会が見つかりませんでした');
+      } else {
+        alert(`${filtered.length}件の大会が見つかりました`);
+      }
+    } catch (error) {
+      console.error('検索エラー:', error);
+      alert('検索中にエラーが発生しました');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 検索リセット
+  const handleResetSearch = () => {
+    setSelectedYearMonth('');
+    setSelectedDay('');
+    setTournaments(allTournaments);
+    alert('検索条件をリセットしました');
+  };
 
   return (
     <div className="screen-36">
@@ -179,8 +260,35 @@ export const Screen36 = () => {
               </div>
             </div>
 
-            <div className="frame-30">
-              <div className="text-wrapper-43">検索</div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <button
+                className="frame-30"
+                onClick={handleSearch}
+                disabled={isSearching}
+                style={{
+                  cursor: isSearching ? 'not-allowed' : 'pointer',
+                  opacity: isSearching ? 0.6 : 1,
+                  flex: 1
+                }}
+              >
+                <div className="text-wrapper-43">
+                  {isSearching ? '検索中...' : '検索'}
+                </div>
+              </button>
+
+              <button
+                className="frame-30"
+                onClick={handleResetSearch}
+                disabled={isSearching}
+                style={{
+                  cursor: isSearching ? 'not-allowed' : 'pointer',
+                  opacity: isSearching ? 0.6 : 1,
+                  backgroundColor: '#757575',
+                  flex: 1
+                }}
+              >
+                <div className="text-wrapper-43">リセット</div>
+              </button>
             </div>
           </div>
         </div>

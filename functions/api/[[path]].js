@@ -461,6 +461,23 @@ export async function onRequest(context) {
         });
       }
 
+      // Parse privacy_settings if it's a string
+      if (profile.privacy_settings && typeof profile.privacy_settings === 'string') {
+        try {
+          profile.privacy_settings = JSON.parse(profile.privacy_settings);
+        } catch (e) {
+          // If parsing fails, set default privacy settings
+          profile.privacy_settings = {
+            username: "public",
+            age: "public",
+            gender: "public",
+            experience: "public",
+            team: "public",
+            location: "public"
+          };
+        }
+      }
+
       return new Response(JSON.stringify(profile), { headers: corsHeaders });
     }
 
@@ -1069,32 +1086,54 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-tournaments/create' && request.method === 'POST') {
-      const { as_user, name, description, sport_type, location, start_date, end_date, max_participants, registration_deadline } = await request.json();
+      console.log('=== Tournament Create Request ===');
 
-      if (!as_user || !name || !sport_type) {
-        return new Response(JSON.stringify({ error: 'as_user, name, and sport_type are required' }), {
-          status: 400,
+      try {
+        const body = await request.json();
+        console.log('Request body:', JSON.stringify(body, null, 2));
+
+        const { as_user, name, description, sport_type, location, start_date, end_date, max_participants, registration_deadline } = body;
+
+        if (!as_user || !name || !sport_type) {
+          console.error('Missing required fields:', { as_user: !!as_user, name: !!name, sport_type: !!sport_type });
+          return new Response(JSON.stringify({ error: 'as_user, name, and sport_type are required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const tournamentId = generateUUID();
+        const now = new Date().toISOString();
+
+        console.log('Creating tournament with ID:', tournamentId);
+
+        await env.DB.prepare(`
+          INSERT INTO tournaments (
+            id, name, description, sport_type, location, start_date, end_date,
+            max_participants, registration_deadline, status, created_by, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?, ?)
+        `).bind(
+          tournamentId, name, description, sport_type, location, start_date, end_date,
+          max_participants, registration_deadline, as_user, now, now
+        ).run();
+
+        const tournament = await env.DB.prepare('SELECT * FROM tournaments WHERE id = ?')
+          .bind(tournamentId).first();
+
+        console.log('Tournament created successfully:', tournamentId);
+
+        return new Response(JSON.stringify(tournament), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Tournament creation error:', error);
+        console.error('Error stack:', error.stack);
+        return new Response(JSON.stringify({
+          error: 'Failed to create tournament',
+          details: error.message
+        }), {
+          status: 500,
           headers: corsHeaders
         });
       }
-
-      const tournamentId = generateUUID();
-      const now = new Date().toISOString();
-
-      await env.DB.prepare(`
-        INSERT INTO tournaments (
-          id, name, description, sport_type, location, start_date, end_date,
-          max_participants, registration_deadline, status, created_by, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?, ?)
-      `).bind(
-        tournamentId, name, description, sport_type, location, start_date, end_date,
-        max_participants, registration_deadline, as_user, now, now
-      ).run();
-
-      const tournament = await env.DB.prepare('SELECT * FROM tournaments WHERE id = ?')
-        .bind(tournamentId).first();
-
-      return new Response(JSON.stringify(tournament), { headers: corsHeaders });
     }
 
     if (path === 'railway-teams/create' && request.method === 'POST') {

@@ -90,9 +90,22 @@ export const Screen37 = () => {
 
   // 大会作成処理
   const handleCreateTournament = async () => {
-    if (!validate()) return;
+    console.log('=== 大会作成ボタンがクリックされました ===');
+    console.log('フォームデータ:', formData);
+
+    const isValid = validate();
+    console.log('バリデーション結果:', isValid);
+
+    if (!isValid) {
+      console.error('バリデーションエラー:', errors);
+      alert('入力内容を確認してください。全ての必須項目を入力する必要があります。');
+      return;
+    }
+
     if (!user) {
+      console.error('ユーザーがログインしていません');
       setErrors({ submit: "ログインが必要です" });
+      alert('ログインが必要です');
       return;
     }
 
@@ -103,20 +116,28 @@ export const Screen37 = () => {
       const asUserId = RAILWAY_TEST_USER || user.id;
       const payload = {
         name: formData.tournamentName,
-        description: `競技方法: ${formData.competitionMethod}, 順位方法: ${formData.rankingMethod}`,
-        sport_type: 'バレーボール',
+        description: `競技方法: ${formData.competitionMethod}, 順位方法: ${formData.rankingMethod}${formData.ballType ? `, 試合球: ${formData.ballType}` : ''}`,
+        sport_type: formData.category || 'バレーボール',
         start_date: formData.date,
         location: `${formData.location} ${formData.venue} (${formData.address})`,
         status: 'upcoming',
       };
+
+      console.log('大会作成リクエスト送信:', payload);
       const { data } = await api.railwayTournaments.create(asUserId, payload);
-      console.log('大会作成成功(railway):', data);
+      console.log('大会作成成功:', data);
+
+      alert('大会を作成しました！');
       navigate('/tournament-manage');
     } catch (error) {
       console.error("大会作成エラー:", error);
-      setErrors({ 
-        submit: error.message || "大会作成に失敗しました。もう一度お試しください。" 
+      console.error("エラー詳細:", error.response?.data);
+
+      const errorMessage = error.response?.data?.error || error.message || "大会作成に失敗しました。もう一度お試しください。";
+      setErrors({
+        submit: errorMessage
       });
+      alert('エラー: ' + errorMessage);
     } finally {
       setIsLoading(false);
     }
