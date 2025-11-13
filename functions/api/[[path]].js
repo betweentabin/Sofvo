@@ -577,7 +577,7 @@ export async function onRequest(context) {
         LIMIT ?
       `).bind(limit).all();
 
-      // Parse image_urls from JSON string to array
+      // Parse image_urls and structure profile data
       const postsWithImages = (posts.results || []).map(post => {
         if (post.image_urls && typeof post.image_urls === 'string') {
           try {
@@ -586,6 +586,60 @@ export async function onRequest(context) {
             post.image_urls = [];
           }
         }
+        // Structure profile data for PostCard component
+        post.profiles = {
+          id: post.user_id,
+          username: post.username,
+          display_name: post.display_name,
+          avatar_url: post.avatar_url
+        };
+        return post;
+      });
+
+      return new Response(JSON.stringify(postsWithImages), { headers: corsHeaders });
+    }
+
+    // Get posts by user ID
+    if (path === 'railway-posts/by-user') {
+      const userId = new URL(request.url).searchParams.get('user_id');
+      const limit = new URL(request.url).searchParams.get('limit') || 10;
+
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const posts = await env.DB.prepare(`
+        SELECT
+          p.*,
+          pr.username,
+          pr.display_name,
+          pr.avatar_url
+        FROM posts p
+        LEFT JOIN profiles pr ON p.user_id = pr.id
+        WHERE p.user_id = ?
+        ORDER BY p.created_at DESC
+        LIMIT ?
+      `).bind(userId, limit).all();
+
+      // Parse image_urls and structure profile data
+      const postsWithImages = (posts.results || []).map(post => {
+        if (post.image_urls && typeof post.image_urls === 'string') {
+          try {
+            post.image_urls = JSON.parse(post.image_urls);
+          } catch (e) {
+            post.image_urls = [];
+          }
+        }
+        // Structure profile data for PostCard component
+        post.profiles = {
+          id: post.user_id,
+          username: post.username,
+          display_name: post.display_name,
+          avatar_url: post.avatar_url
+        };
         return post;
       });
 
@@ -621,7 +675,7 @@ export async function onRequest(context) {
           WHERE p.id = ?
         `).bind(postId).first();
 
-        // Parse image_urls from JSON string to array
+        // Parse image_urls from JSON string to array and structure profile data
         if (post && post.image_urls && typeof post.image_urls === 'string') {
           try {
             post.image_urls = JSON.parse(post.image_urls);
@@ -630,11 +684,196 @@ export async function onRequest(context) {
           }
         }
 
+        // Structure profile data for PostCard component
+        if (post) {
+          post.profiles = {
+            id: post.user_id,
+            username: post.username,
+            display_name: post.display_name,
+            avatar_url: post.avatar_url
+          };
+        }
+
         return new Response(JSON.stringify(post), { headers: corsHeaders });
       } catch (error) {
         console.error('Error creating post:', error);
         return new Response(JSON.stringify({
           error: 'Failed to create post',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Post like/unlike (POST/DELETE /railway-posts/:id/like)
+    if (path.match(/^railway-posts\/([^/]+)\/like$/) && (request.method === 'POST' || request.method === 'DELETE')) {
+      const parts = path.split('/');
+      const postId = parts[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      if (request.method === 'POST') {
+        const existing = await env.DB.prepare(
+          'SELECT * FROM post_likes WHERE post_id = ? AND user_id = ?'
+        ).bind(postId, userId).first();
+
+        if (existing) {
+          return new Response(JSON.stringify({ error: 'Already liked' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const likeId = generateUUID();
+        await env.DB.prepare(`
+          INSERT INTO post_likes (id, post_id, user_id, created_at)
+          VALUES (?, ?, ?, datetime('now'))
+        `).bind(likeId, postId, userId).run();
+
+        await env.DB.prepare(`
+          UPDATE posts SET like_count = like_count + 1 WHERE id = ?
+        `).bind(postId).run();
+
+        return new Response(JSON.stringify({ success: true, message: 'Liked' }), {
+          headers: corsHeaders
+        });
+      } else {
+        const result = await env.DB.prepare(
+          'DELETE FROM post_likes WHERE post_id = ? AND user_id = ?'
+        ).bind(postId, userId).run();
+
+        if (result.meta.changes > 0) {
+          await env.DB.prepare(`
+            UPDATE posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?
+          `).bind(postId).run();
+
+          return new Response(JSON.stringify({ success: true, message: 'Unliked' }), {
+            headers: corsHeaders
+          });
+        }
+
+        return new Response(JSON.stringify({ error: 'Not liked' }), {
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Get post comments (GET /railway-posts/:id/comments)
+    if (path.match(/^railway-posts\/([^/]+)\/comments$/) && request.method === 'GET') {
+      const parts = path.split('/');
+      const postId = parts[1];
+
+      const comments = await env.DB.prepare(`
+        SELECT
+          c.*,
+          p.username,
+          p.display_name,
+          p.avatar_url
+        FROM comments c
+        LEFT JOIN profiles p ON c.user_id = p.id
+        WHERE c.post_id = ?
+        ORDER BY c.created_at ASC
+      `).bind(postId).all();
+
+      return new Response(JSON.stringify(comments.results || []), { headers: corsHeaders });
+    }
+
+    // Create post comment (POST /railway-posts/:id/comments)
+    if (path.match(/^railway-posts\/([^/]+)\/comments$/) && request.method === 'POST') {
+      const parts = path.split('/');
+      const postId = parts[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const { content } = await request.json();
+
+        if (!content) {
+          return new Response(JSON.stringify({ error: 'Content is required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const commentId = generateUUID();
+        const now = new Date().toISOString();
+
+        await env.DB.prepare(`
+          INSERT INTO comments (id, post_id, user_id, content, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).bind(commentId, postId, userId, content, now, now).run();
+
+        // Update comment count
+        await env.DB.prepare(`
+          UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?
+        `).bind(postId).run();
+
+        const comment = await env.DB.prepare(`
+          SELECT
+            c.*,
+            p.username,
+            p.display_name,
+            p.avatar_url
+          FROM comments c
+          LEFT JOIN profiles p ON c.user_id = p.id
+          WHERE c.id = ?
+        `).bind(commentId).first();
+
+        return new Response(JSON.stringify(comment), { headers: corsHeaders });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          error: 'Failed to create comment',
           details: error.message
         }), {
           status: 500,
@@ -673,7 +912,7 @@ export async function onRequest(context) {
         LIMIT ?
       `).bind(asUserId, limit).all();
 
-      // Parse image_urls from JSON string to array
+      // Parse image_urls from JSON string to array and structure profile data
       const postsWithImages = (posts.results || []).map(post => {
         if (post.image_urls && typeof post.image_urls === 'string') {
           try {
@@ -682,6 +921,13 @@ export async function onRequest(context) {
             post.image_urls = [];
           }
         }
+        // Structure profile data for PostCard component
+        post.profiles = {
+          id: post.user_id,
+          username: post.username,
+          display_name: post.display_name,
+          avatar_url: post.avatar_url
+        };
         return post;
       });
 
@@ -834,7 +1080,196 @@ export async function onRequest(context) {
       }), { headers: corsHeaders });
     }
 
-    if (path.startsWith('railway-tournaments/') && path !== 'railway-tournaments/search' && path !== 'railway-tournaments/create' && request.method === 'GET') {
+    // Tournament withdraw endpoint (DELETE /railway-tournaments/:id/apply)
+    if (path.match(/^railway-tournaments\/([^/]+)\/apply$/) && request.method === 'DELETE') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const participant = await env.DB.prepare(
+        'SELECT * FROM tournament_participants WHERE tournament_id = ? AND user_id = ?'
+      ).bind(tournamentId, userId).first();
+
+      if (!participant) {
+        return new Response(JSON.stringify({ error: 'Not participating in this tournament' }), {
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+
+      await env.DB.prepare(
+        'DELETE FROM tournament_participants WHERE tournament_id = ? AND user_id = ?'
+      ).bind(tournamentId, userId).run();
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Successfully withdrew from tournament'
+      }), { headers: corsHeaders });
+    }
+
+    // Check tournament participation status (GET /railway-tournaments/:id/is-participating)
+    if (path.match(/^railway-tournaments\/([^/]+)\/is-participating$/) && request.method === 'GET') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ is_participating: false }), {
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ is_participating: false }), {
+            headers: corsHeaders
+          });
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ is_participating: false }), {
+          headers: corsHeaders
+        });
+      }
+
+      const participant = await env.DB.prepare(
+        'SELECT status FROM tournament_participants WHERE tournament_id = ? AND user_id = ?'
+      ).bind(tournamentId, userId).first();
+
+      return new Response(JSON.stringify({
+        is_participating: !!participant,
+        status: participant?.status || null
+      }), { headers: corsHeaders });
+    }
+
+    // Get tournament participants (GET /railway-tournaments/:id/participants)
+    if (path.match(/^railway-tournaments\/([^/]+)\/participants$/) && request.method === 'GET') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      const participants = await env.DB.prepare(`
+        SELECT
+          tp.*,
+          p.username,
+          p.display_name,
+          p.avatar_url,
+          p.sport_type
+        FROM tournament_participants tp
+        LEFT JOIN profiles p ON tp.user_id = p.id
+        WHERE tp.tournament_id = ?
+        ORDER BY tp.created_at DESC
+      `).bind(tournamentId).all();
+
+      return new Response(JSON.stringify(participants.results || []), { headers: corsHeaders });
+    }
+
+    // Tournament like/unlike (POST/DELETE /railway-tournaments/:id/like)
+    if (path.match(/^railway-tournaments\/([^/]+)\/like$/) && (request.method === 'POST' || request.method === 'DELETE')) {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      if (request.method === 'POST') {
+        const existing = await env.DB.prepare(
+          'SELECT * FROM tournament_likes WHERE tournament_id = ? AND user_id = ?'
+        ).bind(tournamentId, userId).first();
+
+        if (existing) {
+          return new Response(JSON.stringify({ error: 'Already liked' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const likeId = generateUUID();
+        await env.DB.prepare(`
+          INSERT INTO tournament_likes (id, tournament_id, user_id, created_at)
+          VALUES (?, ?, ?, datetime('now'))
+        `).bind(likeId, tournamentId, userId).run();
+
+        await env.DB.prepare(`
+          UPDATE tournaments SET like_count = like_count + 1 WHERE id = ?
+        `).bind(tournamentId).run();
+
+        return new Response(JSON.stringify({ success: true, message: 'Liked' }), {
+          headers: corsHeaders
+        });
+      } else {
+        const result = await env.DB.prepare(
+          'DELETE FROM tournament_likes WHERE tournament_id = ? AND user_id = ?'
+        ).bind(tournamentId, userId).run();
+
+        if (result.meta.changes > 0) {
+          await env.DB.prepare(`
+            UPDATE tournaments SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?
+          `).bind(tournamentId).run();
+
+          return new Response(JSON.stringify({ success: true, message: 'Unliked' }), {
+            headers: corsHeaders
+          });
+        }
+
+        return new Response(JSON.stringify({ error: 'Not liked' }), {
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    if (path.startsWith('railway-tournaments/') && path !== 'railway-tournaments/search' && path !== 'railway-tournaments/create' && path !== 'railway-tournaments/my-hosted' && path !== 'railway-tournaments/my-participating' && request.method === 'GET') {
       // Extract tournament ID from path (e.g., railway-tournaments/{id})
       const parts = path.split('/');
       const tournamentId = parts[1];
@@ -1141,14 +1576,22 @@ export async function onRequest(context) {
 
         console.log('Creating tournament with ID:', tournamentId);
 
+        // Convert undefined to null for optional fields
+        const safeDescription = description || null;
+        const safeLocation = location || null;
+        const safeStartDate = start_date || null;
+        const safeEndDate = end_date || null;
+        const safeMaxParticipants = max_participants || null;
+        const safeRegistrationDeadline = registration_deadline || null;
+
         await env.DB.prepare(`
           INSERT INTO tournaments (
             id, name, description, sport_type, location, start_date, end_date,
             max_participants, registration_deadline, status, created_by, created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?, ?)
         `).bind(
-          tournamentId, name, description, sport_type, location, start_date, end_date,
-          max_participants, registration_deadline, as_user, now, now
+          tournamentId, name, safeDescription, sport_type, safeLocation, safeStartDate, safeEndDate,
+          safeMaxParticipants, safeRegistrationDeadline, as_user, now, now
         ).run();
 
         const tournament = await env.DB.prepare('SELECT * FROM tournaments WHERE id = ?')
@@ -1162,6 +1605,80 @@ export async function onRequest(context) {
         console.error('Error stack:', error.stack);
         return new Response(JSON.stringify({
           error: 'Failed to create tournament',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Get user's hosted tournaments
+    if (path === 'railway-tournaments/my-hosted' && request.method === 'GET') {
+      const url = new URL(request.url);
+      const asUser = url.searchParams.get('as_user');
+
+      if (!asUser) {
+        return new Response(JSON.stringify({ error: 'as_user is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const tournaments = await env.DB.prepare(`
+          SELECT
+            t.*,
+            COUNT(DISTINCT tp.id) as participant_count
+          FROM tournaments t
+          LEFT JOIN tournament_participants tp ON t.id = tp.tournament_id
+          WHERE t.created_by = ?
+          GROUP BY t.id
+          ORDER BY t.created_at DESC
+        `).bind(asUser).all();
+
+        return new Response(JSON.stringify(tournaments.results || []), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Get hosted tournaments error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to get hosted tournaments',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
+    // Get user's participating tournaments
+    if (path === 'railway-tournaments/my-participating' && request.method === 'GET') {
+      const url = new URL(request.url);
+      const asUser = url.searchParams.get('as_user');
+
+      if (!asUser) {
+        return new Response(JSON.stringify({ error: 'as_user is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const tournaments = await env.DB.prepare(`
+          SELECT
+            t.*,
+            tp.status as participation_status,
+            tp.created_at as joined_at
+          FROM tournaments t
+          INNER JOIN tournament_participants tp ON t.id = tp.tournament_id
+          WHERE tp.user_id = ?
+          ORDER BY t.start_date ASC
+        `).bind(asUser).all();
+
+        return new Response(JSON.stringify(tournaments.results || []), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Get participating tournaments error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to get participating tournaments',
           details: error.message
         }), {
           status: 500,
@@ -1504,11 +2021,12 @@ export async function onRequest(context) {
             },
           });
 
-          // Generate public URL (assuming custom domain or R2 public URL)
-          const url = `https://images.sofvo.pages.dev/${filename}`;
+          // Generate public URL using the same domain with /api/media/ path
+          const url = new URL(request.url);
+          const imageUrl = `${url.protocol}//${url.host}/api/media/${filename}`;
 
           return new Response(JSON.stringify({
-            url: url,
+            url: imageUrl,
             filename: file.name,
             size: buffer.byteLength,
             type: mimeType
@@ -2513,6 +3031,131 @@ export async function onRequest(context) {
           status: 500,
           headers: corsHeaders
         });
+      }
+    }
+
+    // Realtime chat SSE endpoint
+    if (path === 'realtime/chat' && request.method === 'GET') {
+      const url = new URL(request.url);
+      const conversationId = url.searchParams.get('conversation_id');
+      const asUser = url.searchParams.get('as_user');
+      const token = url.searchParams.get('token');
+
+      if (!conversationId || !asUser) {
+        return new Response(JSON.stringify({ error: 'conversation_id and as_user are required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Verify token
+      if (token) {
+        try {
+          const tokenData = JSON.parse(atob(token));
+          if (tokenData.id !== asUser) {
+            return new Response(JSON.stringify({ error: 'Invalid token for user' }), {
+              status: 401,
+              headers: corsHeaders
+            });
+          }
+        } catch (e) {
+          return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+      }
+
+      // Create SSE response
+      const { readable, writable } = new TransformStream();
+      const writer = writable.getWriter();
+      const encoder = new TextEncoder();
+
+      // Send initial connection message
+      const connectionMsg = `data: ${JSON.stringify({ type: 'connected', timestamp: new Date().toISOString() })}\n\n`;
+      await writer.write(encoder.encode(connectionMsg));
+
+      // Keep-alive and poll for new messages
+      let lastCheck = new Date().toISOString();
+      const intervalId = setInterval(async () => {
+        try {
+          // Check for new messages since last check
+          const messages = await env.DB.prepare(`
+            SELECT m.*, p.username, p.display_name, p.avatar_url
+            FROM messages m
+            LEFT JOIN profiles p ON m.sender_id = p.id
+            WHERE m.conversation_id = ?
+            AND m.created_at > ?
+            ORDER BY m.created_at ASC
+          `).bind(conversationId, lastCheck).all();
+
+          if (messages.results && messages.results.length > 0) {
+            for (const msg of messages.results) {
+              const data = `data: ${JSON.stringify({
+                type: 'message',
+                message: {
+                  ...msg,
+                  sender: {
+                    id: msg.sender_id,
+                    username: msg.username,
+                    display_name: msg.display_name,
+                    avatar_url: msg.avatar_url
+                  }
+                }
+              })}\n\n`;
+              await writer.write(encoder.encode(data));
+            }
+            lastCheck = messages.results[messages.results.length - 1].created_at;
+          }
+
+          // Send keep-alive ping
+          await writer.write(encoder.encode(': ping\n\n'));
+        } catch (error) {
+          console.error('SSE polling error:', error);
+          clearInterval(intervalId);
+          await writer.close();
+        }
+      }, 3000); // Poll every 3 seconds
+
+      // Clean up on connection close
+      request.signal.addEventListener('abort', () => {
+        clearInterval(intervalId);
+        writer.close();
+      });
+
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*',
+        }
+      });
+    }
+
+    // Get image from R2
+    if (path.startsWith('media/')) {
+      const filename = path.replace('media/', '');
+
+      if (env.IMAGES) {
+        try {
+          const object = await env.IMAGES.get(filename);
+
+          if (!object) {
+            return new Response('Image not found', { status: 404 });
+          }
+
+          const headers = new Headers();
+          object.writeHttpMetadata(headers);
+          headers.set('etag', object.httpEtag);
+          headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+          headers.set('Access-Control-Allow-Origin', '*');
+
+          return new Response(object.body, { headers });
+        } catch (error) {
+          console.error('Error fetching image from R2:', error);
+          return new Response('Error fetching image', { status: 500 });
+        }
       }
     }
 
