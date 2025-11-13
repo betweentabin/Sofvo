@@ -71,17 +71,30 @@ export const Screen13 = () => {
   };
 
   const handleImageUpload = async (e) => {
+    console.log('=== 画像アップロード開始 ===');
     const file = e.target.files?.[0];
-    if (!file) return;
+    console.log('選択されたファイル:', file ? {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    } : 'ファイルなし');
+
+    if (!file) {
+      console.log('ファイルが選択されていません');
+      return;
+    }
 
     // ファイルサイズチェック（5MB以下）
     if (file.size > 5 * 1024 * 1024) {
+      console.error('ファイルサイズが大きすぎます:', file.size);
       alert('画像サイズは5MB以下にしてください');
       return;
     }
 
     // ファイルタイプチェック
     if (!file.type.startsWith('image/')) {
+      console.error('画像ファイルではありません:', file.type);
       alert('画像ファイルを選択してください');
       return;
     }
@@ -90,18 +103,28 @@ export const Screen13 = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      console.log('FormData作成完了、APIを呼び出します...');
 
-      const { data } = await api.media.upload(formData);
+      const response = await api.media.upload(formData);
+      console.log('アップロードレスポンス:', response);
+
+      const { data } = response;
+      console.log('アップロード成功、URL:', data.url ? data.url.substring(0, 50) + '...' : 'なし');
 
       setProfile(prev => ({
         ...prev,
         avatar_url: data.url
       }));
+      alert('画像をアップロードしました！');
     } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('画像のアップロードに失敗しました');
+      console.error('画像アップロードエラー:', error);
+      console.error('エラーレスポンス:', error.response?.data);
+      console.error('エラーステータス:', error.response?.status);
+      const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
+      alert('画像のアップロードに失敗しました: ' + errorMsg);
     } finally {
       setUploadingImage(false);
+      console.log('画像アップロード処理終了');
     }
   };
 

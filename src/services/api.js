@@ -195,11 +195,24 @@ export const api = {
   
   // メディアアップロード
   media: {
-    upload: async (file, type = 'image') => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', type);
-      
+    upload: async (formDataOrFile, type = 'image') => {
+      console.log('=== api.media.upload called ===');
+      console.log('Argument type:', formDataOrFile?.constructor?.name);
+
+      let formData;
+
+      // FormDataが渡された場合はそのまま使用、Fileが渡された場合はFormDataを作成
+      if (formDataOrFile instanceof FormData) {
+        console.log('FormData received, using as is');
+        formData = formDataOrFile;
+      } else {
+        console.log('File received, creating FormData');
+        formData = new FormData();
+        formData.append('file', formDataOrFile);
+        formData.append('type', type);
+      }
+
+      console.log('Sending POST to /media/upload');
       return nodeAPI.post('/media/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'

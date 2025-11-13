@@ -367,7 +367,71 @@ export async function onRequest(context) {
       }
     }
 
-    if (path === 'railway-users/profile') {
+    // Get followers list
+    if (path === 'railway-users/followers' && request.method === 'GET') {
+      const userId = new URL(request.url).searchParams.get('user_id');
+      const limit = new URL(request.url).searchParams.get('limit') || 50;
+
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const followers = await env.DB.prepare(`
+        SELECT
+          p.id,
+          p.username,
+          p.display_name,
+          p.avatar_url,
+          p.bio,
+          p.location,
+          p.followers_count,
+          p.following_count
+        FROM follows f
+        JOIN profiles p ON f.follower_id = p.id
+        WHERE f.following_id = ?
+        ORDER BY f.created_at DESC
+        LIMIT ?
+      `).bind(userId, limit).all();
+
+      return new Response(JSON.stringify(followers.results || []), { headers: corsHeaders });
+    }
+
+    // Get following list
+    if (path === 'railway-users/following' && request.method === 'GET') {
+      const userId = new URL(request.url).searchParams.get('user_id');
+      const limit = new URL(request.url).searchParams.get('limit') || 50;
+
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      const following = await env.DB.prepare(`
+        SELECT
+          p.id,
+          p.username,
+          p.display_name,
+          p.avatar_url,
+          p.bio,
+          p.location,
+          p.followers_count,
+          p.following_count
+        FROM follows f
+        JOIN profiles p ON f.following_id = p.id
+        WHERE f.follower_id = ?
+        ORDER BY f.created_at DESC
+        LIMIT ?
+      `).bind(userId, limit).all();
+
+      return new Response(JSON.stringify(following.results || []), { headers: corsHeaders });
+    }
+
+    if (path === 'railway-users/profile' && request.method === 'GET') {
       let userId = new URL(request.url).searchParams.get('user_id');
 
       if (!userId) {
@@ -655,10 +719,17 @@ export async function onRequest(context) {
       const token = authHeader.substring(7);
       let userId;
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        userId = payload.user?.id;
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
         if (!userId) {
           return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+        // Check token expiration
+        if (tokenData.exp && tokenData.exp < Date.now()) {
+          return new Response(JSON.stringify({ error: 'Token expired' }), {
             status: 401,
             headers: corsHeaders
           });
@@ -1172,8 +1243,8 @@ export async function onRequest(context) {
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.slice(7);
         try {
-          const tokenData = JSON.parse(atob(token));
-          userId = tokenData.id;
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.user?.id || payload.id;
         } catch (e) {
           console.error('Token parsing error:', e);
           // Token parsing failed, will try request body
@@ -1304,24 +1375,42 @@ export async function onRequest(context) {
     }
 
     if (path === 'media/upload' && request.method === 'POST') {
+      console.log('=== Media Upload Request ===');
+      console.log('Content-Type:', request.headers.get('content-type'));
+
       try {
         const formData = await request.formData();
+        console.log('FormData keys:', Array.from(formData.keys()));
+
         const file = formData.get('file');
+        console.log('File info:', file ? {
+          name: file.name,
+          type: file.type,
+          size: file.size
+        } : 'No file found');
 
         if (!file) {
+          console.error('No file provided in formData');
           return new Response(JSON.stringify({ error: 'No file provided' }), {
             status: 400,
             headers: corsHeaders
           });
         }
 
+        console.log('Reading file as array buffer...');
         // Read file as array buffer
         const buffer = await file.arrayBuffer();
+        console.log('Buffer size:', buffer.byteLength);
+
         const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+        console.log('Base64 length:', base64.length);
+
         const mimeType = file.type || 'application/octet-stream';
 
         // Create data URL
         const dataUrl = `data:${mimeType};base64,${base64}`;
+
+        console.log('Upload successful, data URL created');
 
         // For now, return the data URL
         // In production, you should upload to R2 or another storage service
@@ -1333,9 +1422,11 @@ export async function onRequest(context) {
         }), { headers: corsHeaders });
       } catch (error) {
         console.error('Media upload error:', error);
+        console.error('Error stack:', error.stack);
         return new Response(JSON.stringify({
           error: 'Failed to upload file',
-          details: error.message
+          details: error.message,
+          stack: error.stack
         }), {
           status: 500,
           headers: corsHeaders
