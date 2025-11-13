@@ -638,6 +638,80 @@ export async function onRequest(context) {
       return new Response(JSON.stringify(tournaments.results || []), { headers: corsHeaders });
     }
 
+    // Tournament apply endpoint
+    if (path.match(/^railway-tournaments\/([^/]+)\/apply$/) && request.method === 'POST') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      // Get user ID from JWT
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.user?.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      // Check if tournament exists
+      const tournament = await env.DB.prepare('SELECT * FROM tournaments WHERE id = ?')
+        .bind(tournamentId).first();
+
+      if (!tournament) {
+        return new Response(JSON.stringify({ error: 'Tournament not found' }), {
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+
+      // Check if already applied
+      const existing = await env.DB.prepare(
+        'SELECT * FROM tournament_participants WHERE tournament_id = ? AND user_id = ?'
+      ).bind(tournamentId, userId).first();
+
+      if (existing) {
+        return new Response(JSON.stringify({ error: 'Already applied to this tournament' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Create participant entry
+      const participantId = generateUUID();
+      await env.DB.prepare(`
+        INSERT INTO tournament_participants (id, tournament_id, user_id, status, created_at)
+        VALUES (?, ?, ?, 'pending', datetime('now'))
+      `).bind(participantId, tournamentId, userId).run();
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Successfully applied to tournament',
+        participant: {
+          id: participantId,
+          tournament_id: tournamentId,
+          user_id: userId,
+          status: 'pending'
+        }
+      }), { headers: corsHeaders });
+    }
+
     if (path.startsWith('railway-tournaments/') && path !== 'railway-tournaments/search' && path !== 'railway-tournaments/create' && request.method === 'GET') {
       // Extract tournament ID from path (e.g., railway-tournaments/{id})
       const parts = path.split('/');
@@ -1101,17 +1175,23 @@ export async function onRequest(context) {
           const tokenData = JSON.parse(atob(token));
           userId = tokenData.id;
         } catch (e) {
+          console.error('Token parsing error:', e);
           // Token parsing failed, will try request body
         }
       }
 
       const body = await request.json();
+      console.log('Update profile request body:', JSON.stringify(body, null, 2));
+
       const { user_id: bodyUserId, username, display_name, bio, sport_type, phone, furigana, avatar_url, age, gender, experience_years, team_name, location, privacy_settings } = body;
 
       // Use user_id from body if provided, otherwise use token
       userId = bodyUserId || userId;
 
+      console.log('Resolved userId:', userId);
+
       if (!userId) {
+        console.error('Missing user_id - authHeader:', !!authHeader, 'bodyUserId:', bodyUserId);
         return new Response(JSON.stringify({ error: 'user_id is required' }), {
           status: 400,
           headers: corsHeaders
@@ -1180,8 +1260,14 @@ export async function onRequest(context) {
         values.push(typeof privacy_settings === 'string' ? privacy_settings : JSON.stringify(privacy_settings));
       }
 
+      console.log('Updates array:', updates, 'Values:', values);
+
       if (updates.length === 0) {
-        return new Response(JSON.stringify({ error: 'No fields to update' }), {
+        console.error('No fields to update - body keys:', Object.keys(body));
+        return new Response(JSON.stringify({
+          error: 'No fields to update',
+          receivedFields: Object.keys(body)
+        }), {
           status: 400,
           headers: corsHeaders
         });
@@ -1191,16 +1277,30 @@ export async function onRequest(context) {
       values.push(now);
       values.push(userId);
 
-      await env.DB.prepare(`
-        UPDATE profiles
-        SET ${updates.join(', ')}
-        WHERE id = ?
-      `).bind(...values).run();
+      console.log('Executing UPDATE with:', updates.join(', '));
 
-      const profile = await env.DB.prepare('SELECT * FROM profiles WHERE id = ?')
-        .bind(userId).first();
+      try {
+        await env.DB.prepare(`
+          UPDATE profiles
+          SET ${updates.join(', ')}
+          WHERE id = ?
+        `).bind(...values).run();
 
-      return new Response(JSON.stringify(profile), { headers: corsHeaders });
+        const profile = await env.DB.prepare('SELECT * FROM profiles WHERE id = ?')
+          .bind(userId).first();
+
+        console.log('Profile updated successfully');
+        return new Response(JSON.stringify(profile), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Database error updating profile:', error);
+        return new Response(JSON.stringify({
+          error: 'Database error',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
     }
 
     if (path === 'media/upload' && request.method === 'POST') {
