@@ -19,29 +19,50 @@ async function run() {
   await client.connect();
   console.log('🔌 Connected');
 
-  // Pick some profiles and a team if available
+  // Pick all profiles
   const { rows: profiles } = await client.query(
-    `SELECT id, username, display_name FROM profiles ORDER BY created_at LIMIT 3`
+    `SELECT id, username, display_name FROM profiles ORDER BY created_at LIMIT 20`
   );
   if (profiles.length === 0) {
     console.error('❌ No profiles found. Seed users first (node database/seed-data.js).');
     process.exit(1);
   }
 
-  const { rows: teams } = await client.query(
-    `SELECT id, name FROM teams ORDER BY created_at LIMIT 1`
-  );
+  console.log(`📝 Found ${profiles.length} profiles`);
 
-  const p1 = profiles[0].id;
-  const p2 = profiles[1]?.id || profiles[0].id;
-  const p3 = profiles[2]?.id || profiles[0].id;
-  const teamId = teams[0]?.id || null;
-
-  const posts = [
-    { user: p1, team: null, type: 'post', visibility: 'public', content: 'テスト投稿: Sofvoの世界へようこそ！' },
-    { user: p2, team: teamId, type: 'announcement', visibility: teamId ? 'team' : 'public', content: teamId ? 'チームのお知らせ: 今週の練習は19時開始です。' : 'お知らせテスト' },
-    { user: p3, team: null, type: 'diary', visibility: 'followers', content: '日記: 今日はレシーブ練習を重点的にやりました。' }
+  // 投稿内容のテンプレート
+  const postTemplates = [
+    "今日の練習は充実していました！新しい技を習得できて嬉しいです 💪",
+    "チームメイトと一緒にトレーニング。みんなで成長できることが何より楽しい！",
+    "大会に向けて準備中。目標に向かって頑張ります！",
+    "今週末の試合が楽しみです。ベストを尽くします！",
+    "新しい戦術を試してみました。なかなか良い感じです👍",
+    "朝練習からスタート。良い汗をかきました☀️",
+    "コーチからアドバイスをもらって改善点が見えてきました",
+    "仲間と切磋琢磨できる環境に感謝です",
+    "次の目標に向けて計画を立てています📝",
+    "今日の反省点を活かして明日も頑張ります！",
+    "基礎練習の大切さを改めて実感しました",
+    "試合で学んだことをチームで共有しました",
+    "メンタルトレーニングも取り入れています🧘",
+    "体調管理も競技の一部。しっかりケアします",
+    "目標達成に向けて一歩ずつ前進中！"
   ];
+
+  const posts = [];
+  // 各ユーザーに3つの投稿を作成
+  for (const profile of profiles) {
+    const shuffled = [...postTemplates].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < 3; i++) {
+      const daysAgo = i; // 0, 1, 2 days ago
+      posts.push({
+        user: profile.id,
+        content: shuffled[i],
+        visibility: 'public',
+        daysAgo
+      });
+    }
+  }
 
   await client.query('BEGIN');
   try {

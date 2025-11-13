@@ -18,6 +18,7 @@
     "db:seed:matches": "node database/seed-matches.mjs",
     "db:test": "node database/test-connection.js",
     "db:reset": "node database/setup-railway-db.js && node database/seed-data.js",
+    "db:add-team-members": "node database/add-team-members.js",
     "deploy": "npm run build && wrangler pages deploy dist",
     "deploy:preview": "npm run build && wrangler pages deploy dist --project-name=sofvo",
     "deploy:token": "npm run build && wrangler pages deploy dist --auth-method=api-token",
