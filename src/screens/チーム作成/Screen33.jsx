@@ -76,9 +76,23 @@ export const Screen33 = () => {
 
   // チーム作成処理
   const handleCreateTeam = async () => {
-    if (!validate()) return;
+    console.log('=== チーム作成ボタンがクリックされました ===');
+    console.log('現在のフォームデータ:', formData);
+    console.log('ユーザー情報:', user);
+
+    const isValid = validate();
+    console.log('バリデーション結果:', isValid);
+
+    if (!isValid) {
+      console.error('バリデーションエラー:', errors);
+      alert('入力内容を確認してください。全ての必須項目を入力する必要があります。');
+      return;
+    }
+
     if (!user) {
+      console.error('ユーザーがログインしていません');
       setErrors({ submit: "ログインが必要です" });
+      alert('ログインが必要です');
       return;
     }
 
@@ -87,18 +101,30 @@ export const Screen33 = () => {
 
     try {
       const asUserId = RAILWAY_TEST_USER || user.id;
+      console.log('チーム作成リクエスト送信:', {
+        asUserId,
+        name: formData.teamName,
+        description: formData.selfIntroduction,
+        sport_type: 'バレーボール',
+      });
+
       const { data: team } = await api.railwayTeams.createTeam(asUserId, {
         name: formData.teamName,
         description: formData.selfIntroduction,
         sport_type: 'バレーボール',
       });
+
       console.log('チーム作成成功(railway):', team);
+      alert('チームを作成しました！');
       navigate('/team-management');
     } catch (error) {
       console.error("チーム作成エラー:", error);
-      setErrors({ 
-        submit: error.message || "チーム作成に失敗しました。もう一度お試しください。" 
+      console.error("エラー詳細:", error.response?.data);
+      const errorMessage = error.response?.data?.error || error.message || "チーム作成に失敗しました。もう一度お試しください。";
+      setErrors({
+        submit: errorMessage
       });
+      alert('エラー: ' + errorMessage);
     } finally {
       setIsLoading(false);
     }
