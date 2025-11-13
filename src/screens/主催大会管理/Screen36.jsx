@@ -13,6 +13,49 @@ export const Screen36 = () => {
   const RAILWAY_TEST_USER = import.meta.env.VITE_RAILWAY_TEST_USER_ID || null;
 
   const [tournaments, setTournaments] = useState([]);
+  const [selectedYearMonth, setSelectedYearMonth] = useState('');
+  const [selectedDay, setSelectedDay] = useState('');
+
+  // 前後1年分（24ヶ月）の年月を生成
+  const generateYearMonthOptions = () => {
+    const options = [];
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0-11
+
+    // 1年前から1年後までの24ヶ月
+    for (let i = -12; i <= 11; i++) {
+      const date = new Date(currentYear, currentMonth + i, 1);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1; // 1-12
+      options.push({
+        value: `${year}-${String(month).padStart(2, '0')}`,
+        label: `${year}年${month}月`
+      });
+    }
+    return options;
+  };
+
+  const yearMonthOptions = generateYearMonthOptions();
+
+  // 選択された年月の日数を生成
+  const generateDayOptions = () => {
+    if (!selectedYearMonth) return [];
+
+    const [year, month] = selectedYearMonth.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const options = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      options.push({
+        value: String(day),
+        label: `${day}日`
+      });
+    }
+    return options;
+  };
+
+  const dayOptions = generateDayOptions();
 
   const parseLocation = (loc) => {
     if (!loc) return { region: "", place: "", address: "" };
@@ -99,19 +142,39 @@ export const Screen36 = () => {
             <div className="frame-24">
               <div className="frame-box1">
                 <label className="dropdown-label" htmlFor="select-year-month">年月</label>
-                <select id="select-year-month" className="custom-select">
-                  <option>2025年5月</option>
-                  <option>2025年6月</option>
-                  <option>2025年7月</option>
+                <select
+                  id="select-year-month"
+                  className="custom-select"
+                  value={selectedYearMonth}
+                  onChange={(e) => {
+                    setSelectedYearMonth(e.target.value);
+                    setSelectedDay(''); // 年月が変更されたら日をリセット
+                  }}
+                >
+                  <option value="">選択してください</option>
+                  {yearMonthOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="frame-box2">
                 <label className="dropdown-label" htmlFor="select-day">日</label>
-                <select id="select-day" className="custom-select">
-                  <option>18日</option>
-                  <option>19日</option>
-                  <option>20日</option>
+                <select
+                  id="select-day"
+                  className="custom-select"
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(e.target.value)}
+                  disabled={!selectedYearMonth}
+                >
+                  <option value="">選択してください</option>
+                  {dayOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
