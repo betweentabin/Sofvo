@@ -577,7 +577,19 @@ export async function onRequest(context) {
         LIMIT ?
       `).bind(limit).all();
 
-      return new Response(JSON.stringify(posts.results || []), { headers: corsHeaders });
+      // Parse image_urls from JSON string to array
+      const postsWithImages = (posts.results || []).map(post => {
+        if (post.image_urls && typeof post.image_urls === 'string') {
+          try {
+            post.image_urls = JSON.parse(post.image_urls);
+          } catch (e) {
+            post.image_urls = [];
+          }
+        }
+        return post;
+      });
+
+      return new Response(JSON.stringify(postsWithImages), { headers: corsHeaders });
     }
 
     if (path === 'railway-posts/create' && request.method === 'POST') {
@@ -594,12 +606,13 @@ export async function onRequest(context) {
         const postId = generateUUID();
         const now = new Date().toISOString();
 
-        await env.DB.prepare(`
-          INSERT INTO posts (id, user_id, content, visibility, file_url, like_count, comment_count, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)
-        `).bind(postId, as_user, content, visibility, file_url, now, now).run();
+        // Convert image_urls array to JSON string
+        const imageUrlsJson = Array.isArray(image_urls) ? JSON.stringify(image_urls) : null;
 
-        // TODO: Handle image_urls if needed (requires post_images table)
+        await env.DB.prepare(`
+          INSERT INTO posts (id, user_id, content, visibility, file_url, image_urls, like_count, comment_count, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?)
+        `).bind(postId, as_user, content, visibility, file_url, imageUrlsJson, now, now).run();
 
         const post = await env.DB.prepare(`
           SELECT p.*, pr.username, pr.display_name, pr.avatar_url
@@ -607,6 +620,15 @@ export async function onRequest(context) {
           LEFT JOIN profiles pr ON p.user_id = pr.id
           WHERE p.id = ?
         `).bind(postId).first();
+
+        // Parse image_urls from JSON string to array
+        if (post && post.image_urls && typeof post.image_urls === 'string') {
+          try {
+            post.image_urls = JSON.parse(post.image_urls);
+          } catch (e) {
+            post.image_urls = [];
+          }
+        }
 
         return new Response(JSON.stringify(post), { headers: corsHeaders });
       } catch (error) {
@@ -651,7 +673,19 @@ export async function onRequest(context) {
         LIMIT ?
       `).bind(asUserId, limit).all();
 
-      return new Response(JSON.stringify(posts.results || []), { headers: corsHeaders });
+      // Parse image_urls from JSON string to array
+      const postsWithImages = (posts.results || []).map(post => {
+        if (post.image_urls && typeof post.image_urls === 'string') {
+          try {
+            post.image_urls = JSON.parse(post.image_urls);
+          } catch (e) {
+            post.image_urls = [];
+          }
+        }
+        return post;
+      });
+
+      return new Response(JSON.stringify(postsWithImages), { headers: corsHeaders });
     }
 
     if (path === 'railway-home/recommended-diaries') {
@@ -1177,9 +1211,11 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-teams/owner') {
+      console.log('=== Get Owner Team Request ===');
       let asUserId = new URL(request.url).searchParams.get('as_user');
 
       if (!asUserId) {
+        console.error('as_user is missing');
         return new Response(JSON.stringify({ error: 'as_user is required' }), {
           status: 400,
           headers: corsHeaders
@@ -1188,6 +1224,7 @@ export async function onRequest(context) {
 
       // Remove any whitespace characters (including newlines) from as_user
       asUserId = asUserId.trim().replace(/[\r\n\t]/g, '');
+      console.log('Looking for owner team for user:', asUserId);
 
       const team = await env.DB.prepare(`
         SELECT t.* FROM teams t
@@ -1196,25 +1233,48 @@ export async function onRequest(context) {
         LIMIT 1
       `).bind(asUserId).first();
 
+      console.log('Found owner team:', team ? team.id : 'None');
+
       return new Response(JSON.stringify(team || null), { headers: corsHeaders });
     }
 
     if (path === 'railway-teams/members') {
+      console.log('=== Get Team Members Request ===');
       const teamId = new URL(request.url).searchParams.get('team_id');
 
       if (!teamId) {
+        console.error('team_id is missing');
         return new Response(JSON.stringify({ error: 'team_id is required' }), {
           status: 400,
           headers: corsHeaders
         });
       }
 
+      console.log('Getting members for team:', teamId);
+
       const members = await env.DB.prepare(`
-        SELECT tm.*, p.username, p.display_name, p.avatar_url
+        SELECT
+          tm.*,
+          p.username,
+          p.display_name,
+          p.avatar_url,
+          p.age,
+          p.gender,
+          p.experience_years,
+          p.location
         FROM team_members tm
         LEFT JOIN profiles p ON tm.user_id = p.id
         WHERE tm.team_id = ?
+        ORDER BY
+          CASE tm.role
+            WHEN 'owner' THEN 1
+            WHEN 'admin' THEN 2
+            ELSE 3
+          END,
+          tm.joined_at ASC
       `).bind(teamId).all();
+
+      console.log('Found members:', members.results?.length || 0);
 
       return new Response(JSON.stringify(members.results || []), { headers: corsHeaders });
     }
@@ -1414,58 +1474,69 @@ export async function onRequest(context) {
     }
 
     if (path === 'media/upload' && request.method === 'POST') {
-      console.log('=== Media Upload Request ===');
-      console.log('Content-Type:', request.headers.get('content-type'));
-
       try {
         const formData = await request.formData();
-        console.log('FormData keys:', Array.from(formData.keys()));
-
         const file = formData.get('file');
-        console.log('File info:', file ? {
-          name: file.name,
-          type: file.type,
-          size: file.size
-        } : 'No file found');
 
         if (!file) {
-          console.error('No file provided in formData');
           return new Response(JSON.stringify({ error: 'No file provided' }), {
             status: 400,
             headers: corsHeaders
           });
         }
 
-        console.log('Reading file as array buffer...');
         // Read file as array buffer
         const buffer = await file.arrayBuffer();
-        console.log('Buffer size:', buffer.byteLength);
-
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-        console.log('Base64 length:', base64.length);
-
         const mimeType = file.type || 'application/octet-stream';
 
-        // Create data URL
-        const dataUrl = `data:${mimeType};base64,${base64}`;
+        // Generate unique filename
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(7);
+        const extension = file.name.split('.').pop();
+        const filename = `${timestamp}-${random}.${extension}`;
 
-        console.log('Upload successful, data URL created');
+        // Check if R2 is available (only in production)
+        if (env.IMAGES) {
+          // Upload to R2
+          await env.IMAGES.put(filename, buffer, {
+            httpMetadata: {
+              contentType: mimeType,
+            },
+          });
 
-        // For now, return the data URL
-        // In production, you should upload to R2 or another storage service
-        return new Response(JSON.stringify({
-          url: dataUrl,
-          filename: file.name,
-          size: buffer.byteLength,
-          type: mimeType
-        }), { headers: corsHeaders });
+          // Generate public URL (assuming custom domain or R2 public URL)
+          const url = `https://images.sofvo.pages.dev/${filename}`;
+
+          return new Response(JSON.stringify({
+            url: url,
+            filename: file.name,
+            size: buffer.byteLength,
+            type: mimeType
+          }), { headers: corsHeaders });
+        } else {
+          // Fallback to base64 data URL for development
+          const uint8Array = new Uint8Array(buffer);
+          let binary = '';
+          const chunkSize = 8192;
+          for (let i = 0; i < uint8Array.length; i += chunkSize) {
+            const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+            binary += String.fromCharCode(...chunk);
+          }
+          const base64 = btoa(binary);
+          const dataUrl = `data:${mimeType};base64,${base64}`;
+
+          return new Response(JSON.stringify({
+            url: dataUrl,
+            filename: file.name,
+            size: buffer.byteLength,
+            type: mimeType
+          }), { headers: corsHeaders });
+        }
       } catch (error) {
         console.error('Media upload error:', error);
-        console.error('Error stack:', error.stack);
         return new Response(JSON.stringify({
           error: 'Failed to upload file',
-          details: error.message,
-          stack: error.stack
+          details: error.message
         }), {
           status: 500,
           headers: corsHeaders
