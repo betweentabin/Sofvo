@@ -43,6 +43,25 @@ export const DivWrapper = () => {
     }));
   };
 
+  // 必須項目が全て入力されているかチェック
+  const isFormComplete = () => {
+    return (
+      formData.accountName.trim() !== "" &&
+      formData.email.trim() !== "" &&
+      /\S+@\S+\.\S+/.test(formData.email) &&
+      formData.phone.trim() !== "" &&
+      /^[0-9]{10,11}$/.test(formData.phone.replace(/-/g, "")) &&
+      formData.password.trim() !== "" &&
+      formData.password.length >= 8 &&
+      /^[a-zA-Z0-9]+$/.test(formData.password) &&
+      formData.name.trim() !== "" &&
+      formData.furigana.trim() !== "" &&
+      /^[ァ-ヶー]+$/.test(formData.furigana) &&
+      formData.agreeTerms &&
+      formData.agreePrivacy
+    );
+  };
+
   // バリデーション
   const validate = () => {
     const newErrors = {};
@@ -297,18 +316,20 @@ export const DivWrapper = () => {
               <div className="text-wrapper-33">キャンセル</div>
             </Link>
 
-            <button 
-              type="submit" 
-              className="frame-16" 
-              style={{ 
-                border: "none", 
+            <button
+              type="submit"
+              className="frame-16"
+              style={{
+                border: "none",
                 textDecoration: "none",
                 opacity: isLoading ? 0.6 : 1,
-                cursor: isLoading ? "not-allowed" : "pointer"
+                cursor: (isLoading || !isFormComplete()) ? "not-allowed" : "pointer",
+                backgroundColor: isFormComplete() ? "#007bff" : "#cccccc",
+                transition: "background-color 0.3s ease"
               }}
-              disabled={isLoading}
+              disabled={isLoading || !isFormComplete()}
             >
-              <div className="text-wrapper-34">
+              <div className="text-wrapper-34" style={{ color: "white" }}>
                 {isLoading ? "作成中..." : "次へ"}
               </div>
             </button>
