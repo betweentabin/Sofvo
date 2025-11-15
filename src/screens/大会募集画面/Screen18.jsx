@@ -23,6 +23,12 @@ export const Screen18 = () => {
   const [teamId, setTeamId] = useState(null);
   const [team, setTeam] = useState(null);
   const [teamEntryStatus, setTeamEntryStatus] = useState('unknown');
+  const [matches, setMatches] = useState([]);
+  const [participants, setParticipants] = useState([]);
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [matchScore1, setMatchScore1] = useState('');
+  const [matchScore2, setMatchScore2] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -58,6 +64,20 @@ export const Screen18 = () => {
           console.warn('team load failed', e);
           setTeamEntryStatus('error');
         }
+        // Load matches
+        try {
+          const { data: matchData } = await api.railwayTournaments.matches(tournamentId);
+          setMatches(matchData || []);
+        } catch (e) {
+          console.warn('Failed to load matches', e);
+        }
+        // Load participants
+        try {
+          const { data: partData } = await api.railwayTournaments.listParticipants(tournamentId);
+          setParticipants(partData || []);
+        } catch (e) {
+          console.warn('Failed to load participants', e);
+        }
       } catch (e) {
         console.error('Failed to load tournament', e);
       } finally {
@@ -65,7 +85,7 @@ export const Screen18 = () => {
       }
     };
     load();
-  }, [tournamentId]);
+  }, [tournamentId, user?.id]);
 
   
   // いいねボタンの処理（API）
@@ -177,6 +197,81 @@ export const Screen18 = () => {
     navigate("/dm");
   };
 
+  // 対戦表生成処理
+  const handleGenerateMatches = async () => {
+    if (!tournamentId) return;
+    if (!window.confirm('対戦表を生成しますか？既に参加登録されているチーム/個人で総当たり戦の対戦表を作成します。')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data } = await api.railwayTournaments.generateMatches(tournamentId);
+      setMatches(data.matches || []);
+      alert(`対戦表を生成しました（${data.count}試合）`);
+      // Reload matches from server to get full details
+      const { data: matchData } = await api.railwayTournaments.matches(tournamentId);
+      setMatches(matchData || []);
+    } catch (e) {
+      console.error('Failed to generate matches', e);
+      alert(e.response?.data?.error || '対戦表の生成に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 試合結果入力モーダルを開く
+  const openMatchModal = (match) => {
+    setSelectedMatch(match);
+    setMatchScore1(match.score1 !== null ? String(match.score1) : '');
+    setMatchScore2(match.score2 !== null ? String(match.score2) : '');
+    setShowMatchModal(true);
+  };
+
+  // 試合結果を更新
+  const handleUpdateMatch = async () => {
+    if (!selectedMatch || !tournamentId) return;
+
+    const score1 = parseInt(matchScore1, 10);
+    const score2 = parseInt(matchScore2, 10);
+
+    if (isNaN(score1) || isNaN(score2)) {
+      alert('スコアは数値で入力してください');
+      return;
+    }
+
+    try {
+      await api.railwayTournaments.updateMatch(tournamentId, selectedMatch.id, {
+        score1,
+        score2,
+        status: 'completed'
+      });
+
+      // Reload matches
+      const { data: matchData } = await api.railwayTournaments.matches(tournamentId);
+      setMatches(matchData || []);
+      setShowMatchModal(false);
+      setSelectedMatch(null);
+    } catch (e) {
+      console.error('Failed to update match', e);
+      alert(e.response?.data?.error || '試合結果の更新に失敗しました');
+    }
+  };
+
+  // 試合の参加者かどうかをチェック
+  const isMatchParticipant = (match) => {
+    if (!user?.id) return false;
+    if (match.player1_id === user.id || match.player2_id === user.id) return true;
+    // Check if user is member of participating teams
+    // This would require team membership data - simplified for now
+    return false;
+  };
+
+  // 大会主催者かどうかをチェック
+  const isOrganizer = () => {
+    return tournament?.organizer_id === user?.id;
+  };
+
   return (
     <div className="screen-18">
       <HeaderContent />
@@ -269,121 +364,87 @@ export const Screen18 = () => {
           </div>
         </div>
 
-        {/* 大会結果 */}
+        {/* 対戦表 */}
         <div className="frame-164">
-          <div className="text-wrapper-96">大会結果</div>
+          <div className="text-wrapper-96">対戦表</div>
         </div>
 
-        <div className="frame-180-1">
-          <div className="frame-181">
+        {/* 主催者のみ：対戦表生成ボタン */}
+        {isOrganizer() && matches.length === 0 && participants.length >= 2 && (
+          <div style={{ padding: "20px", textAlign: "center" }}>
+            <button
+              onClick={handleGenerateMatches}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                cursor: "pointer",
+                fontWeight: "bold"
+              }}
+            >
+              対戦表を生成する（{participants.length}名/チームで総当たり戦）
+            </button>
+            <p style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
+              現在参加登録されている {participants.length} 名/チームで総当たり戦の対戦表を作成します
+            </p>
+          </div>
+        )}
 
-            {/* 1行目：横幅いっぱい */}
-            <div className="row row-1">
-              <div className="cell-1">本選</div>
-            </div>
-
-            {/* 2行目：左列は3列分の幅 */}
-            <div className="row row-2">
-              <div className="cell-span-2">対戦相手</div>
-              <div className="cell-2">スコア</div>
-            </div>
-
-            {/* 3行目 */}
-            <div className="row row-3" key={3}>
-              <div className="sub-row">
-                <div className="sub-cell-3-1">3-1-1</div>
-                <div className="sub-cell-3-2">VS</div>
-                <div className="sub-cell-3-3">3-1-3</div>
+        {/* 対戦表表示 */}
+        {matches.length > 0 ? (
+          <div className="frame-180-1">
+            <div className="frame-181">
+              {/* ヘッダー */}
+              <div className="row row-1">
+                <div className="cell-1">総当たり戦</div>
               </div>
-              <div className="cell-3">3-2</div>
-            </div>
 
-            {/* 4行目 */}
-            <div className="row row-4" key={4}>
-              <div className="sub-row">
-                <div className="sub-cell-4-1">4-1-1</div>
-                <div className="sub-cell-4-2">VS</div>
-                <div className="sub-cell-4-3">4-1-3</div>
+              <div className="row row-2">
+                <div className="cell-span-2">対戦カード</div>
+                <div className="cell-2">スコア</div>
               </div>
-              <div className="cell-4">4-2</div>
-            </div>
 
-            {/* 5行目 */}
-            <div className="row row-5" key={5}>
-              <div className="sub-row">
-                <div className="sub-cell-5-1">5-1-1</div>
-                <div className="sub-cell-5-2">VS</div>
-                <div className="sub-cell-5-3">5-1-3</div>
-              </div>
-              <div className="cell-5">5-2</div>
-            </div>
+              {/* 試合一覧 */}
+              {matches.map((match, index) => {
+                const participant1Name = match.team1_name || match.player1_display_name || match.player1_username || '参加者1';
+                const participant2Name = match.team2_name || match.player2_display_name || match.player2_username || '参加者2';
+                const canEdit = isOrganizer() || isMatchParticipant(match);
 
-            {/* 6行目 */}
-            <div className="row row-6" key={6}>
-              <div className="sub-row">
-                <div className="sub-cell-6-1">6-1-1</div>
-                <div className="sub-cell-6-2">VS</div>
-                <div className="sub-cell-6-3">6-1-3</div>
-              </div>
-              <div className="cell-6">6-2</div>
+                return (
+                  <div
+                    className="row row-3"
+                    key={match.id}
+                    onClick={() => canEdit && openMatchModal(match)}
+                    style={{
+                      cursor: canEdit ? "pointer" : "default",
+                      backgroundColor: canEdit ? "#f8f9fa" : "inherit"
+                    }}
+                  >
+                    <div className="sub-row">
+                      <div className="sub-cell-3-1">{participant1Name}</div>
+                      <div className="sub-cell-3-2">VS</div>
+                      <div className="sub-cell-3-3">{participant2Name}</div>
+                    </div>
+                    <div className="cell-3">
+                      {match.score1 !== null && match.score2 !== null
+                        ? `${match.score1} - ${match.score2}`
+                        : '未入力'}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-
-        <div className="frame-182">
-          <div className="frame-181">
-            {/* 1行目：横幅いっぱい */}
-            <div className="row row-7">
-              <div className="cell-7">予選</div>
-            </div>
-
-            {/* 2行目：左列は3列分の幅 */}
-            <div className="row row-8">
-              <div className="cell-span-8">対戦相手</div>
-              <div className="cell-8">スコア</div>
-            </div>
-
-            {/* 3行目 */}
-            <div className="row row-9" key={3}>
-              <div className="sub-row">
-                <div className="sub-cell-9-1">3-1-1</div>
-                <div className="sub-cell-9-2">VS</div>
-                <div className="sub-cell-9-3">3-1-3</div>
-              </div>
-              <div className="cell-9">3-2</div>
-            </div>
-
-            {/* 4行目 */}
-            <div className="row row-10" key={4}>
-              <div className="sub-row">
-                <div className="sub-cell-10-1">4-1-1</div>
-                <div className="sub-cell-10-2">VS</div>
-                <div className="sub-cell-10-3">4-1-3</div>
-              </div>
-              <div className="cell-10">4-2</div>
-            </div>
-
-            {/* 5行目 */}
-            <div className="row row-11" key={5}>
-              <div className="sub-row">
-                <div className="sub-cell-11-1">5-1-1</div>
-                <div className="sub-cell-11-2">VS</div>
-                <div className="sub-cell-11-3">5-1-3</div>
-              </div>
-              <div className="cell-11">5-2</div>
-            </div>
-
-            {/* 6行目 */}
-            <div className="row row-12" key={6}>
-              <div className="sub-row">
-                <div className="sub-cell-12-1">6-1-1</div>
-                <div className="sub-cell-12-2">VS</div>
-                <div className="sub-cell-12-3">6-1-3</div>
-              </div>
-              <div className="cell-12">6-2</div>
-            </div>
+        ) : (
+          <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
+            {participants.length < 2
+              ? '対戦表を生成するには2名以上の参加登録が必要です'
+              : '対戦表はまだ生成されていません'}
           </div>
-        </div>
+        )}
 
         <div className="frame-309">
           <button
@@ -559,6 +620,123 @@ export const Screen18 = () => {
                   }}
                 >
                   {(entryStatus === 'entered' || teamEntryStatus === 'entered') ? '解除する' : 'エントリーする'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 試合結果入力モーダル */}
+        {showMatchModal && selectedMatch && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: "white",
+              padding: "30px",
+              borderRadius: "10px",
+              maxWidth: "500px",
+              width: "90%"
+            }}>
+              <h3 style={{ marginBottom: "20px", fontSize: "18px", fontWeight: "bold" }}>試合結果を入力</h3>
+
+              <div style={{ marginBottom: "20px" }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "15px",
+                  backgroundColor: "#f8f9fa",
+                  borderRadius: "8px"
+                }}>
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontWeight: "bold", marginBottom: "10px" }}>
+                      {selectedMatch.team1_name || selectedMatch.player1_display_name || selectedMatch.player1_username || '参加者1'}
+                    </div>
+                    <input
+                      type="number"
+                      value={matchScore1}
+                      onChange={(e) => setMatchScore1(e.target.value)}
+                      style={{
+                        width: "80px",
+                        padding: "8px",
+                        fontSize: "18px",
+                        textAlign: "center",
+                        border: "2px solid #007bff",
+                        borderRadius: "5px"
+                      }}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div style={{ padding: "0 20px", fontSize: "24px", fontWeight: "bold", color: "#666" }}>
+                    VS
+                  </div>
+
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontWeight: "bold", marginBottom: "10px" }}>
+                      {selectedMatch.team2_name || selectedMatch.player2_display_name || selectedMatch.player2_username || '参加者2'}
+                    </div>
+                    <input
+                      type="number"
+                      value={matchScore2}
+                      onChange={(e) => setMatchScore2(e.target.value)}
+                      style={{
+                        width: "80px",
+                        padding: "8px",
+                        fontSize: "18px",
+                        textAlign: "center",
+                        border: "2px solid #007bff",
+                        borderRadius: "5px"
+                      }}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                display: "flex",
+                gap: "10px",
+                justifyContent: "flex-end"
+              }}>
+                <button
+                  onClick={() => {
+                    setShowMatchModal(false);
+                    setSelectedMatch(null);
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    border: "1px solid #ccc",
+                    borderRadius: "5px",
+                    backgroundColor: "white",
+                    cursor: "pointer"
+                  }}
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleUpdateMatch}
+                  style={{
+                    padding: "10px 20px",
+                    border: "none",
+                    borderRadius: "5px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    cursor: "pointer",
+                    fontWeight: "bold"
+                  }}
+                >
+                  保存
                 </button>
               </div>
             </div>

@@ -242,6 +242,7 @@ export const api = {
   // ===== Railway (PostgreSQL) Posts =====
   railwayPosts: {
     latest: (limit = 30) => nodeAPI.get('/railway-posts/latest', { params: { limit } }),
+    byUser: (userId, limit = 10) => nodeAPI.get('/railway-posts/by-user', { params: { user_id: userId, limit } }),
     following: (asUserId, limit = 30) => nodeAPI.get('/railway-posts/following', { params: { as_user: asUserId, limit } }),
     // Optionally accepts fileUrl (string) and imageUrls (array)
     create: (asUserId, content, visibility = 'public', fileUrl = null, imageUrls = []) => {
@@ -266,6 +267,8 @@ export const api = {
     getStats: (userId) => nodeAPI.get('/railway-users/stats', { params: { user_id: userId } }),
     getTournaments: (userId, limit = 5) => nodeAPI.get('/railway-users/tournaments', { params: { user_id: userId, limit } }),
     search: (term, limit = 10, opts = {}) => nodeAPI.get('/railway-users/search', { params: { term, limit, ...opts } }),
+    getFollowers: (userId, limit = 50) => nodeAPI.get('/railway-users/followers', { params: { user_id: userId, limit } }),
+    getFollowing: (userId, limit = 50) => nodeAPI.get('/railway-users/following', { params: { user_id: userId, limit } }),
   },
   // ===== Railway (PostgreSQL) Teams =====
   railwayTeams: {
@@ -280,6 +283,7 @@ export const api = {
   railwayTournaments: {
     create: (asUserId, payload) => nodeAPI.post('/railway-tournaments/create', { as_user: asUserId, ...payload }),
     listMyHosted: (asUserId) => nodeAPI.get('/railway-tournaments/my-hosted', { params: { as_user: asUserId } }),
+    listMyParticipating: (asUserId) => nodeAPI.get('/railway-tournaments/my-participating', { params: { as_user: asUserId } }),
     getOne: (id) => nodeAPI.get(`/railway-tournaments/${id}`),
     getLikes: (id) => nodeAPI.get(`/railway-tournaments/${id}/likes`),
     like: (id) => nodeAPI.post(`/railway-tournaments/${id}/like`),
@@ -287,6 +291,7 @@ export const api = {
     results: (id) => nodeAPI.get(`/railway-tournaments/${id}/results`),
     matches: (id) => nodeAPI.get(`/railway-tournaments/${id}/matches`),
     listParticipants: (id) => nodeAPI.get(`/railway-tournaments/${id}/participants`),
+    generateMatches: (id) => nodeAPI.post(`/railway-tournaments/${id}/generate-matches`),
     createMatch: (id, payload) => nodeAPI.post(`/railway-tournaments/${id}/matches`, payload),
     updateMatch: (tournamentId, matchId, payload) => nodeAPI.put(`/railway-tournaments/${tournamentId}/matches/${matchId}`, payload),
     deleteMatch: (tournamentId, matchId) => nodeAPI.delete(`/railway-tournaments/${tournamentId}/matches/${matchId}`),

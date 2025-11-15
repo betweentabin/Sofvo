@@ -1318,6 +1318,259 @@ export async function onRequest(context) {
       }
     }
 
+    // Generate round-robin matches (POST /railway-tournaments/:id/generate-matches)
+    if (path.match(/^railway-tournaments\/([^/]+)\/generate-matches$/) && request.method === 'POST') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      // Check if user is tournament organizer
+      const tournament = await env.DB.prepare(
+        'SELECT * FROM tournaments WHERE id = ? AND organizer_id = ?'
+      ).bind(tournamentId, userId).first();
+
+      if (!tournament) {
+        return new Response(JSON.stringify({ error: 'Only tournament organizer can generate matches' }), {
+          status: 403,
+          headers: corsHeaders
+        });
+      }
+
+      // Get all participants
+      const participants = await env.DB.prepare(`
+        SELECT * FROM tournament_participants
+        WHERE tournament_id = ? AND status = 'registered'
+        ORDER BY registered_at ASC
+      `).bind(tournamentId).all();
+
+      const participantsList = participants.results || [];
+
+      if (participantsList.length < 2) {
+        return new Response(JSON.stringify({ error: 'At least 2 participants required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Check if matches already exist
+      const existingMatches = await env.DB.prepare(
+        'SELECT COUNT(*) as count FROM tournament_matches WHERE tournament_id = ?'
+      ).bind(tournamentId).first();
+
+      if (existingMatches && existingMatches.count > 0) {
+        return new Response(JSON.stringify({ error: 'Matches already generated for this tournament' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Generate round-robin matches
+      const matches = [];
+      let matchNumber = 1;
+
+      for (let i = 0; i < participantsList.length; i++) {
+        for (let j = i + 1; j < participantsList.length; j++) {
+          const participant1 = participantsList[i];
+          const participant2 = participantsList[j];
+
+          const matchId = generateUUID();
+          const match = {
+            id: matchId,
+            tournament_id: tournamentId,
+            match_number: matchNumber,
+            round: 1,
+            team1_id: participant1.mode === 'team' ? participant1.team_id : null,
+            team2_id: participant2.mode === 'team' ? participant2.team_id : null,
+            player1_id: participant1.mode === 'individual' ? participant1.user_id : null,
+            player2_id: participant2.mode === 'individual' ? participant2.user_id : null,
+            score1: null,
+            score2: null,
+            status: 'scheduled',
+            scheduled_time: null
+          };
+
+          matches.push(match);
+          matchNumber++;
+
+          // Insert match into database
+          await env.DB.prepare(`
+            INSERT INTO tournament_matches
+            (id, tournament_id, match_number, round, team1_id, team2_id, player1_id, player2_id, score1, score2, status, scheduled_time, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+          `).bind(
+            match.id,
+            match.tournament_id,
+            match.match_number,
+            match.round,
+            match.team1_id,
+            match.team2_id,
+            match.player1_id,
+            match.player2_id,
+            match.score1,
+            match.score2,
+            match.status,
+            match.scheduled_time
+          ).run();
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Matches generated successfully',
+        count: matches.length,
+        matches: matches
+      }), { headers: corsHeaders });
+    }
+
+    // Get tournament matches (GET /railway-tournaments/:id/matches)
+    if (path.match(/^railway-tournaments\/([^/]+)\/matches$/) && request.method === 'GET') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      const matches = await env.DB.prepare(`
+        SELECT
+          tm.*,
+          t1.name as team1_name,
+          t2.name as team2_name,
+          p1.username as player1_username,
+          p1.display_name as player1_display_name,
+          p2.username as player2_username,
+          p2.display_name as player2_display_name
+        FROM tournament_matches tm
+        LEFT JOIN teams t1 ON tm.team1_id = t1.id
+        LEFT JOIN teams t2 ON tm.team2_id = t2.id
+        LEFT JOIN profiles p1 ON tm.player1_id = p1.id
+        LEFT JOIN profiles p2 ON tm.player2_id = p2.id
+        WHERE tm.tournament_id = ?
+        ORDER BY tm.match_number ASC
+      `).bind(tournamentId).all();
+
+      return new Response(JSON.stringify(matches.results || []), { headers: corsHeaders });
+    }
+
+    // Update match result (PUT /railway-tournaments/:tournamentId/matches/:matchId)
+    if (path.match(/^railway-tournaments\/([^/]+)\/matches\/([^/]+)$/) && request.method === 'PUT') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+      const matchId = parts[3];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Invalid token' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const body = await request.json();
+      const { score1, score2, status } = body;
+
+      // Get match details
+      const match = await env.DB.prepare(
+        'SELECT * FROM tournament_matches WHERE id = ? AND tournament_id = ?'
+      ).bind(matchId, tournamentId).first();
+
+      if (!match) {
+        return new Response(JSON.stringify({ error: 'Match not found' }), {
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+
+      // Check if user is tournament organizer OR a participant in this match
+      const tournament = await env.DB.prepare(
+        'SELECT * FROM tournaments WHERE id = ?'
+      ).bind(tournamentId).first();
+
+      let isAuthorized = false;
+
+      // Check if organizer
+      if (tournament.organizer_id === userId) {
+        isAuthorized = true;
+      } else {
+        // Check if participant in the match
+        if (match.team1_id || match.team2_id) {
+          // Team match - check if user is member of either team
+          const teamMembership = await env.DB.prepare(`
+            SELECT * FROM team_members
+            WHERE user_id = ? AND (team_id = ? OR team_id = ?)
+          `).bind(userId, match.team1_id, match.team2_id).first();
+
+          if (teamMembership) {
+            isAuthorized = true;
+          }
+        } else {
+          // Individual match - check if user is one of the players
+          if (match.player1_id === userId || match.player2_id === userId) {
+            isAuthorized = true;
+          }
+        }
+      }
+
+      if (!isAuthorized) {
+        return new Response(JSON.stringify({ error: 'Not authorized to update this match' }), {
+          status: 403,
+          headers: corsHeaders
+        });
+      }
+
+      // Update match
+      await env.DB.prepare(`
+        UPDATE tournament_matches
+        SET score1 = ?, score2 = ?, status = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `).bind(score1, score2, status || 'completed', matchId).run();
+
+      const updatedMatch = await env.DB.prepare(
+        'SELECT * FROM tournament_matches WHERE id = ?'
+      ).bind(matchId).first();
+
+      return new Response(JSON.stringify(updatedMatch), { headers: corsHeaders });
+    }
+
     if (path.startsWith('railway-tournaments/') && path !== 'railway-tournaments/search' && path !== 'railway-tournaments/create' && path !== 'railway-tournaments/my-hosted' && path !== 'railway-tournaments/my-participating' && request.method === 'GET') {
       // Extract tournament ID from path (e.g., railway-tournaments/{id})
       const parts = path.split('/');
