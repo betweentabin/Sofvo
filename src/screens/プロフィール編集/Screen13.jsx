@@ -71,30 +71,17 @@ export const Screen13 = () => {
   };
 
   const handleImageUpload = async (e) => {
-    console.log('=== 画像アップロード開始 ===');
     const file = e.target.files?.[0];
-    console.log('選択されたファイル:', file ? {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      lastModified: file.lastModified
-    } : 'ファイルなし');
-
-    if (!file) {
-      console.log('ファイルが選択されていません');
-      return;
-    }
+    if (!file) return;
 
     // ファイルサイズチェック（5MB以下）
     if (file.size > 5 * 1024 * 1024) {
-      console.error('ファイルサイズが大きすぎます:', file.size);
       alert('画像サイズは5MB以下にしてください');
       return;
     }
 
     // ファイルタイプチェック
     if (!file.type.startsWith('image/')) {
-      console.error('画像ファイルではありません:', file.type);
       alert('画像ファイルを選択してください');
       return;
     }
@@ -103,13 +90,9 @@ export const Screen13 = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      console.log('FormData作成完了、APIを呼び出します...');
 
       const response = await api.media.upload(formData);
-      console.log('アップロードレスポンス:', response);
-
       const { data } = response;
-      console.log('アップロード成功、URL:', data.url ? data.url.substring(0, 50) + '...' : 'なし');
 
       setProfile(prev => ({
         ...prev,
@@ -118,13 +101,10 @@ export const Screen13 = () => {
       alert('画像をアップロードしました！');
     } catch (error) {
       console.error('画像アップロードエラー:', error);
-      console.error('エラーレスポンス:', error.response?.data);
-      console.error('エラーステータス:', error.response?.status);
       const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
       alert('画像のアップロードに失敗しました: ' + errorMsg);
     } finally {
       setUploadingImage(false);
-      console.log('画像アップロード処理終了');
     }
   };
 
@@ -155,7 +135,7 @@ export const Screen13 = () => {
     try {
       // 更新するデータを準備
       const updateData = {
-        user_id: user.id, // Add user_id to ensure it's sent
+        user_id: user.id,
         display_name: profile.display_name,
         username: profile.username,
         age: profile.age ? parseInt(profile.age) : null,
@@ -168,20 +148,13 @@ export const Screen13 = () => {
         privacy_settings: profile.privacy_settings
       };
 
-      console.log('Updating profile with data:', updateData);
-
       await api.railwayUsers.updateProfile(updateData);
-      console.log('Profile updated successfully');
       alert('プロフィールを更新しました');
       navigate('/my-profile');
     } catch (error) {
       console.error('Error updating profile:', error);
-      console.error('Error response data:', error.response?.data);
-      console.error('Error response status:', error.response?.status);
       const errorMsg = error.response?.data?.error || error.message;
-      const errorDetails = error.response?.data?.details ? `\n詳細: ${error.response.data.details}` : '';
-      const receivedFields = error.response?.data?.receivedFields ? `\n受信フィールド: ${error.response.data.receivedFields.join(', ')}` : '';
-      alert('プロフィールの更新に失敗しました: ' + errorMsg + errorDetails + receivedFields);
+      alert('プロフィールの更新に失敗しました: ' + errorMsg);
     } finally {
       setLoading(false);
     }

@@ -228,6 +228,44 @@ export async function onRequest(context) {
       return new Response(JSON.stringify(results.results), { headers: corsHeaders });
     }
 
+    // Get recommended users
+    if (path === 'railway-users/recommended') {
+      const limit = new URL(request.url).searchParams.get('limit') || 20;
+      let asUser = new URL(request.url).searchParams.get('as_user');
+
+      // Remove whitespace from as_user
+      if (asUser) {
+        asUser = asUser.trim().replace(/[\r\n\t]/g, '');
+      }
+
+      // Get recommended users: users not followed by current user, ordered by followers count
+      let query;
+      if (asUser) {
+        query = `
+          SELECT p.id, p.username, p.display_name, p.avatar_url, p.followers_count
+          FROM profiles p
+          WHERE p.id != ?
+          AND p.id NOT IN (
+            SELECT following_id FROM follows WHERE follower_id = ?
+          )
+          ORDER BY p.followers_count DESC, p.created_at DESC
+          LIMIT ?
+        `;
+        const results = await env.DB.prepare(query).bind(asUser, asUser, limit).all();
+        return new Response(JSON.stringify(results.results || []), { headers: corsHeaders });
+      } else {
+        // No user logged in, just show popular users
+        query = `
+          SELECT id, username, display_name, avatar_url, followers_count
+          FROM profiles
+          ORDER BY followers_count DESC, created_at DESC
+          LIMIT ?
+        `;
+        const results = await env.DB.prepare(query).bind(limit).all();
+        return new Response(JSON.stringify(results.results || []), { headers: corsHeaders });
+      }
+    }
+
     // Get follow status
     if (path === 'railway-users/follow-status' && request.method === 'GET') {
       const url = new URL(request.url);
@@ -542,24 +580,51 @@ export async function onRequest(context) {
       // Remove any whitespace characters (including newlines) from user_id
       userId = userId.trim().replace(/[\r\n\t]/g, '');
 
+      // Get tournaments user has participated in (from tournament_participants)
       const tournaments = await env.DB.prepare(`
         SELECT
+          tp.id as participant_id,
+          tp.tournament_id,
+          tp.mode,
+          tp.registered_at,
           t.id,
           t.name,
           t.start_date,
           t.end_date,
           t.location,
           t.sport_type,
+          t.status,
           tr.position,
           tr.points
-        FROM tournament_results tr
-        JOIN tournaments t ON tr.tournament_id = t.id
-        WHERE tr.user_id = ?
+        FROM tournament_participants tp
+        JOIN tournaments t ON tp.tournament_id = t.id
+        LEFT JOIN tournament_results tr ON tr.tournament_id = t.id AND tr.user_id = tp.user_id
+        WHERE tp.user_id = ? AND tp.status = 'registered'
         ORDER BY t.start_date DESC
         LIMIT ?
       `).bind(userId, limit).all();
 
-      return new Response(JSON.stringify(tournaments.results || []), { headers: corsHeaders });
+      // Transform data to match frontend expectations
+      const formattedTournaments = (tournaments.results || []).map(item => ({
+        tournament_id: item.tournament_id,
+        mode: item.mode,
+        registered_at: item.registered_at,
+        tournaments: {
+          id: item.id,
+          name: item.name,
+          start_date: item.start_date,
+          end_date: item.end_date,
+          location: item.location,
+          sport_type: item.sport_type,
+          status: item.status
+        },
+        tournament_results: item.position ? [{
+          position: item.position,
+          points: item.points || 0
+        }] : []
+      }));
+
+      return new Response(JSON.stringify(formattedTournaments), { headers: corsHeaders });
     }
 
     if (path === 'railway-posts/latest') {
@@ -1071,6 +1136,27 @@ export async function onRequest(context) {
           status: 400,
           headers: corsHeaders
         });
+      }
+
+      // Check capacity limit
+      if (tournament.max_participants && tournament.max_participants > 0) {
+        const currentCount = await env.DB.prepare(
+          `SELECT COUNT(*) as count FROM tournament_participants
+           WHERE tournament_id = ? AND mode = ? AND status = 'registered'`
+        ).bind(tournamentId, mode).first();
+
+        const count = currentCount?.count || 0;
+
+        if (count >= tournament.max_participants) {
+          return new Response(JSON.stringify({
+            error: mode === 'team'
+              ? 'この大会のチーム枠は定員に達しています'
+              : 'この大会の個人枠は定員に達しています'
+          }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
       }
 
       // Create participant entry
@@ -1593,7 +1679,32 @@ export async function onRequest(context) {
         });
       }
 
-      return new Response(JSON.stringify(tournament), { headers: corsHeaders });
+      // Count current participants by mode
+      const teamCount = await env.DB.prepare(
+        `SELECT COUNT(*) as count FROM tournament_participants
+         WHERE tournament_id = ? AND mode = 'team' AND status = 'registered'`
+      ).bind(tournamentId).first();
+
+      const individualCount = await env.DB.prepare(
+        `SELECT COUNT(*) as count FROM tournament_participants
+         WHERE tournament_id = ? AND mode = 'individual' AND status = 'registered'`
+      ).bind(tournamentId).first();
+
+      // Calculate remaining slots
+      const maxParticipants = tournament.max_participants || 0;
+      const currentTeam = teamCount?.count || 0;
+      const currentIndividual = individualCount?.count || 0;
+
+      // Add remaining slots to tournament data
+      const tournamentWithSlots = {
+        ...tournament,
+        remaining_team: maxParticipants > 0 ? Math.max(0, maxParticipants - currentTeam) : null,
+        remaining_individual: maxParticipants > 0 ? Math.max(0, maxParticipants - currentIndividual) : null,
+        current_team_count: currentTeam,
+        current_individual_count: currentIndividual
+      };
+
+      return new Response(JSON.stringify(tournamentWithSlots), { headers: corsHeaders });
     }
 
     if (path === 'railway-meta') {
@@ -1685,6 +1796,47 @@ export async function onRequest(context) {
             status: 400,
             headers: corsHeaders
           });
+        }
+
+        // For direct messages, check follow relationship and block status
+        if (type === 'direct' && participant_ids.length === 1) {
+          const targetUserId = participant_ids[0];
+
+          // Check if either user has blocked the other
+          const blockCheck = await env.DB.prepare(`
+            SELECT id FROM blocks
+            WHERE (blocker_id = ? AND blocked_id = ?)
+               OR (blocker_id = ? AND blocked_id = ?)
+          `).bind(as_user, targetUserId, targetUserId, as_user).first();
+
+          if (blockCheck) {
+            return new Response(JSON.stringify({
+              error: 'メッセージを送信できません。',
+              code: 'BLOCKED'
+            }), {
+              status: 403,
+              headers: corsHeaders
+            });
+          }
+
+          // Check if users follow each other (mutual follow required)
+          const followCheck = await env.DB.prepare(`
+            SELECT
+              (SELECT id FROM follows WHERE follower_id = ? AND following_id = ?) as user_follows_target,
+              (SELECT id FROM follows WHERE follower_id = ? AND following_id = ?) as target_follows_user
+          `).bind(as_user, targetUserId, targetUserId, as_user).first();
+
+          const isMutualFollow = followCheck.user_follows_target && followCheck.target_follows_user;
+
+          if (!isMutualFollow) {
+            return new Response(JSON.stringify({
+              error: 'メッセージを送信するには、お互いにフォローしている必要があります。',
+              code: 'NOT_MUTUAL_FOLLOW'
+            }), {
+              status: 403,
+              headers: corsHeaders
+            });
+          }
         }
 
         const conversationId = generateUUID();
@@ -1809,6 +1961,31 @@ export async function onRequest(context) {
             status: 403,
             headers: corsHeaders
           });
+        }
+
+        // Get other participants in the conversation to check for blocks
+        const otherParticipants = await env.DB.prepare(`
+          SELECT user_id FROM conversation_participants
+          WHERE conversation_id = ? AND user_id != ?
+        `).bind(conversation_id, as_user).all();
+
+        // Check if any participant has blocked the sender or vice versa
+        for (const otherUser of otherParticipants.results || []) {
+          const blockCheck = await env.DB.prepare(`
+            SELECT id FROM blocks
+            WHERE (blocker_id = ? AND blocked_id = ?)
+               OR (blocker_id = ? AND blocked_id = ?)
+          `).bind(as_user, otherUser.user_id, otherUser.user_id, as_user).first();
+
+          if (blockCheck) {
+            return new Response(JSON.stringify({
+              error: 'メッセージを送信できません。',
+              code: 'BLOCKED'
+            }), {
+              status: 403,
+              headers: corsHeaders
+            });
+          }
         }
 
         const messageId = generateUUID();

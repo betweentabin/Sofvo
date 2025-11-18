@@ -14,6 +14,8 @@ export const Dm = () => {
   const [showNewMessage, setShowNewMessage] = useState(false);
   const [searchUser, setSearchUser] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [followingUsers, setFollowingUsers] = useState([]);
+  const [loadingFollowing, setLoadingFollowing] = useState(false);
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -64,6 +66,28 @@ export const Dm = () => {
     }
   }, [conversationId, conversations]);
 
+  // フォロー中のユーザーを取得
+  const fetchFollowingUsers = async () => {
+    if (!viewerUserId) return;
+    try {
+      setLoadingFollowing(true);
+      const { data } = await api.railwayUsers.getFollowing(viewerUserId, 50);
+      setFollowingUsers(data || []);
+    } catch (e) {
+      console.error('Failed to fetch following users:', e);
+      setFollowingUsers([]);
+    } finally {
+      setLoadingFollowing(false);
+    }
+  };
+
+  // 新規メッセージモーダルを開いたときにフォロー中を取得
+  useEffect(() => {
+    if (showNewMessage) {
+      fetchFollowingUsers();
+    }
+  }, [showNewMessage, viewerUserId]);
+
   const handleSearchUser = async () => {
     if (!searchUser.trim()) return;
     try {
@@ -95,7 +119,16 @@ export const Dm = () => {
         }
       } catch (err) {
         if (err?.response?.status === 403) {
-          alert('メッセージを送るには相互フォローが必要です');
+          const errorCode = err?.response?.data?.code;
+          const errorMessage = err?.response?.data?.error;
+
+          if (errorCode === 'BLOCKED') {
+            alert('メッセージを送信できません。');
+          } else if (errorCode === 'NOT_MUTUAL_FOLLOW') {
+            alert(errorMessage || 'メッセージを送信するには、お互いにフォローしている必要があります。');
+          } else {
+            alert(errorMessage || 'メッセージを送るには相互フォローが必要です');
+          }
         } else {
           console.error('Failed to create conversation:', err);
           alert('会話の作成に失敗しました');
@@ -231,32 +264,78 @@ export const Dm = () => {
                 <button onClick={() => setShowNewMessage(false)}>×</button>
               </div>
               <div className="modal-body">
-                <input
-                  type="text"
-                  placeholder="ユーザー名を検索..."
-                  value={searchUser}
-                  onChange={(e) => setSearchUser(e.target.value)}
-                  onKeyUp={(e) => e.key === 'Enter' && handleSearchUser()}
-                />
-                <button onClick={handleSearchUser}>検索</button>
-                
-                <div className="search-results">
-                  {searchResults.map((user) => (
-                    <div
-                      key={user.id}
-                      className="user-result"
-                      onClick={() => handleStartConversation(user.id)}
-                    >
-                      <div className="user-avatar">
-                        {user.display_name?.charAt(0) || user.username.charAt(0)}
-                      </div>
-                      <div className="user-info">
-                        <div className="user-name">{user.display_name || user.username}</div>
-                        <div className="user-username">@{user.username}</div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="search-section">
+                  <input
+                    type="text"
+                    placeholder="ユーザー名を検索..."
+                    value={searchUser}
+                    onChange={(e) => setSearchUser(e.target.value)}
+                    onKeyUp={(e) => e.key === 'Enter' && handleSearchUser()}
+                  />
+                  <button onClick={handleSearchUser}>検索</button>
                 </div>
+
+                {searchResults.length > 0 && (
+                  <div className="search-results">
+                    <div className="section-title">検索結果</div>
+                    {searchResults.map((user) => (
+                      <div
+                        key={user.id}
+                        className="user-result"
+                        onClick={() => handleStartConversation(user.id)}
+                      >
+                        <div className="user-avatar">
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt={user.display_name || user.username} />
+                          ) : (
+                            <div className="avatar-placeholder">
+                              {user.display_name?.charAt(0) || user.username.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <div className="user-name">{user.display_name || user.username}</div>
+                          <div className="user-username">@{user.username}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {searchResults.length === 0 && (
+                  <div className="following-list">
+                    <div className="section-title">フォロー中</div>
+                    {loadingFollowing ? (
+                      <div className="loading-message">読み込み中...</div>
+                    ) : followingUsers.length === 0 ? (
+                      <div className="empty-message">
+                        フォロー中のユーザーがいません
+                      </div>
+                    ) : (
+                      followingUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="user-result"
+                          onClick={() => handleStartConversation(user.id)}
+                        >
+                          <div className="user-avatar">
+                            {user.avatar_url ? (
+                              <img src={user.avatar_url} alt={user.display_name || user.username} />
+                            ) : (
+                              <div className="avatar-placeholder">
+                                {user.display_name?.charAt(0) || user.username.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="user-info">
+                            <div className="user-name">{user.display_name || user.username}</div>
+                            <div className="user-username">@{user.username}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

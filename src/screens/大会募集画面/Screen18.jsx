@@ -172,9 +172,11 @@ export const Screen18 = () => {
         setEntryStatus('entering');
         await api.railwayTournaments.apply(tournamentId, 'individual');
         setEntryStatus('entered');
+        alert('個人エントリーが完了しました');
       } catch (e) {
         console.error('apply failed', e);
-        alert('エントリーに失敗しました');
+        const errorMessage = e.response?.data?.error || 'エントリーに失敗しました';
+        alert(errorMessage);
         setEntryStatus('not_entered');
       }
     } else if (selectedMode === 'team') {
@@ -182,9 +184,11 @@ export const Screen18 = () => {
         setTeamEntryStatus('entering');
         await api.railwayTournaments.apply(tournamentId, 'team', teamId);
         setTeamEntryStatus('entered');
+        alert('チームエントリーが完了しました');
       } catch (e) {
         console.error('team apply failed', e);
-        alert('チームのエントリーに失敗しました');
+        const errorMessage = e.response?.data?.error || 'チームのエントリーに失敗しました';
+        alert(errorMessage);
         setTeamEntryStatus('not_entered');
       }
     }

@@ -33,21 +33,31 @@ export const Screen11 = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const params = { status: 'upcoming', limit: 50 };
-        if (user?.id) params.as_user = user.id;
-        const { data } = await api.railwayTournaments.search(params);
+        if (!user?.id) {
+          if (active) {
+            setTodayTournament(null);
+            setUpcomingTournaments([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // ユーザーが参加している大会を取得
+        const { data } = await api.railwayTournaments.listMyParticipating(user.id);
         const list = Array.isArray(data) ? data : [];
         const now = new Date();
+
         // 今日開催の大会
         const todays = list.filter(t => t.start_date && isSameDay(t.start_date, now));
         if (active) setTodayTournament(todays[0] || null);
-        // 参加予定（単純に今後の上位数件を表示）
+
+        // 参加予定（今後の大会）
         const upcoming = list
           .filter(t => t.start_date && new Date(t.start_date) >= new Date(now.getFullYear(), now.getMonth(), now.getDate()))
           .slice(0, 5);
         if (active) setUpcomingTournaments(upcoming);
       } catch (e) {
-        console.error('Failed to load upcoming tournaments:', e);
+        console.error('Failed to load participating tournaments:', e);
         if (active) {
           setTodayTournament(null);
           setUpcomingTournaments([]);

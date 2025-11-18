@@ -21,6 +21,27 @@
   border: none;
   cursor: pointer;
   padding: 0;
+  transition: all 0.3s ease;
+}
+
+.screen-14 .follow-button.following .frame-234 {
+  background-color: #6c757d;
+}
+
+.screen-14 .follow-button.following:hover .frame-234 {
+  background-color: #dc3545;
+}
+
+.screen-14 .follow-button.following:hover .text-wrapper-123::after {
+  content: "フォロー解除";
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.screen-14 .follow-button.following:hover .text-wrapper-123 {
+  color: transparent;
+  position: relative;
 }
 
 .screen-14 .no-tournaments {
@@ -191,6 +212,15 @@
   gap: 10px;
   position: relative;
   width: 100%;
+}
+
+.screen-14 .clickable-stat {
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.screen-14 .clickable-stat:hover {
+  opacity: 0.7;
+  color: #0B4F7F !important;
 }
 
 .screen-14 .text-wrapper-124-1,
@@ -519,3 +549,103 @@
 
 
 
+
+/* PostCard styles for activity section */
+.screen-14 .post-card {
+  background: #fff;
+  border: 1px solid #E5E5E5;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.screen-14 .post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.screen-14 .post-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #d9d9d9;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screen-14 .post-author {
+  font-weight: bold;
+  color: #1A1A1A;
+}
+
+.screen-14 .post-details {
+  color: #1A1A1A;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+}
+
+.screen-14 .post-line {
+  white-space: pre-wrap;
+}
+
+.screen-14 .post-images {
+  display: flex;
+  gap: 14px;
+  margin: 10px 0 14px;
+  overflow-x: auto;
+}
+
+.screen-14 .post-image {
+  width: 160px;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #d9d9d9;
+  flex-shrink: 0;
+}
+
+.screen-14 .post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.screen-14 .post-cta {
+  background: #0B4F7F;
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
+.screen-14 .post-like {
+  background: none;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #1A1A1A;
+  font-weight: bold;
+}
+
+.screen-14 .heart-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.screen-14 .activity-loading,
+.screen-14 .activity-empty {
+  text-align: center;
+  color: #7a8ca5;
+  font-size: 14px;
+  padding: 30px 20px;
+}

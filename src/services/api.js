@@ -269,6 +269,7 @@ export const api = {
     search: (term, limit = 10, opts = {}) => nodeAPI.get('/railway-users/search', { params: { term, limit, ...opts } }),
     getFollowers: (userId, limit = 50) => nodeAPI.get('/railway-users/followers', { params: { user_id: userId, limit } }),
     getFollowing: (userId, limit = 50) => nodeAPI.get('/railway-users/following', { params: { user_id: userId, limit } }),
+    getRecommended: (asUser, limit = 20) => nodeAPI.get('/railway-users/recommended', { params: { as_user: asUser, limit } }),
   },
   // ===== Railway (PostgreSQL) Teams =====
   railwayTeams: {

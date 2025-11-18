@@ -287,27 +287,57 @@
 .Dm .modal-body {
   padding: 20px;
   overflow-y: auto;
+  flex: 1;
 }
 
-.Dm .modal-body input {
-  width: calc(100% - 80px);
+.Dm .search-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.Dm .search-section input {
+  flex: 1;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  margin-right: 10px;
 }
 
-.Dm .modal-body button {
+.Dm .search-section button {
   padding: 10px 20px;
   background-color: #007bff;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.Dm .search-results {
-  margin-top: 20px;
+.Dm .search-section button:hover {
+  background-color: #0056b3;
+}
+
+.Dm .section-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.Dm .search-results,
+.Dm .following-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.Dm .loading-message,
+.Dm .empty-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 14px;
 }
 
 .Dm .user-result {
@@ -333,6 +363,25 @@
   justify-content: center;
   font-weight: bold;
   margin-right: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.Dm .user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.Dm .user-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
 }
 
 .Dm .user-info {

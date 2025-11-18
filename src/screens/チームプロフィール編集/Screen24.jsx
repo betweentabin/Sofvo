@@ -23,7 +23,8 @@ export const Screen24 = () => {
       setLoading(true);
       try {
         const { data } = await api.railwayTeams.getOwnerTeam(user.id);
-        const t = Array.isArray(data) ? data[0] : null;
+        // APIはオブジェクトまたはnullを返す
+        const t = data;
         if (active && t) {
           setTeam({
             name: t.name || "",

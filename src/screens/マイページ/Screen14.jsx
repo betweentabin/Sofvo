@@ -4,6 +4,7 @@ import { useHeaderOffset } from "../../hooks/useHeaderOffset";
 import { Footer } from "../../components/Footer";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import PostCard from "../../components/PostCard";
 // Supabase removed: Railway-only
 import api from "../../services/api";
 import "./style.css";
@@ -43,7 +44,9 @@ export const Screen14 = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      let targetUserId = USE_RAILWAY ? (userId || RAILWAY_TEST_USER || user?.id) : (userId || user?.id);
+      // Fix: Prioritize actual logged-in user over test user
+      let targetUserId = USE_RAILWAY ? (userId || user?.id || RAILWAY_TEST_USER) : (userId || user?.id);
+
       if (!targetUserId) {
         navigate('/login');
         return;
@@ -54,7 +57,7 @@ export const Screen14 = () => {
 
       const { data } = await api.railwayUsers.getProfile(targetUserId);
       setProfile(data);
-      const currentRailId = RAILWAY_TEST_USER || user?.id;
+      const currentRailId = user?.id || RAILWAY_TEST_USER;
       const isOwn = targetUserId === currentRailId;
       setIsOwnProfile(isOwn);
       if (!isOwn && currentRailId) {
@@ -99,14 +102,13 @@ export const Screen14 = () => {
     }
   };
 
-  // 最近の活動（投稿）を取得し、対象ユーザーのものだけに絞り込み
+  // 最近の活動（投稿）を取得 - 効率的な専用エンドポイントを使用
   const fetchActivities = async (targetUserId) => {
     try {
       setActivitiesLoading(true);
-      // 直近の投稿から自分の投稿のみを抽出（最大10件）
-      const { data } = await api.railwayPosts.latest(50);
-      const mine = (data || []).filter(p => p.user_id === targetUserId).slice(0, 10);
-      setActivities(mine);
+      // ユーザーの投稿を直接取得（最大10件）
+      const { data } = await api.railwayPosts.byUser(targetUserId, 10);
+      setActivities(data || []);
     } catch (error) {
       console.error('Error fetching activities:', error);
       setActivities([]);
@@ -119,7 +121,7 @@ export const Screen14 = () => {
     if (!user || !profile) return;
 
     try {
-      const currentRailId = RAILWAY_TEST_USER || user?.id;
+      const currentRailId = user?.id || RAILWAY_TEST_USER;
       if (!currentRailId || !profile?.id) return;
       if (followStatus) {
         await api.railwayUsers.unfollow(currentRailId, profile.id);
@@ -194,8 +196,13 @@ export const Screen14 = () => {
                       <div className="text-wrapper-123">編集</div>
                     </Link>
                   ) : (
-                    <button onClick={handleFollow} className="frame-234 follow-button">
-                      <div className="text-wrapper-123">{followStatus ? "フォロー中" : "フォロー"}</div>
+                    <button
+                      onClick={handleFollow}
+                      className={`follow-button ${followStatus ? 'following' : ''}`}
+                    >
+                      <div className="frame-234">
+                        <div className="text-wrapper-123">{followStatus ? "フォロー中" : "フォロー"}</div>
+                      </div>
                     </button>
                   )}
                 </div>
@@ -205,8 +212,20 @@ export const Screen14 = () => {
                     <div className="text-wrapper-124-2">{stats.totalPoints} ポイント（通算）</div>
                   </div>
                   <div className="frame-236">
-                    <div className="text-wrapper-124-3">{stats.followingCount} フォロー</div>
-                    <div className="text-wrapper-124-4">{stats.followersCount} フォロワー</div>
+                    <Link
+                      to={`/follow-list${profile?.id ? `/${profile.id}` : ''}?type=following`}
+                      className="text-wrapper-124-3 clickable-stat"
+                      style={{ textDecoration: 'none', cursor: 'pointer' }}
+                    >
+                      {stats.followingCount} フォロー
+                    </Link>
+                    <Link
+                      to={`/follow-list${profile?.id ? `/${profile.id}` : ''}?type=followers`}
+                      className="text-wrapper-124-4 clickable-stat"
+                      style={{ textDecoration: 'none', cursor: 'pointer' }}
+                    >
+                      {stats.followersCount} フォロワー
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -237,6 +256,9 @@ export const Screen14 = () => {
                   <div className="text-wrapper-127-1">大会名：{item.tournaments?.name || "不明"}</div>
                   <div className="text-wrapper-127-2">
                     開催日時：{item.tournaments?.start_date ? new Date(item.tournaments.start_date).toLocaleDateString('ja-JP') : "未定"}
+                  </div>
+                  <div className="text-wrapper-127-2-5" style={{ fontSize: '13px', color: '#666' }}>
+                    参加形式：{item.mode === 'team' ? 'チーム参加' : '個人参加'}
                   </div>
                   <div className="text-wrapper-127-3">
                     試合結果：{item.tournament_results?.[0]?.position ? `第${item.tournament_results[0].position}位` : "未確定"}
@@ -269,13 +291,21 @@ export const Screen14 = () => {
             {activitiesLoading ? (
               <div className="activity-loading">読み込み中...</div>
             ) : activities.length > 0 ? (
-              activities.map((act) => (
-                <div key={act.id} className="activity-card">
-                  <div className="activity-header">
-                    <span className="activity-time">{new Date(act.created_at).toLocaleDateString('ja-JP')}</span>
-                  </div>
-                  <div className="activity-content">{act.content}</div>
-                </div>
+              activities.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={{
+                    ...post,
+                    profiles: {
+                      id: post.user_id,
+                      username: post.username,
+                      display_name: post.display_name,
+                      avatar_url: post.avatar_url
+                    }
+                  }}
+                  onLike={() => {}}
+                  liked={false}
+                />
               ))
             ) : (
               <div className="activity-empty">まだ活動記録がありません</div>
