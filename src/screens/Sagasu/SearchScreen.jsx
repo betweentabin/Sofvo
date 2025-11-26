@@ -128,14 +128,33 @@ export const SearchScreen = () => {
     setLoading(true);
     try {
       const asUserId = RAILWAY_TEST_USER || user?.id || null;
-      const { data } = await api.railwayTournaments.search({
+
+      // Parse year-month filter to start/end dates
+      let startDate = null;
+      let endDate = null;
+      if (filters.yearMonth) {
+        const match = filters.yearMonth.match(/(\d{4})年(\d{1,2})月/);
+        if (match) {
+          const year = parseInt(match[1]);
+          const month = parseInt(match[2]);
+          startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+          endDate = new Date(year, month, 0).toISOString().split('T')[0];
+        }
+      }
+
+      const params = {
         status: 'upcoming',
         area: filters.area || '',
         type: filters.type || '',
         followingOnly: filters.followingOnly ? 'true' : 'false',
         as_user: asUserId,
         limit: 50,
-      });
+      };
+
+      if (startDate) params.start_date = startDate;
+      if (endDate) params.end_date = endDate;
+
+      const { data } = await api.railwayTournaments.search(params);
       setTournaments(data || []);
     } catch (error) {
       console.error('Error searching tournaments:', error);

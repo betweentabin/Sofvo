@@ -1023,9 +1023,11 @@ export async function onRequest(context) {
 
     if (path === 'railway-tournaments/search') {
       const url = new URL(request.url);
-      const sport_type = url.searchParams.get('sport_type');
-      const location = url.searchParams.get('location');
+      const sport_type = url.searchParams.get('sport_type') || url.searchParams.get('type');
+      const location = url.searchParams.get('location') || url.searchParams.get('area');
       const status = url.searchParams.get('status');
+      const start_date = url.searchParams.get('start_date');
+      const end_date = url.searchParams.get('end_date');
       const limit = url.searchParams.get('limit') || 20;
 
       let query = 'SELECT * FROM tournaments WHERE 1=1';
@@ -1039,6 +1041,18 @@ export async function onRequest(context) {
       if (location) {
         query += ' AND location LIKE ?';
         bindings.push(`%${location}%`);
+      }
+
+      // Date range filter (year-month filter from frontend)
+      if (start_date && end_date) {
+        query += ' AND start_date >= ? AND start_date <= ?';
+        bindings.push(start_date, end_date);
+      } else if (start_date) {
+        query += ' AND start_date >= ?';
+        bindings.push(start_date);
+      } else if (end_date) {
+        query += ' AND start_date <= ?';
+        bindings.push(end_date);
       }
 
       if (status) {
@@ -1055,7 +1069,7 @@ export async function onRequest(context) {
         }
       }
 
-      query += ' ORDER BY start_date DESC LIMIT ?';
+      query += ' ORDER BY start_date ASC LIMIT ?';
       bindings.push(limit);
 
       const stmt = env.DB.prepare(query);
