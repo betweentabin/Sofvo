@@ -30,61 +30,63 @@ export const Screen18 = () => {
   const [matchScore1, setMatchScore1] = useState('');
   const [matchScore2, setMatchScore2] = useState('');
 
-  useEffect(() => {
-    const load = async () => {
-      if (!tournamentId) return;
-      setLoading(true);
+  // Load tournament data
+  const loadTournamentData = async () => {
+    if (!tournamentId) return;
+    setLoading(true);
+    try {
+      const { data } = await api.railwayTournaments.getOne(tournamentId);
+      setTournament(data);
+      // Load likes with auth
+      const { data: likes } = await api.railwayTournaments.getLikes(tournamentId);
+      setLikeCount(likes?.count || 0);
+      setIsLiked(!!likes?.liked);
+      // Load participation status (individual)
       try {
-        const { data } = await api.railwayTournaments.getOne(tournamentId);
-        setTournament(data);
-        // Load likes with auth
-        const { data: likes } = await api.railwayTournaments.getLikes(tournamentId);
-        setLikeCount(likes?.count || 0);
-        setIsLiked(!!likes?.liked);
-        // Load participation status (individual)
-        try {
-          const { data: part } = await api.railwayTournaments.isParticipating(tournamentId, 'individual');
-          setEntryStatus(part?.participating ? 'entered' : 'not_entered');
-        } catch {}
-        // Load owner team and team participation status
-        try {
-          if (user?.id) {
-            const { data: teams } = await api.railwayTeams.getOwnerTeam(user.id);
-            const t = Array.isArray(teams) ? teams[0] : teams;
-            if (t?.id) {
-              setTeam(t);
-              setTeamId(t.id);
-              const { data: tpart } = await api.railwayTournaments.isParticipating(tournamentId, 'team', t.id);
-              setTeamEntryStatus(tpart?.participating ? 'entered' : 'not_entered');
-            } else {
-              setTeamEntryStatus('no_team');
-            }
+        const { data: part } = await api.railwayTournaments.isParticipating(tournamentId, 'individual');
+        setEntryStatus(part?.participating ? 'entered' : 'not_entered');
+      } catch {}
+      // Load owner team and team participation status
+      try {
+        if (user?.id) {
+          const { data: teams } = await api.railwayTeams.getOwnerTeam(user.id);
+          const t = Array.isArray(teams) ? teams[0] : teams;
+          if (t?.id) {
+            setTeam(t);
+            setTeamId(t.id);
+            const { data: tpart } = await api.railwayTournaments.isParticipating(tournamentId, 'team', t.id);
+            setTeamEntryStatus(tpart?.participating ? 'entered' : 'not_entered');
+          } else {
+            setTeamEntryStatus('no_team');
           }
-        } catch (e) {
-          console.warn('team load failed', e);
-          setTeamEntryStatus('error');
-        }
-        // Load matches
-        try {
-          const { data: matchData } = await api.railwayTournaments.matches(tournamentId);
-          setMatches(matchData || []);
-        } catch (e) {
-          console.warn('Failed to load matches', e);
-        }
-        // Load participants
-        try {
-          const { data: partData } = await api.railwayTournaments.listParticipants(tournamentId);
-          setParticipants(partData || []);
-        } catch (e) {
-          console.warn('Failed to load participants', e);
         }
       } catch (e) {
-        console.error('Failed to load tournament', e);
-      } finally {
-        setLoading(false);
+        console.warn('team load failed', e);
+        setTeamEntryStatus('error');
       }
-    };
-    load();
+      // Load matches
+      try {
+        const { data: matchData } = await api.railwayTournaments.matches(tournamentId);
+        setMatches(matchData || []);
+      } catch (e) {
+        console.warn('Failed to load matches', e);
+      }
+      // Load participants
+      try {
+        const { data: partData } = await api.railwayTournaments.listParticipants(tournamentId);
+        setParticipants(partData || []);
+      } catch (e) {
+        console.warn('Failed to load participants', e);
+      }
+    } catch (e) {
+      console.error('Failed to load tournament', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTournamentData();
   }, [tournamentId, user?.id]);
 
   
@@ -146,6 +148,8 @@ export const Screen18 = () => {
         await api.railwayTournaments.withdraw(tournamentId, 'individual');
         setEntryStatus('not_entered');
         setSelectedMode(null);
+        // Reload tournament data to update remaining slots
+        await loadTournamentData();
       } catch (e) {
         console.error('withdraw failed', e);
         setEntryStatus('entered');
@@ -159,6 +163,8 @@ export const Screen18 = () => {
         await api.railwayTournaments.withdraw(tournamentId, 'team', teamId);
         setTeamEntryStatus('not_entered');
         setSelectedMode(null);
+        // Reload tournament data to update remaining slots
+        await loadTournamentData();
       } catch (e) {
         console.error('team withdraw failed', e);
         setTeamEntryStatus('entered');
@@ -173,6 +179,8 @@ export const Screen18 = () => {
         await api.railwayTournaments.apply(tournamentId, 'individual');
         setEntryStatus('entered');
         alert('個人エントリーが完了しました');
+        // Reload tournament data to update remaining slots
+        await loadTournamentData();
       } catch (e) {
         console.error('apply failed', e);
         const errorMessage = e.response?.data?.error || 'エントリーに失敗しました';
@@ -185,6 +193,8 @@ export const Screen18 = () => {
         await api.railwayTournaments.apply(tournamentId, 'team', teamId);
         setTeamEntryStatus('entered');
         alert('チームエントリーが完了しました');
+        // Reload tournament data to update remaining slots
+        await loadTournamentData();
       } catch (e) {
         console.error('team apply failed', e);
         const errorMessage = e.response?.data?.error || 'チームのエントリーに失敗しました';

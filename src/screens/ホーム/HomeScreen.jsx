@@ -60,6 +60,7 @@ export const HomeScreen = () => {
   const [followingPosts, setFollowingPosts] = useState([]);
   const [recommendedPosts, setRecommendedPosts] = useState([]);
   const [recommendedDiaries, setRecommendedDiaries] = useState([]);
+  const [recommendedTeams, setRecommendedTeams] = useState([]);
   const [timelinePosts, setTimelinePosts] = useState([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -118,6 +119,17 @@ export const HomeScreen = () => {
     }
   };
 
+  // Fetch recommended teams
+  const fetchRecommendedTeams = async () => {
+    try {
+      const { data } = await api.railwayTeams.getRecommended(3);
+      setRecommendedTeams(data || []);
+    } catch (error) {
+      console.error('Error fetching recommended teams:', error);
+      setRecommendedTeams([]);
+    }
+  };
+
   useEffect(() => {
     let isActive = true;
     const loadTimeline = async () => {
@@ -150,7 +162,8 @@ export const HomeScreen = () => {
       } else if (activeTab === 'recommend') {
         await Promise.all([
           fetchRecommendedPosts(),
-          fetchRecommendedDiaries()
+          fetchRecommendedDiaries(),
+          fetchRecommendedTeams()
         ]);
       }
       setLoading(false);
@@ -652,28 +665,51 @@ export const HomeScreen = () => {
               </div>
 
               <div className="recommend-items">
-                {recommendedDiaries.length > 0 ? (
-                  recommendedDiaries.map((diary) => (
-                    <div
-                      className="recommend-item"
-                      key={diary.id}
-                      onClick={() => navigate(`/profile/${diary.id}`)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="rectangle-6" />
-                      <div className="recommend-item-content">
-                        <div className="recommend-item-header">
-                          <div className="frame-117" />
-                          <div className="text-wrapper-79">
-                            {diary.display_name || diary.username || 'アカウント名'}
+                {recommendedDiaries.length > 0 || recommendedTeams.length > 0 ? (
+                  <>
+                    {recommendedDiaries.map((diary) => (
+                      <div
+                        className="recommend-item"
+                        key={`user-${diary.id}`}
+                        onClick={() => navigate(`/mypage/${diary.id}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="rectangle-6" />
+                        <div className="recommend-item-content">
+                          <div className="recommend-item-header">
+                            <div className="frame-117" />
+                            <div className="text-wrapper-79">
+                              {diary.display_name || diary.username || 'アカウント名'}
+                            </div>
+                          </div>
+                          <div className="text-wrapper-80">
+                            {diary.bio || 'プロフィール情報がありません'}
                           </div>
                         </div>
-                        <div className="text-wrapper-80">
-                          {diary.bio || 'プロフィール情報がありません'}
+                      </div>
+                    ))}
+                    {recommendedTeams.map((team) => (
+                      <div
+                        className="recommend-item"
+                        key={`team-${team.id}`}
+                        onClick={() => navigate(`/team-member`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="rectangle-6" />
+                        <div className="recommend-item-content">
+                          <div className="recommend-item-header">
+                            <div className="frame-117" />
+                            <div className="text-wrapper-79">
+                              {team.name || 'チーム名未設定'}
+                            </div>
+                          </div>
+                          <div className="text-wrapper-80">
+                            {team.description || 'チーム説明がありません'} • {team.member_count || 0}人のメンバー
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </>
                 ) : (
                   <div style={{ padding: '20px', textAlign: 'center' }}>
                     おすすめのプロフィールがありません

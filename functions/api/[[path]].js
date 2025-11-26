@@ -1138,6 +1138,42 @@ export async function onRequest(context) {
         });
       }
 
+      // Check if team members are already participating (for team mode)
+      if (mode === 'team' && teamId) {
+        // Get all team members
+        const teamMembers = await env.DB.prepare(
+          'SELECT user_id FROM team_members WHERE team_id = ?'
+        ).bind(teamId).all();
+
+        if (teamMembers.results && teamMembers.results.length > 0) {
+          // Check if any team member is already participating in this tournament
+          const memberIds = teamMembers.results.map(m => m.user_id);
+          const placeholders = memberIds.map(() => '?').join(',');
+
+          const conflictQuery = `
+            SELECT p.user_id, pr.display_name, pr.username
+            FROM tournament_participants p
+            LEFT JOIN profiles pr ON p.user_id = pr.id
+            WHERE p.tournament_id = ? AND p.user_id IN (${placeholders}) AND p.status = 'registered'
+            LIMIT 1
+          `;
+
+          const conflict = await env.DB.prepare(conflictQuery)
+            .bind(tournamentId, ...memberIds)
+            .first();
+
+          if (conflict) {
+            const memberName = conflict.display_name || conflict.username || 'チームメンバー';
+            return new Response(JSON.stringify({
+              error: `${memberName} が既にこの大会に参加しているため、チームとして参加できません`
+            }), {
+              status: 400,
+              headers: corsHeaders
+            });
+          }
+        }
+      }
+
       // Check capacity limit
       if (tournament.max_participants && tournament.max_participants > 0) {
         const currentCount = await env.DB.prepare(
@@ -2204,6 +2240,30 @@ export async function onRequest(context) {
           headers: corsHeaders
         });
       }
+    }
+
+    // Get recommended teams
+    if (path === 'railway-teams/recommended') {
+      const limit = new URL(request.url).searchParams.get('limit') || 10;
+
+      // Get teams ordered by creation date (newest first)
+      const teams = await env.DB.prepare(`
+        SELECT
+          t.id,
+          t.name,
+          t.description,
+          t.sport_type,
+          t.logo_url,
+          t.created_at,
+          COUNT(tm.id) as member_count
+        FROM teams t
+        LEFT JOIN team_members tm ON t.id = tm.team_id
+        GROUP BY t.id
+        ORDER BY t.created_at DESC
+        LIMIT ?
+      `).bind(limit).all();
+
+      return new Response(JSON.stringify(teams.results || []), { headers: corsHeaders });
     }
 
     if (path === 'railway-teams/owner') {

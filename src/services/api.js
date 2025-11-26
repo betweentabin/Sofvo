@@ -279,6 +279,7 @@ export const api = {
     removeMember: (asUserId, teamId, userId) => nodeAPI.delete('/railway-teams/members', { data: { as_user: asUserId, team_id: teamId, user_id: userId } }),
     updateTeam: (asUserId, teamId, payload) => nodeAPI.put('/railway-teams/update', { as_user: asUserId, team_id: teamId, ...payload }),
     getStats: (teamId) => nodeAPI.get('/railway-teams/stats', { params: { team_id: teamId } }),
+    getRecommended: (limit = 10) => nodeAPI.get('/railway-teams/recommended', { params: { limit } }),
   },
   // ===== Railway (PostgreSQL) Tournaments =====
   railwayTournaments: {
