@@ -41,13 +41,13 @@ export const Screen37 = () => {
         const { data } = await api.railwayMeta.get();
         if (!active) return;
         setAreaOptions((data?.areas && data.areas.length) ? data.areas : (RUNTIME.searchAreas || ["静岡県","東京都","神奈川県","愛知県"]));
-        setCategoryOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ["男子","女子","混合","ミックス"]));
+        setCategoryOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ["メンズ","レディース","混合","スポレク"]));
         setMethodOptions((data?.competition_methods && data.competition_methods.length) ? data.competition_methods : (RUNTIME.competitionMethods || ["リーグ戦","トーナメント","スイスドロー"]));
         setRankingOptions((data?.ranking_methods && data.ranking_methods.length) ? data.ranking_methods : (RUNTIME.rankingMethods || ["勝数","得失点差","ポイント制"]));
       } catch {
         if (!active) return;
         setAreaOptions(RUNTIME.searchAreas || ["静岡県","東京都","神奈川県","愛知県"]);
-        setCategoryOptions(RUNTIME.searchTypes || ["男子","女子","混合","ミックス"]);
+        setCategoryOptions(RUNTIME.searchTypes || ["メンズ","レディース","混合","スポレク"]);
         setMethodOptions(RUNTIME.competitionMethods || ["リーグ戦","トーナメント","スイスドロー"]);
         setRankingOptions(RUNTIME.rankingMethods || ["勝数","得失点差","ポイント制"]);
       }

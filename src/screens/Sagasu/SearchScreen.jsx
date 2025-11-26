@@ -67,11 +67,11 @@ export const SearchScreen = () => {
         const { data } = await api.railwayMeta.get();
         if (!active) return;
         setAreaOptions((data?.areas && data.areas.length) ? data.areas : (RUNTIME.searchAreas || ['静岡県','東京都','大阪府']));
-        setTypeOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ['レディース','メンズ','混合','スポレク']));
+        setTypeOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ['メンズ','レディース','混合','スポレク']));
       } catch {
         if (!active) return;
         setAreaOptions(RUNTIME.searchAreas || ['静岡県','東京都','大阪府']);
-        setTypeOptions(RUNTIME.searchTypes || ['レディース','メンズ','混合','スポレク']);
+        setTypeOptions(RUNTIME.searchTypes || ['メンズ','レディース','混合','スポレク']);
       }
     };
     loadMeta();
@@ -368,10 +368,9 @@ export const SearchScreen = () => {
                       onChange={(e) => setFilters({...filters, type: e.target.value})}
                     >
                       <option value="">全て</option>
-                      <option value="レディース">レディース</option>
-                      <option value="メンズ">メンズ</option>
-                      <option value="混合">混合</option>
-                      <option value="スポレク">スポレク</option>
+                      {typeOptions.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
