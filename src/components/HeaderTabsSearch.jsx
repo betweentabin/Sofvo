@@ -39,12 +39,12 @@ export const HeaderTabsSearch = ({ onTabChange, activeTab = 'team' }) => {
           >
             チーム参加
           </div>
-          <div 
+          <div
             className={`text-wrapper-62 ${activeTab === 'individual' ? 'active' : ''}`}
             onClick={() => onTabChange && onTabChange('individual')}
             style={{ cursor: 'pointer' }}
           >
-            個人参加
+            メンバー募集
           </div>
         </div>
       </div>

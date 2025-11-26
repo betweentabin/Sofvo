@@ -325,7 +325,7 @@ export const SearchScreen = () => {
                       <img className="search-icon" alt="検索" src="/img/検索黒.png" />
                     </div>
                   </div>
-                  <div className="text-wrapper-39">大会を検索（個人参加）</div>
+                  <div className="text-wrapper-39">メンバーを募集</div>
                 </div>
 
                 <div className="frame-24">
