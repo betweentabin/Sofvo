@@ -154,11 +154,49 @@ export const Screen33 = () => {
   return (
     <div className="screen-33">
       <HeaderContent />
+
+      {/* ナビゲーションヘッダー */}
+      <div className="navigation-header" style={{
+        position: "absolute",
+        top: "60px",
+        left: 0,
+        right: 0,
+        height: "60px",
+        backgroundColor: "#ffffff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 20px",
+        borderBottom: "1px solid #e0e0e0",
+        zIndex: 100
+      }}>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: "transparent",
+            border: "none",
+            fontSize: "24px",
+            cursor: "pointer",
+            padding: "8px"
+          }}
+        >
+          ←
+        </button>
+        <div style={{
+          fontSize: "18px",
+          fontWeight: "bold",
+          color: "#333"
+        }}>
+          チーム作成
+        </div>
+        <div style={{ width: "40px" }}></div>
+      </div>
+
       <div
         className="main-content"
         style={{
           position: "absolute",
-          top: `${mainContentTop}px`,
+          top: `${mainContentTop + 60}px`,
           bottom: "60px",
           overflowY: "auto",
           width: "100%",
@@ -167,10 +205,6 @@ export const Screen33 = () => {
         <div className="screen-33">
           <div className="frame-439">
             <div className="frame-440">
-
-              <div className="frame-466">
-                <div className="text-wrapper-226">チーム作成</div>
-              </div>
 
               <div className="frame-441">
                 <div className="frame-442">

@@ -17,7 +17,8 @@
       "Bash(npx cap:*)",
       "Bash(touch:*)",
       "Bash(mkdir:*)",
-      "WebFetch(domain:supabase.com)"
+      "WebFetch(domain:supabase.com)",
+      "Bash(npx wrangler pages deploy:*)"
     ],
     "deny": []
   }

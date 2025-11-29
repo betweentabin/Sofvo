@@ -249,38 +249,36 @@
 }
 
 .screen-6 .frame-54 {
-  align-items: center;
-  background-color: var(--4);
-  border-radius: 5px;
+  align-items: flex-start;
+  align-self: stretch;
   display: flex;
-  gap: 10px;
-  justify-content: center;
-  overflow: hidden;
-  padding: 5px 0px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 5px;
   position: relative;
-  width: 60px;
+  width: 100%;
 }
 
 .screen-6 .text-wrapper-53 {
-  color: #ffffff;
+  color: var(--4);
   font-family: Arial, Helvetica; font-weight: bold;
-  font-size: 10px;
-  
+  font-size: 13px;
+
   letter-spacing: 0;
   line-height: normal;
-  margin-top: -1px;
   position: relative;
   white-space: nowrap;
   width: fit-content;
 }
 
 .screen-6 .frame-55 {
+  align-self: stretch;
   border: 0.5px solid;
   border-color: var(--4);
   border-radius: 5px;
   height: 150px;
   position: relative;
-  width: 464px;
+  width: 100%;
 }
 
 .screen-6 .frame-56 {
@@ -325,7 +323,7 @@
 
 .screen-6 .frame-58 {
   align-items: center;
-  background-color: var(--);
+  background-color: #0B4F7F;
   border-radius: 5px;
   display: flex;
   gap: 10px;
@@ -421,10 +419,10 @@
 }
 
 .screen-6 .text-wrapper-57 {
-  color: var(--);
+  color: #0B4F7F;
   font-family: Arial, Helvetica; font-weight: bold;
   font-size: 30px;
-  
+
   letter-spacing: 0;
   line-height: normal;
   position: relative;

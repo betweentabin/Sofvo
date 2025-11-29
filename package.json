@@ -16,6 +16,7 @@
     "db:setup": "node database/setup-railway-db.js",
     "db:seed": "node database/seed-data.js",
     "db:seed:matches": "node database/seed-matches.mjs",
+    "db:seed:posts": "npx wrangler d1 execute sofvo-db --remote --file=./database/seed-posts-d1.sql",
     "db:test": "node database/test-connection.js",
     "db:reset": "node database/setup-railway-db.js && node database/seed-data.js",
     "db:add-team-members": "node database/add-team-members.js",

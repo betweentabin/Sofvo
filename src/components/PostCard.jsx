@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 const PostCard = ({ post, onLike, liked = false }) => {
   const displayName = post?.profiles?.display_name || post?.profiles?.username || 'ユーザー';
+  const avatarUrl = post?.profiles?.avatar_url || post?.avatar_url;
   const images = Array.isArray(post?.image_urls) && post.image_urls.length
     ? post.image_urls
     : (post?.file_url ? [post.file_url] : []);
@@ -11,7 +12,15 @@ const PostCard = ({ post, onLike, liked = false }) => {
   return (
     <div className="post-card">
       <Link to={profileId ? `/profile/${profileId}` : '/my-profile'} className="post-header" style={{ textDecoration: 'none' }}>
-        <div className="post-avatar" />
+        <div className="post-avatar">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
+              👤
+            </div>
+          )}
+        </div>
         <div className="post-author" style={{ cursor: 'pointer' }}>{displayName}</div>
       </Link>
 
@@ -31,16 +40,13 @@ const PostCard = ({ post, onLike, liked = false }) => {
         )}
       </div>
 
-      <div className="post-images">
-        {[0,1,2,3,4].map((i) => {
-          const src = images[i];
-          return src ? (
+      {images.length > 0 && (
+        <div className="post-images">
+          {images.map((src, i) => (
             <img key={i} className="post-image" src={src} alt={`post-${i}`} />
-          ) : (
-            <div key={i} className="post-image ph" />
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="post-footer">
         {post?.tournament_id ? (

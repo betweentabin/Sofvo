@@ -147,64 +147,6 @@ export const Screen6 = () => {
               </select>
             </div>
 
-            {/* 競技歴 */}
-            <div className="frame-49">
-              <div className="frame-50">
-                <div className="text-wrapper-52">競技歴</div>
-                <div className="frame-52" onClick={() => togglePrivacy('showExperience')}>
-                  <div className="text-wrapper-51">
-                    {formData.showExperience ? '公開' : '非公開'}
-                  </div>
-                  <img
-                    className="vector-7"
-                    alt="Vector"
-                    src="/img/vector-12.svg"
-                  />
-                </div>
-              </div>
-              <input
-                type="text"
-                className="vector-wrapper input-field"
-                value={formData.experience}
-                onChange={(e) => handleInputChange('experience', e.target.value)}
-                placeholder="例: 5年"
-              />
-            </div>
-
-            {/* 競技 */}
-            <div className="frame-49">
-              <div className="frame-50">
-                <div className="text-wrapper-52">競技</div>
-                <div className="frame-52" onClick={() => togglePrivacy('showSport')}>
-                  <div className="text-wrapper-51">
-                    {formData.showSport ? '公開' : '非公開'}
-                  </div>
-                  <img
-                    className="vector-7"
-                    alt="Vector"
-                    src="/img/vector-12.svg"
-                  />
-                </div>
-              </div>
-              <select
-                className="vector-wrapper input-field"
-                value={formData.sport}
-                onChange={(e) => handleInputChange('sport', e.target.value)}
-              >
-                <option value="">選択してください</option>
-                <option value="soccer">サッカー</option>
-                <option value="baseball">野球</option>
-                <option value="basketball">バスケットボール</option>
-                <option value="volleyball">バレーボール</option>
-                <option value="tennis">テニス</option>
-                <option value="rugby">ラグビー</option>
-                <option value="golf">ゴルフ</option>
-                <option value="swimming">水泳</option>
-                <option value="track">陸上</option>
-                <option value="other">その他</option>
-              </select>
-            </div>
-
             {/* 自己紹介 */}
             <div className="frame-54">
               <div className="text-wrapper-53">自己紹介</div>

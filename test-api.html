@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament API Test</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .test-section {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px;
+      width: 300px;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>🏆 Tournament API テストツール</h1>
+
+  <!-- Auth Section -->
+  <div class="test-section">
+    <h2>認証情報</h2>
+    <div>
+      <label>JWT Token: <input type="text" id="jwt" placeholder="JWT token from localStorage"></label>
+      <button onclick="loadJWT()">LocalStorageから取得</button>
+    </div>
+    <div>
+      <label>User ID: <input type="text" id="userId" placeholder="ユーザーID"></label>
+    </div>
+  </div>
+
+  <!-- Test 1: Get My Teams -->
+  <div class="test-section">
+    <h2>テスト1: 所属チーム一覧取得</h2>
+    <button onclick="getMyTeams()">実行</button>
+    <div id="teams-result"></div>
+  </div>
+
+  <!-- Test 2: Apply to Tournament -->
+  <div class="test-section">
+    <h2>テスト2: 大会に参加</h2>
+    <div>
+      <label>Tournament ID: <input type="text" id="tournamentId"></label>
+    </div>
+    <div>
+      <label>Team ID: <input type="text" id="teamId"></label>
+    </div>
+    <button onclick="applyToTournament()">チームで参加</button>
+    <div id="apply-result"></div>
+  </div>
+
+  <!-- Test 3: Get Tournament Matches -->
+  <div class="test-section">
+    <h2>テスト3: 対戦表取得</h2>
+    <div>
+      <label>Tournament ID: <input type="text" id="matchesTournamentId"></label>
+    </div>
+    <button onclick="getTournamentMatches()">取得</button>
+    <div id="matches-result"></div>
+  </div>
+
+  <!-- Test 4: Get Notifications -->
+  <div class="test-section">
+    <h2>テスト4: 通知一覧取得</h2>
+    <button onclick="getNotifications()">取得</button>
+    <div id="notifications-result"></div>
+  </div>
+
+  <!-- Test 5: Auto Generate Matches -->
+  <div class="test-section">
+    <h2>テスト5: 締切日バッチ処理</h2>
+    <button onclick="autoGenerateMatches()">実行</button>
+    <div id="batch-result"></div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+
+    function loadJWT() {
+      const jwt = localStorage.getItem('JWT');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      document.getElementById('jwt').value = jwt || '';
+      document.getElementById('userId').value = user.id || '';
+      alert('JWT とユーザーIDをロードしました');
+    }
+
+    function getHeaders() {
+      const jwt = document.getElementById('jwt').value;
+      return {
+        'Authorization': `Bearer ${jwt}`,
+        'Content-Type': 'application/json'
+      };
+    }
+
+    async function getMyTeams() {
+      const userId = document.getElementById('userId').value;
+      if (!userId) {
+        alert('User IDを入力してください');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/railway-teams/my-teams?user_id=${userId}`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+
+        const resultDiv = document.getElementById('teams-result');
+        resultDiv.innerHTML = `
+          <h3 class="success">✅ 成功</h3>
+          <p>チーム数: ${data.length}</p>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        document.getElementById('teams-result').innerHTML = `
+          <h3 class="error">❌ エラー</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+
+    async function applyToTournament() {
+      const tournamentId = document.getElementById('tournamentId').value;
+      const teamId = document.getElementById('teamId').value;
+
+      if (!tournamentId || !teamId) {
+        alert('Tournament ID と Team ID を入力してください');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/railway-tournaments/${tournamentId}/apply`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            mode: 'team',
+            team_id: teamId
+          })
+        });
+        const data = await response.json();
+
+        const resultDiv = document.getElementById('apply-result');
+        resultDiv.innerHTML = `
+          <h3 class="${response.ok ? 'success' : 'error'}">${response.ok ? '✅ 成功' : '❌ エラー'}</h3>
+          <p>対戦表自動生成: ${data.matches_generated ? 'はい' : 'いいえ'}</p>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        document.getElementById('apply-result').innerHTML = `
+          <h3 class="error">❌ エラー</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+
+    async function getTournamentMatches() {
+      const tournamentId = document.getElementById('matchesTournamentId').value;
+
+      if (!tournamentId) {
+        alert('Tournament ID を入力してください');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/railway-tournaments/${tournamentId}/matches`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+
+        const resultDiv = document.getElementById('matches-result');
+        let matchList = '';
+        data.forEach(match => {
+          matchList += `
+            <div style="border-bottom: 1px solid #eee; padding: 5px 0;">
+              試合${match.match_number}: ${match.team1_name || '未定'} vs ${match.team2_name || '未定'}
+            </div>
+          `;
+        });
+
+        resultDiv.innerHTML = `
+          <h3 class="success">✅ 成功</h3>
+          <p>試合数: ${data.length}</p>
+          ${matchList}
+          <details>
+            <summary>詳細データ</summary>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          </details>
+        `;
+      } catch (error) {
+        document.getElementById('matches-result').innerHTML = `
+          <h3 class="error">❌ エラー</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+
+    async function getNotifications() {
+      try {
+        const response = await fetch(`${API_BASE}/railway-notifications`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+
+        const resultDiv = document.getElementById('notifications-result');
+        let notificationList = '';
+        data.forEach(n => {
+          const date = new Date(n.created_at);
+          notificationList += `
+            <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px;">
+              <strong>${n.type}</strong> - ${n.title || '無題'}
+              <br>
+              <small>作成日時: ${date.toLocaleString('ja-JP')}</small>
+              <br>
+              ${n.content || n.message || ''}
+            </div>
+          `;
+        });
+
+        resultDiv.innerHTML = `
+          <h3 class="success">✅ 成功</h3>
+          <p>通知数: ${data.length}</p>
+          ${notificationList}
+        `;
+      } catch (error) {
+        document.getElementById('notifications-result').innerHTML = `
+          <h3 class="error">❌ エラー</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+
+    async function autoGenerateMatches() {
+      try {
+        const response = await fetch(`${API_BASE}/railway-tournaments/auto-generate-matches`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+        const data = await response.json();
+
+        const resultDiv = document.getElementById('batch-result');
+        resultDiv.innerHTML = `
+          <h3 class="success">✅ 成功</h3>
+          <p>処理した大会数: ${data.processed}</p>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        document.getElementById('batch-result').innerHTML = `
+          <h3 class="error">❌ エラー</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

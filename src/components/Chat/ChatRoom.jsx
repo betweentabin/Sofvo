@@ -20,7 +20,7 @@ const ChatRoom = ({ conversationId, asUserId = null }) => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
-    
+
     if (!inputMessage.trim() || sending) return
 
     const messageContent = inputMessage.trim()
@@ -32,6 +32,21 @@ const ChatRoom = ({ conversationId, asUserId = null }) => {
       inputRef.current?.focus()
     } catch (err) {
       console.error('Failed to send message:', err)
+
+      // Handle specific error cases
+      if (err?.response?.status === 403) {
+        const errorCode = err?.response?.data?.code;
+        const errorMessage = err?.response?.data?.error;
+
+        if (errorCode === 'BLOCKED') {
+          alert('メッセージを送信できません。');
+        } else {
+          alert(errorMessage || 'メッセージの送信に失敗しました。');
+        }
+      } else {
+        alert('メッセージの送信に失敗しました。');
+      }
+
       setInputMessage(messageContent)
     } finally {
       setSending(false)

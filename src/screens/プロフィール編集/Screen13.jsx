@@ -10,6 +10,7 @@ import "./style.css";
 export const Screen13 = () => {
   const mainContentTop = useHeaderOffset();
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [profile, setProfile] = useState({
     display_name: "",
     username: "",
@@ -19,6 +20,7 @@ export const Screen13 = () => {
     team_name: "",
     location: "",
     bio: "",
+    avatar_url: "",
     privacy_settings: {
       username: "public",
       age: "public",
@@ -28,7 +30,7 @@ export const Screen13 = () => {
       location: "public"
     }
   });
-  
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -52,6 +54,7 @@ export const Screen13 = () => {
           team_name: data.team_name || "",
           location: data.location || "",
           bio: data.bio || "",
+          avatar_url: data.avatar_url || "",
           privacy_settings: data.privacy_settings || {
             username: "public",
             age: "public",
@@ -64,6 +67,44 @@ export const Screen13 = () => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // ファイルサイズチェック（5MB以下）
+    if (file.size > 5 * 1024 * 1024) {
+      alert('画像サイズは5MB以下にしてください');
+      return;
+    }
+
+    // ファイルタイプチェック
+    if (!file.type.startsWith('image/')) {
+      alert('画像ファイルを選択してください');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.media.upload(formData);
+      const { data } = response;
+
+      setProfile(prev => ({
+        ...prev,
+        avatar_url: data.url
+      }));
+      alert('画像をアップロードしました！');
+    } catch (error) {
+      console.error('画像アップロードエラー:', error);
+      const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
+      alert('画像のアップロードに失敗しました: ' + errorMsg);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -94,7 +135,7 @@ export const Screen13 = () => {
     try {
       // 更新するデータを準備
       const updateData = {
-        user_id: user.id, // Add user_id to ensure it's sent
+        user_id: user.id,
         display_name: profile.display_name,
         username: profile.username,
         age: profile.age ? parseInt(profile.age) : null,
@@ -103,18 +144,17 @@ export const Screen13 = () => {
         team_name: profile.team_name,
         location: profile.location,
         bio: profile.bio,
+        avatar_url: profile.avatar_url,
         privacy_settings: profile.privacy_settings
       };
 
-      console.log('Updating profile with data:', updateData);
-
       await api.railwayUsers.updateProfile(updateData);
-      console.log('Profile updated successfully');
       alert('プロフィールを更新しました');
       navigate('/my-profile');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('プロフィールの更新に失敗しました: ' + (error.response?.data?.error || error.message));
+      const errorMsg = error.response?.data?.error || error.message;
+      alert('プロフィールの更新に失敗しました: ' + errorMsg);
     } finally {
       setLoading(false);
     }
@@ -137,6 +177,52 @@ export const Screen13 = () => {
           <div className="frame-440">
             <div className="frame-466">
               <div className="text-wrapper-226">プロフィールを編集</div>
+            </div>
+
+            {/* アバター画像アップロード */}
+            <div className="frame-441">
+              <div className="frame-442">
+                <div className="frame-443">
+                  <div className="text-wrapper-216">プロフィール画像</div>
+                </div>
+              </div>
+              <div className="avatar-upload-container">
+                <div className="avatar-preview">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt="プロフィール" className="avatar-image" />
+                  ) : (
+                    <div className="avatar-placeholder">
+                      <span>📷</span>
+                    </div>
+                  )}
+                </div>
+                <div className="avatar-upload-controls">
+                  <input
+                    type="file"
+                    id="avatar-upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                    disabled={uploadingImage}
+                  />
+                  <label htmlFor="avatar-upload" className={`avatar-upload-button ${uploadingImage ? 'uploading' : ''}`}>
+                    {uploadingImage ? '⏳ アップロード中...' : '📷 画像を選択'}
+                  </label>
+                  {profile.avatar_url && (
+                    <button
+                      type="button"
+                      className="avatar-remove-button"
+                      onClick={() => setProfile(prev => ({ ...prev, avatar_url: '' }))}
+                      disabled={uploadingImage}
+                    >
+                      🗑️ 削除
+                    </button>
+                  )}
+                </div>
+                <div className="avatar-upload-hint">
+                  推奨: 正方形の画像、5MB以下
+                </div>
+              </div>
             </div>
 
             <div className="frame-441">

@@ -6,3 +6,7 @@ pages_build_output_dir = "dist"
 binding = "DB"
 database_name = "sofvo-db"
 database_id = "495811d4-776b-4faa-a5a4-5a6a81f6e9b5"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "sofvo"

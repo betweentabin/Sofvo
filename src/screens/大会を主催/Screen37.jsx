@@ -42,13 +42,13 @@ export const Screen37 = () => {
         if (!active) return;
         setAreaOptions((data?.areas && data.areas.length) ? data.areas : (RUNTIME.searchAreas || ["静岡県","東京都","神奈川県","愛知県"]));
         setCategoryOptions((data?.types && data.types.length) ? data.types : (RUNTIME.searchTypes || ["メンズ","レディース","混合","スポレク"]));
-        setMethodOptions((data?.competition_methods && data.competition_methods.length) ? data.competition_methods : (RUNTIME.competitionMethods || ["リーグ戦","トーナメント","スイスドロー"]));
+        setMethodOptions((data?.competition_methods && data.competition_methods.length) ? data.competition_methods : (RUNTIME.competitionMethods || ["予選+トーナメント","総当たり戦"]));
         setRankingOptions((data?.ranking_methods && data.ranking_methods.length) ? data.ranking_methods : (RUNTIME.rankingMethods || ["勝数","得失点差","ポイント制"]));
       } catch {
         if (!active) return;
         setAreaOptions(RUNTIME.searchAreas || ["静岡県","東京都","神奈川県","愛知県"]);
         setCategoryOptions(RUNTIME.searchTypes || ["メンズ","レディース","混合","スポレク"]);
-        setMethodOptions(RUNTIME.competitionMethods || ["リーグ戦","トーナメント","スイスドロー"]);
+        setMethodOptions(RUNTIME.competitionMethods || ["予選+トーナメント","総当たり戦"]);
         setRankingOptions(RUNTIME.rankingMethods || ["勝数","得失点差","ポイント制"]);
       }
     };

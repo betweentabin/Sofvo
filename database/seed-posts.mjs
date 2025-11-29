@@ -66,32 +66,37 @@ async function run() {
 
   await client.query('BEGIN');
   try {
-    console.log('📝 Inserting test posts...');
+    console.log(`📝 Inserting ${posts.length} test posts...`);
     const postIds = [];
+    let count = 0;
+
     for (const post of posts) {
+      // 投稿日時を計算（daysAgo日前）
+      const createdAt = new Date();
+      createdAt.setDate(createdAt.getDate() - post.daysAgo);
+
       const res = await client.query(
-        `INSERT INTO posts (user_id, team_id, content, type, visibility)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO posts (user_id, content, visibility, like_count, comment_count, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, 0, $5, $5)
          RETURNING id`,
-        [post.user, post.team, post.content, post.type, post.visibility]
+        [
+          post.user,
+          post.content,
+          post.visibility,
+          Math.floor(Math.random() * 20), // ランダムないいね数 (0-19)
+          createdAt,
+        ]
       );
       postIds.push(res.rows[0].id);
-    }
+      count++;
 
-    // Attach an image to the first post if table exists
-    const { rows: hasPostImages } = await client.query(
-      `SELECT to_regclass('public.post_images') IS NOT NULL AS exists`
-    );
-    if (hasPostImages[0].exists) {
-      await client.query(
-        `INSERT INTO post_images (post_id, image_url, caption, display_order)
-         VALUES ($1, $2, $3, 0)`,
-        [postIds[0], 'https://picsum.photos/seed/sofvo/800/600', 'テスト画像']
-      );
+      if (count % 10 === 0) {
+        console.log(`  ✓ ${count}/${posts.length} posts inserted...`);
+      }
     }
 
     await client.query('COMMIT');
-    console.log(`✅ Inserted ${postIds.length} posts`);
+    console.log(`✅ Successfully inserted ${postIds.length} posts`);
 
     const { rows: recent } = await client.query(
       `SELECT id, content, visibility, created_at FROM posts ORDER BY created_at DESC LIMIT 5`

@@ -1,0 +1,59 @@
+/* 自己紹介フィールドの修正版スタイル */
+
+/* 自己紹介セクションのコンテナ */
+.screen-6 .frame-54 {
+  align-items: flex-start;
+  background-color: transparent;  /* 背景を透明に */
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;  /* 縦方向に配置 */
+  gap: 10px;
+  justify-content: flex-start;
+  overflow: visible;
+  padding: 0;
+  position: relative;
+  width: 100%;  /* 全幅を使用 */
+}
+
+/* 自己紹介ラベル */
+.screen-6 .text-wrapper-53 {
+  color: var(--4);  /* 黒文字 */
+  font-family: Arial, Helvetica;
+  font-weight: bold;
+  font-size: 13px;  /* サイズを大きく */
+  letter-spacing: 0;
+  line-height: normal;
+  margin-top: 0;
+  position: relative;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+/* 自己紹介テキストエリア */
+.screen-6 .frame-55 {
+  border: 0.5px solid;
+  border-color: var(--4);
+  border-radius: 5px;
+  height: 150px;
+  min-height: 100px;
+  position: relative;
+  width: 100%;  /* レスポンシブ対応 */
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  background-color: #fff;
+}
+
+.screen-6 .frame-55:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.screen-6 .frame-55::placeholder {
+  color: #999;
+}
+
