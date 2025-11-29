@@ -1154,44 +1154,60 @@ export async function onRequest(context) {
       const parts = path.split('/');
       const tournamentId = parts[1];
 
-      // Get user ID from JWT
-      const authHeader = request.headers.get('Authorization');
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 401,
-          headers: corsHeaders
-        });
-      }
+      console.log('=== Tournament Apply Request ===');
+      console.log('Tournament ID:', tournamentId);
 
-      const token = authHeader.substring(7);
-      let userId;
-      try {
-        const tokenData = JSON.parse(atob(token));
-        userId = tokenData.id;
-        if (!userId) {
-          return new Response(JSON.stringify({ error: 'Invalid token' }), {
-            status: 401,
-            headers: corsHeaders
-          });
-        }
-        // Check token expiration
-        if (tokenData.exp && tokenData.exp < Date.now()) {
-          return new Response(JSON.stringify({ error: 'Token expired' }), {
-            status: 401,
-            headers: corsHeaders
-          });
-        }
-      } catch (e) {
-        return new Response(JSON.stringify({ error: 'Invalid token' }), {
-          status: 401,
-          headers: corsHeaders
-        });
-      }
-
-      // Get mode and team_id from request body
+      // Get mode and team_id from request body first
       const body = await request.json();
       const mode = body.mode || 'individual';
       const teamId = body.team_id || null;
+      
+      console.log('Request body:', { mode, teamId, user_id: body.user_id });
+
+      // Get user ID from JWT or request body (flexible authentication)
+      let userId;
+      const authHeader = request.headers.get('Authorization');
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        // Try JWT authentication first
+        const token = authHeader.substring(7);
+        try {
+          const tokenData = JSON.parse(atob(token));
+          userId = tokenData.id;
+          
+          // Check token expiration
+          if (tokenData.exp && tokenData.exp < Date.now()) {
+            console.log('Token expired');
+            return new Response(JSON.stringify({ error: 'Token expired' }), {
+              status: 401,
+              headers: corsHeaders
+            });
+          }
+          
+          console.log('User ID from JWT:', userId);
+        } catch (e) {
+          console.error('JWT parsing error:', e);
+          // Fall through to body.user_id
+        }
+      }
+      
+      // Fallback to user_id from request body
+      if (!userId && body.user_id) {
+        userId = body.user_id;
+        console.log('User ID from request body:', userId);
+      }
+      
+      // If still no userId, return error
+      if (!userId) {
+        console.error('No user ID provided');
+        return new Response(JSON.stringify({ 
+          error: 'Unauthorized',
+          message: 'Please provide Authorization header or user_id in request body'
+        }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
 
       // Check if tournament exists
       const tournament = await env.DB.prepare('SELECT * FROM tournaments WHERE id = ?')
