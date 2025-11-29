@@ -1239,49 +1239,10 @@ export async function onRequest(context) {
         });
       }
 
-      // Check if team members are already participating in this tournament with a DIFFERENT team
-      // (Same user can participate in multiple teams in the same tournament)
-      if (mode === 'team' && teamId) {
-        // Get all team members for this team
-        const teamMembers = await env.DB.prepare(
-          'SELECT user_id FROM team_members WHERE team_id = ?'
-        ).bind(teamId).all();
-
-        if (teamMembers.results && teamMembers.results.length > 0) {
-          // Check if any team member is already participating with a DIFFERENT team
-          const memberIds = teamMembers.results.map(m => m.user_id);
-          const placeholders = memberIds.map(() => '?').join(',');
-
-          const conflictQuery = `
-            SELECT p.user_id, p.team_id, pr.display_name, pr.username, t.name as team_name
-            FROM tournament_participants p
-            LEFT JOIN profiles pr ON p.user_id = pr.id
-            LEFT JOIN teams t ON p.team_id = t.id
-            WHERE p.tournament_id = ? 
-              AND p.user_id IN (${placeholders}) 
-              AND p.mode = 'team'
-              AND p.team_id != ?
-              AND p.status = 'registered'
-            LIMIT 1
-          `;
-
-          const conflict = await env.DB.prepare(conflictQuery)
-            .bind(tournamentId, ...memberIds, teamId)
-            .first();
-
-          if (conflict) {
-            const memberName = conflict.display_name || conflict.username || 'チームメンバー';
-            const otherTeam = conflict.team_name || '別のチーム';
-            console.log('Team member conflict:', { memberName, otherTeam, teamId: conflict.team_id });
-            return new Response(JSON.stringify({
-              error: `${memberName} が既に「${otherTeam}」で参加しているため、このチームで参加できません`
-            }), {
-              status: 400,
-              headers: corsHeaders
-            });
-          }
-        }
-      }
+      // Note: Team member overlap check removed
+      // Allows same user to be member of multiple teams that participate in the same tournament
+      // This is common in real-world scenarios (e.g., different age groups, mixed teams, etc.)
+      // Only the team-level duplicate check (above) prevents the same team from registering twice
 
       // Check capacity limit
       if (tournament.max_participants && tournament.max_participants > 0) {

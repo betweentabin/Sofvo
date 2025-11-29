@@ -5,7 +5,7 @@
 // 2. 対戦表自動生成
 // 3. 通知機能
 
-const BASE_URL = 'https://e5b4e1ad.sofvo.pages.dev/api';
+const BASE_URL = 'https://5a3336f7.sofvo.pages.dev/api';
 
 // 前回作成したデータ
 const TEST_USER_ID = 'fbe51299-5b26-4b3f-bffb-713b86d34401';
