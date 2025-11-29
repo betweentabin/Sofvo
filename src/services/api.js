@@ -274,6 +274,7 @@ export const api = {
   // ===== Railway (PostgreSQL) Teams =====
   railwayTeams: {
     getOwnerTeam: (asUserId) => nodeAPI.get('/railway-teams/owner', { params: { as_user: asUserId, limit: 1 } }),
+    getMyTeams: (userId) => nodeAPI.get('/railway-teams/my-teams', { params: { user_id: userId } }),
     createTeam: (asUserId, { name, description, sport_type }) => nodeAPI.post('/railway-teams/create', { as_user: asUserId, name, description, sport_type }),
     getMembers: (teamId) => nodeAPI.get('/railway-teams/members', { params: { team_id: teamId } }),
     removeMember: (asUserId, teamId, userId) => nodeAPI.delete('/railway-teams/members', { data: { as_user: asUserId, team_id: teamId, user_id: userId } }),
@@ -291,9 +292,12 @@ export const api = {
     like: (id) => nodeAPI.post(`/railway-tournaments/${id}/like`),
     unlike: (id) => nodeAPI.delete(`/railway-tournaments/${id}/like`),
     results: (id) => nodeAPI.get(`/railway-tournaments/${id}/results`),
-    matches: (id) => nodeAPI.get(`/railway-tournaments/${id}/matches`),
+    matches: (id, phase = null) => nodeAPI.get(`/railway-tournaments/${id}/matches`, { params: phase ? { phase } : {} }),
     listParticipants: (id) => nodeAPI.get(`/railway-tournaments/${id}/participants`),
-    generateMatches: (id) => nodeAPI.post(`/railway-tournaments/${id}/generate-matches`),
+    generateMatches: (id, phase = 'qualifier') => nodeAPI.post(`/railway-tournaments/${id}/generate-matches`, { phase }),
+    qualifierStandings: (id) => nodeAPI.get(`/railway-tournaments/${id}/qualifier-standings`),
+    generateBracket: (id, advancingTeams = 8, seeding = []) => nodeAPI.post(`/railway-tournaments/${id}/generate-bracket`, { advancing_teams: advancingTeams, seeding }),
+    updateBracketSeeding: (id, matchUpdates) => nodeAPI.put(`/railway-tournaments/${id}/update-bracket-seeding`, { match_updates: matchUpdates }),
     createMatch: (id, payload) => nodeAPI.post(`/railway-tournaments/${id}/matches`, payload),
     updateMatch: (tournamentId, matchId, payload) => nodeAPI.put(`/railway-tournaments/${tournamentId}/matches/${matchId}`, payload),
     deleteMatch: (tournamentId, matchId) => nodeAPI.delete(`/railway-tournaments/${tournamentId}/matches/${matchId}`),

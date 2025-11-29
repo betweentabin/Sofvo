@@ -1216,9 +1216,203 @@ export async function onRequest(context) {
         VALUES (?, ?, ?, ?, ?, 'registered', datetime('now'))
       `).bind(participantId, tournamentId, userId, teamId, mode).run();
 
+      // Check if capacity has been reached and auto-generate matches
+      let matchesGenerated = false;
+      if (tournament.max_participants && tournament.max_participants > 0) {
+        const updatedCount = await env.DB.prepare(
+          `SELECT COUNT(*) as count FROM tournament_participants
+           WHERE tournament_id = ? AND status = 'registered'`
+        ).bind(tournamentId).first();
+
+        const totalCount = updatedCount?.count || 0;
+
+        // If capacity reached, auto-generate matches
+        if (totalCount >= tournament.max_participants) {
+          // Check if matches already exist
+          const existingMatches = await env.DB.prepare(
+            'SELECT COUNT(*) as count FROM tournament_matches WHERE tournament_id = ?'
+          ).bind(tournamentId).first();
+
+          if (!existingMatches || existingMatches.count === 0) {
+            // Get all participants
+            const participants = await env.DB.prepare(`
+              SELECT * FROM tournament_participants
+              WHERE tournament_id = ? AND status = 'registered'
+              ORDER BY registered_at ASC
+            `).bind(tournamentId).all();
+
+            const participantsList = participants.results || [];
+
+            // Filter only team participants
+            const teamParticipants = participantsList.filter(p => p.mode === 'team' && p.team_id);
+
+            if (teamParticipants.length >= 2) {
+              // Shuffle participants for random matchups
+              const shuffledParticipants = [...teamParticipants];
+              for (let i = shuffledParticipants.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledParticipants[i], shuffledParticipants[j]] = [shuffledParticipants[j], shuffledParticipants[i]];
+              }
+
+              // Generate round-robin matches (team only)
+              let matchNumber = 1;
+              const phase = 'qualifier';
+
+              for (let i = 0; i < shuffledParticipants.length; i++) {
+                for (let j = i + 1; j < shuffledParticipants.length; j++) {
+                  const participant1 = shuffledParticipants[i];
+                  const participant2 = shuffledParticipants[j];
+
+                  const matchId = generateUUID();
+                  await env.DB.prepare(`
+                    INSERT INTO tournament_matches
+                    (id, tournament_id, match_number, round, phase, team1_id, team2_id, player1_id, player2_id, score1, score2, status, scheduled_time, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+                  `).bind(
+                    matchId,
+                    tournamentId,
+                    matchNumber,
+                    1, // round
+                    phase,
+                    participant1.team_id,
+                    participant2.team_id,
+                    null, // player1_id
+                    null, // player2_id
+                    null, // score1
+                    null, // score2
+                    'scheduled', // status
+                    null // scheduled_time
+                  ).run();
+
+                  matchNumber++;
+                }
+              }
+
+              matchesGenerated = true;
+
+              // Send notifications to all participants about match schedule (1 day before)
+              if (tournament.start_date) {
+                const tournamentStartDate = new Date(tournament.start_date);
+                const oneDayBefore = new Date(tournamentStartDate);
+                oneDayBefore.setDate(oneDayBefore.getDate() - 1);
+
+                const allParticipants = await env.DB.prepare(`
+                  SELECT DISTINCT tp.user_id
+                  FROM tournament_participants tp
+                  WHERE tp.tournament_id = ? AND tp.status = 'registered'
+                `).bind(tournamentId).all();
+
+                const matchNotificationTitle = '明日の大会について';
+                const matchNotificationContent = `「${tournament.name}」が明日開催されます。\n\n対戦表:\n試合数: ${matchNumber - 1}試合\n\n開催情報:\n開催日: ${tournament.start_date}\n場所: ${tournament.location || '未定'}`;
+
+                const matchNotificationData = JSON.stringify({
+                  tournament_id: tournamentId,
+                  tournament_name: tournament.name,
+                  phase: 'qualifier',
+                  match_count: matchNumber - 1,
+                  start_date: tournament.start_date,
+                  location: tournament.location,
+                  notification_date: oneDayBefore.toISOString()
+                });
+
+                for (const participant of (allParticipants.results || [])) {
+                  const notificationId = generateUUID();
+                  await env.DB.prepare(`
+                    INSERT INTO notifications (id, user_id, type, title, content, data, read, created_at)
+                    VALUES (?, ?, 'match_schedule', ?, ?, ?, 0, ?)
+                  `).bind(
+                    notificationId,
+                    participant.user_id,
+                    matchNotificationTitle,
+                    matchNotificationContent,
+                    matchNotificationData,
+                    oneDayBefore.toISOString()
+                  ).run();
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Create notification for tournament start (1 day before) - only if matches not generated yet
+      // If matches were generated, notification with match schedule was already created above
+      if (tournament.start_date && !matchesGenerated) {
+        const tournamentStartDate = new Date(tournament.start_date);
+        const oneDayBefore = new Date(tournamentStartDate);
+        oneDayBefore.setDate(oneDayBefore.getDate() - 1);
+
+        // Check if matches already exist
+        const existingMatches = await env.DB.prepare(
+          'SELECT COUNT(*) as count FROM tournament_matches WHERE tournament_id = ?'
+        ).bind(tournamentId).first();
+
+        const matchCount = existingMatches?.count || 0;
+
+        const notificationTitle = '明日の大会について';
+        let notificationContent = `「${tournament.name}」が明日開催されます。\n\n`;
+
+        if (matchCount > 0) {
+          notificationContent += `対戦表:\n試合数: ${matchCount}試合\n\n`;
+        }
+
+        notificationContent += `開催情報:\n開催日: ${tournament.start_date}\n場所: ${tournament.location || '未定'}`;
+
+        const notificationData = JSON.stringify({
+          tournament_id: tournamentId,
+          tournament_name: tournament.name,
+          start_date: tournament.start_date,
+          location: tournament.location,
+          mode: mode,
+          team_id: teamId,
+          match_count: matchCount,
+          notification_date: oneDayBefore.toISOString()
+        });
+
+        // Create notification for the user who registered
+        const notificationId = generateUUID();
+        await env.DB.prepare(`
+          INSERT INTO notifications (id, user_id, type, title, content, data, read, created_at)
+          VALUES (?, ?, 'match_schedule', ?, ?, ?, 0, ?)
+        `).bind(
+          notificationId,
+          userId,
+          notificationTitle,
+          notificationContent,
+          notificationData,
+          oneDayBefore.toISOString()
+        ).run();
+
+        // If team mode, create notifications for all team members
+        if (mode === 'team' && teamId) {
+          const teamMembers = await env.DB.prepare(
+            'SELECT user_id FROM team_members WHERE team_id = ? AND user_id != ?'
+          ).bind(teamId, userId).all();
+
+          if (teamMembers.results && teamMembers.results.length > 0) {
+            for (const member of teamMembers.results) {
+              const memberNotificationId = generateUUID();
+              await env.DB.prepare(`
+                INSERT INTO notifications (id, user_id, type, title, content, data, read, created_at)
+                VALUES (?, ?, 'match_schedule', ?, ?, ?, 0, ?)
+              `).bind(
+                memberNotificationId,
+                member.user_id,
+                notificationTitle,
+                notificationContent,
+                notificationData,
+                oneDayBefore.toISOString()
+              ).run();
+            }
+          }
+        }
+      }
+
       return new Response(JSON.stringify({
         success: true,
-        message: 'Successfully applied to tournament',
+        message: matchesGenerated
+          ? 'Successfully applied to tournament. Matches have been auto-generated as capacity was reached.'
+          : 'Successfully applied to tournament',
         participant: {
           id: participantId,
           tournament_id: tournamentId,
@@ -1226,7 +1420,8 @@ export async function onRequest(context) {
           team_id: teamId,
           mode: mode,
           status: 'registered'
-        }
+        },
+        matches_generated: matchesGenerated
       }), { headers: corsHeaders });
     }
 
@@ -1497,6 +1692,10 @@ export async function onRequest(context) {
         });
       }
 
+      // Get request body to check phase
+      const body = await request.json().catch(() => ({}));
+      const phase = body.phase || 'qualifier'; // 'qualifier' or 'tournament'
+
       // Get all participants
       const participants = await env.DB.prepare(`
         SELECT * FROM tournament_participants
@@ -1513,26 +1712,43 @@ export async function onRequest(context) {
         });
       }
 
-      // Check if matches already exist
+      // Check if matches already exist for this phase
       const existingMatches = await env.DB.prepare(
-        'SELECT COUNT(*) as count FROM tournament_matches WHERE tournament_id = ?'
-      ).bind(tournamentId).first();
+        'SELECT COUNT(*) as count FROM tournament_matches WHERE tournament_id = ? AND phase = ?'
+      ).bind(tournamentId, phase).first();
 
       if (existingMatches && existingMatches.count > 0) {
-        return new Response(JSON.stringify({ error: 'Matches already generated for this tournament' }), {
+        return new Response(JSON.stringify({ error: `Matches already generated for ${phase} phase` }), {
           status: 400,
           headers: corsHeaders
         });
       }
 
-      // Generate round-robin matches
+      // Filter only team participants (no individual participants)
+      const teamParticipants = participantsList.filter(p => p.mode === 'team' && p.team_id);
+
+      if (teamParticipants.length < 2) {
+        return new Response(JSON.stringify({ error: 'At least 2 teams required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      // Shuffle participants for random matchups
+      const shuffledParticipants = [...teamParticipants];
+      for (let i = shuffledParticipants.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledParticipants[i], shuffledParticipants[j]] = [shuffledParticipants[j], shuffledParticipants[i]];
+      }
+
+      // Generate round-robin matches (team only)
       const matches = [];
       let matchNumber = 1;
 
-      for (let i = 0; i < participantsList.length; i++) {
-        for (let j = i + 1; j < participantsList.length; j++) {
-          const participant1 = participantsList[i];
-          const participant2 = participantsList[j];
+      for (let i = 0; i < shuffledParticipants.length; i++) {
+        for (let j = i + 1; j < shuffledParticipants.length; j++) {
+          const participant1 = shuffledParticipants[i];
+          const participant2 = shuffledParticipants[j];
 
           const matchId = generateUUID();
           const match = {
@@ -1540,10 +1756,11 @@ export async function onRequest(context) {
             tournament_id: tournamentId,
             match_number: matchNumber,
             round: 1,
-            team1_id: participant1.mode === 'team' ? participant1.team_id : null,
-            team2_id: participant2.mode === 'team' ? participant2.team_id : null,
-            player1_id: participant1.mode === 'individual' ? participant1.user_id : null,
-            player2_id: participant2.mode === 'individual' ? participant2.user_id : null,
+            phase: phase,
+            team1_id: participant1.team_id,
+            team2_id: participant2.team_id,
+            player1_id: null,
+            player2_id: null,
             score1: null,
             score2: null,
             status: 'scheduled',
@@ -1556,17 +1773,18 @@ export async function onRequest(context) {
           // Insert match into database
           await env.DB.prepare(`
             INSERT INTO tournament_matches
-            (id, tournament_id, match_number, round, team1_id, team2_id, player1_id, player2_id, score1, score2, status, scheduled_time, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            (id, tournament_id, match_number, round, phase, team1_id, team2_id, player1_id, player2_id, score1, score2, status, scheduled_time, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
           `).bind(
             match.id,
             match.tournament_id,
             match.match_number,
             match.round,
+            match.phase,
             match.team1_id,
             match.team2_id,
-            match.player1_id,
-            match.player2_id,
+            null, // player1_id
+            null, // player2_id
             match.score1,
             match.score2,
             match.status,
@@ -1575,11 +1793,63 @@ export async function onRequest(context) {
         }
       }
 
+      // Send notifications to all participants about match schedule (1 day before tournament)
+      if (matches.length > 0) {
+        // Get tournament info
+        const tournamentInfo = await env.DB.prepare(
+          'SELECT * FROM tournaments WHERE id = ?'
+        ).bind(tournamentId).first();
+
+        // Only schedule notification if tournament has a start date
+        if (tournamentInfo.start_date) {
+          const tournamentStartDate = new Date(tournamentInfo.start_date);
+          const oneDayBefore = new Date(tournamentStartDate);
+          oneDayBefore.setDate(oneDayBefore.getDate() - 1);
+
+          // Get all participants
+          const allParticipants = await env.DB.prepare(`
+            SELECT DISTINCT tp.user_id, tp.team_id
+            FROM tournament_participants tp
+            WHERE tp.tournament_id = ? AND tp.status = 'registered'
+          `).bind(tournamentId).all();
+
+          const notificationTitle = '明日の大会について';
+          const notificationContent = `「${tournamentInfo.name}」が明日開催されます。\n\n対戦表:\n試合数: ${matches.length}試合\n\n開催情報:\n開催日: ${tournamentInfo.start_date}\n場所: ${tournamentInfo.location || '未定'}`;
+
+          const notificationData = JSON.stringify({
+            tournament_id: tournamentId,
+            tournament_name: tournamentInfo.name,
+            phase: phase,
+            match_count: matches.length,
+            start_date: tournamentInfo.start_date,
+            location: tournamentInfo.location,
+            notification_date: oneDayBefore.toISOString()
+          });
+
+          // Create notifications for all participants (scheduled for 1 day before)
+          for (const participant of (allParticipants.results || [])) {
+            const notificationId = generateUUID();
+            await env.DB.prepare(`
+              INSERT INTO notifications (id, user_id, type, title, content, data, read, created_at)
+              VALUES (?, ?, 'match_schedule', ?, ?, ?, 0, ?)
+            `).bind(
+              notificationId,
+              participant.user_id,
+              notificationTitle,
+              notificationContent,
+              notificationData,
+              oneDayBefore.toISOString()
+            ).run();
+          }
+        }
+      }
+
       return new Response(JSON.stringify({
         success: true,
-        message: 'Matches generated successfully',
+        message: `${phase === 'qualifier' ? 'Qualifier' : 'Tournament'} matches generated successfully`,
         count: matches.length,
-        matches: matches
+        matches: matches,
+        phase: phase
       }), { headers: corsHeaders });
     }
 
@@ -1587,8 +1857,10 @@ export async function onRequest(context) {
     if (path.match(/^railway-tournaments\/([^/]+)\/matches$/) && request.method === 'GET') {
       const parts = path.split('/');
       const tournamentId = parts[1];
+      const url = new URL(request.url);
+      const phase = url.searchParams.get('phase'); // Optional phase filter
 
-      const matches = await env.DB.prepare(`
+      let query = `
         SELECT
           tm.*,
           t1.name as team1_name,
@@ -1603,8 +1875,18 @@ export async function onRequest(context) {
         LEFT JOIN profiles p1 ON tm.player1_id = p1.id
         LEFT JOIN profiles p2 ON tm.player2_id = p2.id
         WHERE tm.tournament_id = ?
-        ORDER BY tm.match_number ASC
-      `).bind(tournamentId).all();
+      `;
+
+      const bindings = [tournamentId];
+
+      if (phase) {
+        query += ' AND tm.phase = ?';
+        bindings.push(phase);
+      }
+
+      query += ' ORDER BY tm.match_number ASC';
+
+      const matches = await env.DB.prepare(query).bind(...bindings).all();
 
       return new Response(JSON.stringify(matches.results || []), { headers: corsHeaders });
     }
@@ -1705,6 +1987,382 @@ export async function onRequest(context) {
       ).bind(matchId).first();
 
       return new Response(JSON.stringify(updatedMatch), { headers: corsHeaders });
+    }
+
+    // Get qualifier standings (GET /railway-tournaments/:id/qualifier-standings)
+    if (path.match(/^railway-tournaments\/([^/]+)\/qualifier-standings$/) && request.method === 'GET') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      // Get all qualifier matches
+      const matches = await env.DB.prepare(`
+        SELECT * FROM tournament_matches
+        WHERE tournament_id = ? AND phase = 'qualifier' AND status = 'completed'
+      `).bind(tournamentId).all();
+
+      // Get all participants
+      const participants = await env.DB.prepare(`
+        SELECT * FROM tournament_participants
+        WHERE tournament_id = ? AND status = 'registered'
+      `).bind(tournamentId).all();
+
+      // Calculate standings
+      const standings = {};
+
+      participants.results?.forEach(p => {
+        const key = p.mode === 'team' ? `team_${p.team_id}` : `player_${p.user_id}`;
+        standings[key] = {
+          participant_id: p.id,
+          mode: p.mode,
+          team_id: p.team_id,
+          user_id: p.user_id,
+          wins: 0,
+          losses: 0,
+          draws: 0,
+          points: 0,
+          goals_for: 0,
+          goals_against: 0,
+          goal_difference: 0
+        };
+      });
+
+      // Process matches
+      matches.results?.forEach(m => {
+        const team1Key = m.team1_id ? `team_${m.team1_id}` : `player_${m.player1_id}`;
+        const team2Key = m.team2_id ? `team_${m.team2_id}` : `player_${m.player2_id}`;
+
+        if (standings[team1Key] && standings[team2Key]) {
+          const score1 = m.score1 || 0;
+          const score2 = m.score2 || 0;
+
+          standings[team1Key].goals_for += score1;
+          standings[team1Key].goals_against += score2;
+          standings[team2Key].goals_for += score2;
+          standings[team2Key].goals_against += score1;
+
+          if (score1 > score2) {
+            standings[team1Key].wins += 1;
+            standings[team1Key].points += 3;
+            standings[team2Key].losses += 1;
+          } else if (score2 > score1) {
+            standings[team2Key].wins += 1;
+            standings[team2Key].points += 3;
+            standings[team1Key].losses += 1;
+          } else {
+            standings[team1Key].draws += 1;
+            standings[team1Key].points += 1;
+            standings[team2Key].draws += 1;
+            standings[team2Key].points += 1;
+          }
+        }
+      });
+
+      // Calculate goal difference and sort
+      const standingsArray = Object.values(standings).map(s => ({
+        ...s,
+        goal_difference: s.goals_for - s.goals_against
+      })).sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.goal_difference !== a.goal_difference) return b.goal_difference - a.goal_difference;
+        return b.goals_for - a.goals_for;
+      });
+
+      return new Response(JSON.stringify(standingsArray), { headers: corsHeaders });
+    }
+
+    // Generate tournament bracket (POST /railway-tournaments/:id/generate-bracket)
+    if (path.match(/^railway-tournaments\/([^/]+)\/generate-bracket$/) && request.method === 'POST') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      // Check if user is tournament organizer
+      const tournament = await env.DB.prepare(
+        'SELECT * FROM tournaments WHERE id = ? AND organizer_id = ?'
+      ).bind(tournamentId, userId).first();
+
+      if (!tournament) {
+        return new Response(JSON.stringify({ error: 'Only tournament organizer can generate bracket' }), {
+          status: 403,
+          headers: corsHeaders
+        });
+      }
+
+      // Get request body for seeding configuration
+      const body = await request.json().catch(() => ({}));
+      const { advancing_teams = 8, seeding = [] } = body;
+
+      // If no custom seeding provided, use qualifier standings
+      let seeds = seeding;
+      if (!seeds || seeds.length === 0) {
+        // Get qualifier standings directly from database
+        const matches = await env.DB.prepare(`
+          SELECT * FROM tournament_matches
+          WHERE tournament_id = ? AND phase = 'qualifier' AND status = 'completed'
+        `).bind(tournamentId).all();
+
+        const participants = await env.DB.prepare(`
+          SELECT * FROM tournament_participants
+          WHERE tournament_id = ? AND status = 'registered'
+        `).bind(tournamentId).all();
+
+        // Calculate standings
+        const standings = {};
+        participants.results?.forEach(p => {
+          const key = p.mode === 'team' ? `team_${p.team_id}` : `player_${p.user_id}`;
+          standings[key] = {
+            participant_id: p.id,
+            mode: p.mode,
+            team_id: p.team_id,
+            user_id: p.user_id,
+            wins: 0,
+            points: 0,
+            goals_for: 0,
+            goals_against: 0
+          };
+        });
+
+        // Process matches
+        matches.results?.forEach(m => {
+          const team1Key = m.team1_id ? `team_${m.team1_id}` : `player_${m.player1_id}`;
+          const team2Key = m.team2_id ? `team_${m.team2_id}` : `player_${m.player2_id}`;
+
+          if (standings[team1Key] && standings[team2Key]) {
+            const score1 = m.score1 || 0;
+            const score2 = m.score2 || 0;
+
+            standings[team1Key].goals_for += score1;
+            standings[team1Key].goals_against += score2;
+            standings[team2Key].goals_for += score2;
+            standings[team2Key].goals_against += score1;
+
+            if (score1 > score2) {
+              standings[team1Key].wins += 1;
+              standings[team1Key].points += 3;
+            } else if (score2 > score1) {
+              standings[team2Key].wins += 1;
+              standings[team2Key].points += 3;
+            } else {
+              standings[team1Key].points += 1;
+              standings[team2Key].points += 1;
+            }
+          }
+        });
+
+        // Sort and create seeds
+        const standingsArray = Object.values(standings)
+          .map(s => ({
+            ...s,
+            goal_difference: s.goals_for - s.goals_against
+          }))
+          .sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.goal_difference !== a.goal_difference) return b.goal_difference - a.goal_difference;
+            return b.goals_for - a.goals_for;
+          });
+
+        seeds = standingsArray.slice(0, advancing_teams).map((s, idx) => ({
+          seed: idx + 1,
+          participant_id: s.participant_id,
+          team_id: s.team_id,
+          user_id: s.user_id
+        }));
+      }
+
+      // Calculate tournament rounds
+      const numTeams = seeds.length;
+      const rounds = Math.ceil(Math.log2(numTeams));
+
+      // Generate bracket matches
+      const matches = [];
+      let matchNumber = 1;
+
+      // First round pairings (1 vs 8, 2 vs 7, 3 vs 6, 4 vs 5 for 8 teams)
+      for (let i = 0; i < numTeams / 2; i++) {
+        const seed1 = seeds[i];
+        const seed2 = seeds[numTeams - 1 - i];
+
+        const matchId = generateUUID();
+        const match = {
+          id: matchId,
+          tournament_id: tournamentId,
+          match_number: matchNumber,
+          round: 1,
+          phase: 'tournament',
+          team1_id: seed1.team_id || null,
+          team2_id: seed2.team_id || null,
+          player1_id: seed1.user_id || null,
+          player2_id: seed2.user_id || null,
+          score1: null,
+          score2: null,
+          status: 'scheduled',
+          scheduled_time: null
+        };
+
+        matches.push(match);
+
+        await env.DB.prepare(`
+          INSERT INTO tournament_matches
+          (id, tournament_id, match_number, round, phase, team1_id, team2_id, player1_id, player2_id, score1, score2, status, scheduled_time, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          match.id,
+          match.tournament_id,
+          match.match_number,
+          match.round,
+          match.phase,
+          match.team1_id,
+          match.team2_id,
+          match.player1_id,
+          match.player2_id,
+          match.score1,
+          match.score2,
+          match.status,
+          match.scheduled_time
+        ).run();
+
+        matchNumber++;
+      }
+
+      // Create placeholder matches for subsequent rounds
+      for (let round = 2; round <= rounds; round++) {
+        const matchesInRound = Math.pow(2, rounds - round);
+        for (let i = 0; i < matchesInRound; i++) {
+          const matchId = generateUUID();
+          const match = {
+            id: matchId,
+            tournament_id: tournamentId,
+            match_number: matchNumber,
+            round: round,
+            phase: 'tournament',
+            team1_id: null,
+            team2_id: null,
+            player1_id: null,
+            player2_id: null,
+            score1: null,
+            score2: null,
+            status: 'pending',
+            scheduled_time: null
+          };
+
+          matches.push(match);
+
+          await env.DB.prepare(`
+            INSERT INTO tournament_matches
+            (id, tournament_id, match_number, round, phase, team1_id, team2_id, player1_id, player2_id, score1, score2, status, scheduled_time, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+          `).bind(
+            match.id,
+            match.tournament_id,
+            match.match_number,
+            match.round,
+            match.phase,
+            match.team1_id,
+            match.team2_id,
+            match.player1_id,
+            match.player2_id,
+            match.score1,
+            match.score2,
+            match.status,
+            match.scheduled_time
+          ).run();
+
+          matchNumber++;
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Tournament bracket generated successfully',
+        rounds: rounds,
+        total_matches: matches.length,
+        matches: matches
+      }), { headers: corsHeaders });
+    }
+
+    // Update bracket seeding (PUT /railway-tournaments/:id/update-bracket-seeding)
+    if (path.match(/^railway-tournaments\/([^/]+)\/update-bracket-seeding$/) && request.method === 'PUT') {
+      const parts = path.split('/');
+      const tournamentId = parts[1];
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      const token = authHeader.substring(7);
+      let userId;
+      try {
+        const tokenData = JSON.parse(atob(token));
+        userId = tokenData.id;
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+
+      // Check if user is tournament organizer
+      const tournament = await env.DB.prepare(
+        'SELECT * FROM tournaments WHERE id = ? AND organizer_id = ?'
+      ).bind(tournamentId, userId).first();
+
+      if (!tournament) {
+        return new Response(JSON.stringify({ error: 'Only tournament organizer can update bracket seeding' }), {
+          status: 403,
+          headers: corsHeaders
+        });
+      }
+
+      // Get request body with match updates
+      const body = await request.json();
+      const { match_updates = [] } = body;
+
+      // Update each match
+      for (const update of match_updates) {
+        const { match_id, team1_id, team2_id, player1_id, player2_id } = update;
+
+        await env.DB.prepare(`
+          UPDATE tournament_matches
+          SET team1_id = ?, team2_id = ?, player1_id = ?, player2_id = ?, updated_at = datetime('now')
+          WHERE id = ? AND tournament_id = ? AND phase = 'tournament' AND status = 'scheduled'
+        `).bind(
+          team1_id || null,
+          team2_id || null,
+          player1_id || null,
+          player2_id || null,
+          match_id,
+          tournamentId
+        ).run();
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Bracket seeding updated successfully',
+        updated_count: match_updates.length
+      }), { headers: corsHeaders });
     }
 
     if (path.startsWith('railway-tournaments/') && path !== 'railway-tournaments/search' && path !== 'railway-tournaments/create' && path !== 'railway-tournaments/my-hosted' && path !== 'railway-tournaments/my-participating' && request.method === 'GET') {
@@ -2142,6 +2800,159 @@ export async function onRequest(context) {
       }
     }
 
+    // Auto-generate matches for tournaments past registration deadline (Batch job endpoint)
+    if (path === 'railway-tournaments/auto-generate-matches' && request.method === 'POST') {
+      try {
+        // Get current date/time
+        const now = new Date().toISOString();
+
+        // Find tournaments that:
+        // 1. Have passed registration deadline
+        // 2. Have at least 2 participants
+        // 3. Don't have matches generated yet
+        // 4. Have max_participants = 0 or NULL (no capacity limit that would trigger auto-generation)
+        const eligibleTournaments = await env.DB.prepare(`
+          SELECT DISTINCT t.*
+          FROM tournaments t
+          WHERE t.registration_deadline IS NOT NULL
+            AND t.registration_deadline < ?
+            AND t.status = 'upcoming'
+            AND t.id NOT IN (
+              SELECT DISTINCT tournament_id FROM tournament_matches
+            )
+            AND (t.max_participants IS NULL OR t.max_participants = 0)
+            AND (
+              SELECT COUNT(*) FROM tournament_participants tp
+              WHERE tp.tournament_id = t.id AND tp.status = 'registered'
+            ) >= 2
+        `).bind(now).all();
+
+        const results = [];
+
+        for (const tournament of (eligibleTournaments.results || [])) {
+          // Get all participants for this tournament
+          const participants = await env.DB.prepare(`
+            SELECT * FROM tournament_participants
+            WHERE tournament_id = ? AND status = 'registered'
+            ORDER BY registered_at ASC
+          `).bind(tournament.id).all();
+
+          const participantsList = participants.results || [];
+
+          // Filter only team participants
+          const teamParticipants = participantsList.filter(p => p.mode === 'team' && p.team_id);
+
+          if (teamParticipants.length >= 2) {
+            // Shuffle participants for random matchups
+            const shuffledParticipants = [...teamParticipants];
+            for (let i = shuffledParticipants.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffledParticipants[i], shuffledParticipants[j]] = [shuffledParticipants[j], shuffledParticipants[i]];
+            }
+
+            // Generate round-robin matches (team only)
+            let matchNumber = 1;
+            const phase = 'qualifier';
+            let matchesCreated = 0;
+
+            for (let i = 0; i < shuffledParticipants.length; i++) {
+              for (let j = i + 1; j < shuffledParticipants.length; j++) {
+                const participant1 = shuffledParticipants[i];
+                const participant2 = shuffledParticipants[j];
+
+                const matchId = generateUUID();
+                await env.DB.prepare(`
+                  INSERT INTO tournament_matches
+                  (id, tournament_id, match_number, round, phase, team1_id, team2_id, player1_id, player2_id, score1, score2, status, scheduled_time, created_at, updated_at)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+                `).bind(
+                  matchId,
+                  tournament.id,
+                  matchNumber,
+                  1, // round
+                  phase,
+                  participant1.team_id,
+                  participant2.team_id,
+                  null, // player1_id
+                  null, // player2_id
+                  null, // score1
+                  null, // score2
+                  'scheduled', // status
+                  null // scheduled_time
+                ).run();
+
+                matchNumber++;
+                matchesCreated++;
+              }
+            }
+
+            // Send notifications to all participants about match schedule (1 day before)
+            if (tournament.start_date) {
+              const tournamentStartDate = new Date(tournament.start_date);
+              const oneDayBefore = new Date(tournamentStartDate);
+              oneDayBefore.setDate(oneDayBefore.getDate() - 1);
+
+              const allParticipants = await env.DB.prepare(`
+                SELECT DISTINCT tp.user_id
+                FROM tournament_participants tp
+                WHERE tp.tournament_id = ? AND tp.status = 'registered'
+              `).bind(tournament.id).all();
+
+              const matchNotificationTitle = '明日の大会について';
+              const matchNotificationContent = `「${tournament.name}」が明日開催されます。\n\n対戦表:\n試合数: ${matchesCreated}試合\n\n開催情報:\n開催日: ${tournament.start_date}\n場所: ${tournament.location || '未定'}`;
+
+              const matchNotificationData = JSON.stringify({
+                tournament_id: tournament.id,
+                tournament_name: tournament.name,
+                phase: 'qualifier',
+                match_count: matchesCreated,
+                start_date: tournament.start_date,
+                location: tournament.location,
+                notification_date: oneDayBefore.toISOString()
+              });
+
+              for (const participant of (allParticipants.results || [])) {
+                const notificationId = generateUUID();
+                await env.DB.prepare(`
+                  INSERT INTO notifications (id, user_id, type, title, content, data, read, created_at)
+                  VALUES (?, ?, 'match_schedule', ?, ?, ?, 0, ?)
+                `).bind(
+                  notificationId,
+                  participant.user_id,
+                  matchNotificationTitle,
+                  matchNotificationContent,
+                  matchNotificationData,
+                  oneDayBefore.toISOString()
+                ).run();
+              }
+            }
+
+            results.push({
+              tournament_id: tournament.id,
+              tournament_name: tournament.name,
+              participants: teamParticipants.length,
+              matches_created: matchesCreated
+            });
+          }
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          processed: results.length,
+          tournaments: results
+        }), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Auto-generate matches error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to auto-generate matches',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+    }
+
     // Get user's hosted tournaments
     if (path === 'railway-tournaments/my-hosted' && request.method === 'GET') {
       const url = new URL(request.url);
@@ -2306,6 +3117,45 @@ export async function onRequest(context) {
       console.log('Found owner team:', team ? team.id : 'None');
 
       return new Response(JSON.stringify(team || null), { headers: corsHeaders });
+    }
+
+    // Get user's teams (teams where user is a member)
+    if (path === 'railway-teams/my-teams') {
+      const userId = new URL(request.url).searchParams.get('user_id');
+
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'user_id is required' }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
+      try {
+        const teams = await env.DB.prepare(`
+          SELECT
+            t.*,
+            tm.role as user_role,
+            tm.joined_at as user_joined_at,
+            COUNT(DISTINCT tm2.id) as member_count
+          FROM team_members tm
+          JOIN teams t ON tm.team_id = t.id
+          LEFT JOIN team_members tm2 ON t.id = tm2.team_id
+          WHERE tm.user_id = ?
+          GROUP BY t.id, tm.role, tm.joined_at
+          ORDER BY tm.joined_at DESC
+        `).bind(userId).all();
+
+        return new Response(JSON.stringify(teams.results || []), { headers: corsHeaders });
+      } catch (error) {
+        console.error('Get user teams error:', error);
+        return new Response(JSON.stringify({
+          error: 'Failed to get user teams',
+          details: error.message
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
     }
 
     if (path === 'railway-teams/members') {
@@ -3090,7 +3940,7 @@ export async function onRequest(context) {
 
       try {
         const result = await env.DB.prepare(
-          'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0'
+          'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read = 0'
         ).bind(userId).first();
 
         return new Response(JSON.stringify({ count: result?.count || 0 }), {
@@ -3141,7 +3991,7 @@ export async function onRequest(context) {
 
       try {
         await env.DB.prepare(
-          'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?'
+          'UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?'
         ).bind(notificationId, userId).run();
 
         return new Response(JSON.stringify({ success: true }), {
@@ -3190,7 +4040,7 @@ export async function onRequest(context) {
 
       try {
         await env.DB.prepare(
-          'UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0'
+          'UPDATE notifications SET read = 1 WHERE user_id = ? AND read = 0'
         ).bind(userId).run();
 
         return new Response(JSON.stringify({ success: true }), {

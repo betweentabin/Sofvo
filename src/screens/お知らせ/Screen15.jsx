@@ -119,7 +119,10 @@ export const Screen15 = () => {
                     <div className="frame-263">
                       <div className="frame-264" />
                       <div className="text-wrapper-135">
-                        {notification.type === 'system' ? 'Sofvo公式' : notification.title || '通知'}
+                        {notification.type === 'tournament_reminder' ? '大会のお知らせ' :
+                         notification.type === 'match_schedule' ? '対戦表発表' :
+                         notification.type === 'system' ? 'Sofvo公式' :
+                         notification.title || '通知'}
                       </div>
                     </div>
                     <div className="text-wrapper-136">
@@ -128,7 +131,7 @@ export const Screen15 = () => {
                   </div>
 
                   <div className="text-wrapper-137">
-                    {notification.message || 'メッセージがありません'}
+                    {notification.content || notification.message || 'メッセージがありません'}
                   </div>
                 </div>
               ))
