@@ -73,7 +73,7 @@ export async function onRequest(context) {
     }
 
     if (path === 'railway-auth/register' && request.method === 'POST') {
-      const { email, password, username, display_name } = await request.json();
+      const { email, password, username, display_name, phone, furigana } = await request.json();
 
       if (!email || !password || !username) {
         return new Response(JSON.stringify({
@@ -95,35 +95,98 @@ export async function onRequest(context) {
         });
       }
 
+      // Check if username is already taken
+      const existingUsername = await env.DB.prepare('SELECT id FROM profiles WHERE username = ?').bind(username).first();
+      if (existingUsername) {
+        return new Response(JSON.stringify({
+          errors: [{ msg: 'Username already exists', path: 'username' }]
+        }), {
+          status: 400,
+          headers: corsHeaders
+        });
+      }
+
       // Generate UUID and hash password
       const userId = generateUUID();
       const hashedPassword = await hashPassword(password);
       const now = new Date().toISOString();
 
-      // Insert user and profile
-      await env.DB.batch([
-        env.DB.prepare('INSERT INTO users (id, email, encrypted_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
-          .bind(userId, email, hashedPassword, now, now),
-        env.DB.prepare('INSERT INTO profiles (id, username, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
-          .bind(userId, username, display_name || username, now, now)
-      ]);
+      console.log('Creating user:', { userId, email, username });
 
-      const token = btoa(JSON.stringify({ id: userId, email, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 }));
+      try {
+        // Insert user and profile in a batch transaction
+        const results = await env.DB.batch([
+          env.DB.prepare('INSERT INTO users (id, email, encrypted_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
+            .bind(userId, email, hashedPassword, now, now),
+          env.DB.prepare('INSERT INTO profiles (id, username, display_name, phone, furigana, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+            .bind(userId, username, display_name || username, phone || null, furigana || null, now, now)
+        ]);
 
-      return new Response(JSON.stringify({
-        user: { id: userId, email, username, display_name: display_name || username },
-        token
-      }), { headers: corsHeaders });
+        console.log('User and profile created successfully:', results);
+
+        // Verify that the profile was created
+        const verifyProfile = await env.DB.prepare('SELECT id, username, display_name FROM profiles WHERE id = ?')
+          .bind(userId).first();
+
+        if (!verifyProfile) {
+          console.error('Profile verification failed - profile not found');
+          throw new Error('Failed to create user profile');
+        }
+
+        console.log('Profile verified:', verifyProfile);
+
+        // Generate token
+        const token = btoa(JSON.stringify({ id: userId, email, username, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 }));
+
+        return new Response(JSON.stringify({
+          success: true,
+          user: { 
+            id: userId, 
+            email, 
+            username, 
+            display_name: display_name || username,
+            phone: phone || null,
+            furigana: furigana || null
+          },
+          token
+        }), { headers: corsHeaders });
+
+      } catch (error) {
+        console.error('Error creating user:', error);
+        console.error('Error details:', error.message, error.stack);
+        
+        // Clean up if user was created but profile failed
+        try {
+          await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+          console.log('Cleaned up user record after error');
+        } catch (cleanupError) {
+          console.error('Failed to clean up user record:', cleanupError);
+        }
+
+        return new Response(JSON.stringify({
+          errors: [{ 
+            msg: 'Failed to create account. Please try again.', 
+            path: 'submit',
+            details: error.message 
+          }]
+        }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
     }
 
     if (path === 'railway-auth/login' && request.method === 'POST') {
       const { email, password } = await request.json();
 
+      console.log('Login attempt for:', email);
+
       const user = await env.DB.prepare(
-        'SELECT u.*, p.username, p.display_name FROM users u LEFT JOIN profiles p ON u.id = p.id WHERE u.email = ?'
+        'SELECT u.*, p.username, p.display_name, p.phone, p.furigana FROM users u LEFT JOIN profiles p ON u.id = p.id WHERE u.email = ?'
       ).bind(email).first();
 
       if (!user) {
+        console.log('User not found:', email);
         return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
           status: 401,
           headers: corsHeaders
@@ -133,21 +196,27 @@ export async function onRequest(context) {
       // Verify password
       const hashedInput = await hashPassword(password);
       if (hashedInput !== user.encrypted_password) {
+        console.log('Invalid password for:', email);
         return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
           status: 401,
           headers: corsHeaders
         });
       }
 
+      console.log('Login successful for:', email);
+
       // Simple token (in production, use proper JWT)
-      const token = btoa(JSON.stringify({ id: user.id, email: user.email, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 }));
+      const token = btoa(JSON.stringify({ id: user.id, email: user.email, username: user.username, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 }));
 
       return new Response(JSON.stringify({
+        success: true,
         user: {
           id: user.id,
           email: user.email,
           username: user.username,
-          display_name: user.display_name
+          display_name: user.display_name,
+          phone: user.phone || null,
+          furigana: user.furigana || null
         },
         token
       }), { headers: corsHeaders });
@@ -192,7 +261,7 @@ export async function onRequest(context) {
 
       // Get user profile
       const user = await env.DB.prepare(
-        'SELECT u.*, p.username, p.display_name, p.avatar_url, p.bio FROM users u LEFT JOIN profiles p ON u.id = p.id WHERE u.id = ?'
+        'SELECT u.*, p.username, p.display_name, p.avatar_url, p.bio, p.phone, p.furigana FROM users u LEFT JOIN profiles p ON u.id = p.id WHERE u.id = ?'
       ).bind(userId).first();
 
       if (!user) {
@@ -209,7 +278,9 @@ export async function onRequest(context) {
           username: user.username,
           display_name: user.display_name,
           avatar_url: user.avatar_url,
-          bio: user.bio
+          bio: user.bio,
+          phone: user.phone || null,
+          furigana: user.furigana || null
         }
       }), { headers: corsHeaders });
     }

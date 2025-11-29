@@ -82,34 +82,117 @@ export const AuthProvider = ({ children }) => {
   const signIn = async (email, password) => {
     try {
       const { data } = await http.post('/railway-auth/login', { email, password })
+      console.log('Login response:', data)
+      
       localStorage.setItem('JWT', data.token)
-      setUser({ id: data.user.id, email: data.user.email })
+      
+      // Store complete user information
+      const userData = {
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.username,
+        display_name: data.user.display_name,
+        phone: data.user.phone || null,
+        furigana: data.user.furigana || null
+      }
+      
+      localStorage.setItem('user', JSON.stringify(userData))
+      setUser(userData)
+      
+      console.log('User data stored:', userData)
+      
       return data
     } catch (err) {
+      console.error('Login error:', err)
+      
       // Retry against legacy local-auth if Railway route is missing
       if (err?.response?.status === 404 || err?.response?.status === 401) {
-        const { data } = await http.post('/local-auth/login', { email, password })
-        localStorage.setItem('JWT', data.token)
-        setUser({ id: data.user.id, email: data.user.email })
-        return data
+        try {
+          const { data } = await http.post('/local-auth/login', { email, password })
+          localStorage.setItem('JWT', data.token)
+          
+          const userData = {
+            id: data.user.id,
+            email: data.user.email,
+            username: data.user.username || data.user.email.split('@')[0],
+            display_name: data.user.display_name || 'User',
+            phone: data.user.phone || null,
+            furigana: data.user.furigana || null
+          }
+          
+          localStorage.setItem('user', JSON.stringify(userData))
+          setUser(userData)
+          
+          return data
+        } catch (localErr) {
+          console.error('Local auth login error:', localErr)
+          throw localErr
+        }
       }
       throw err
     }
   }
 
   const signUp = async (email, password, metadata = {}) => {
-    const payload = { email, password, username: metadata.username || email.split('@')[0], display_name: metadata.display_name || metadata.username || 'User' }
+    const payload = { 
+      email, 
+      password, 
+      username: metadata.username || email.split('@')[0], 
+      display_name: metadata.display_name || metadata.username || 'User',
+      phone: metadata.phone || null,
+      furigana: metadata.furigana || null
+    }
+    
+    console.log('Signing up with payload:', { ...payload, password: '[REDACTED]' })
+    
     try {
       const { data } = await http.post('/railway-auth/register', payload)
+      console.log('Signup response:', data)
+      
+      // Store JWT token
       localStorage.setItem('JWT', data.token)
-      setUser({ id: data.user.id, email: data.user.email })
+      
+      // Store complete user information
+      const userData = {
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.username,
+        display_name: data.user.display_name,
+        phone: data.user.phone,
+        furigana: data.user.furigana
+      }
+      
+      localStorage.setItem('user', JSON.stringify(userData))
+      setUser(userData)
+      
+      console.log('User data stored:', userData)
+      
       return data
     } catch (err) {
+      console.error('Signup error:', err)
+      
       if (err?.response?.status === 404 || err?.response?.status === 401) {
-        const { data } = await http.post('/local-auth/register', payload)
-        localStorage.setItem('JWT', data.token)
-        setUser({ id: data.user.id, email: data.user.email })
-        return data
+        try {
+          const { data } = await http.post('/local-auth/register', payload)
+          localStorage.setItem('JWT', data.token)
+          
+          const userData = {
+            id: data.user.id,
+            email: data.user.email,
+            username: data.user.username,
+            display_name: data.user.display_name,
+            phone: data.user.phone,
+            furigana: data.user.furigana
+          }
+          
+          localStorage.setItem('user', JSON.stringify(userData))
+          setUser(userData)
+          
+          return data
+        } catch (localErr) {
+          console.error('Local auth signup error:', localErr)
+          throw localErr
+        }
       }
       throw err
     }
